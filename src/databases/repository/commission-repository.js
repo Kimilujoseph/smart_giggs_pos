@@ -122,25 +122,25 @@ class CommissionRepository {
           CommissionPaymentsOnAccessorySales,
           ...rest
         } = p;
-        
+
         const mobileSales = CommissionPaymentsOnMobileSales.map(s => {
-            const { mobiles, ...saleData } = s.mobilesales;
-            return {
-                ...saleData,
-                itemName: mobiles.categories.itemName,
-                IMEI: mobiles.IMEI,
-                storage: mobiles.storage,
-                color: mobiles.color,
-            };
+          const { mobiles, ...saleData } = s.mobilesales;
+          return {
+            ...saleData,
+            itemName: mobiles.categories.itemName,
+            IMEI: mobiles.IMEI,
+            storage: mobiles.storage,
+            color: mobiles.color,
+          };
         });
 
         const accessorySales = CommissionPaymentsOnAccessorySales.map(s => {
-            const { accessories, ...saleData } = s.accessorysales;
-            return {
-                ...saleData,
-                itemName: accessories.categories.itemName,
-                color: accessories.color,
-            };
+          const { accessories, ...saleData } = s.accessorysales;
+          return {
+            ...saleData,
+            itemName: accessories.categories.itemName,
+            color: accessories.color,
+          };
         });
 
         return {
@@ -190,6 +190,7 @@ class CommissionRepository {
           periodStartDate,
           periodEndDate,
           processedById,
+          status: "PAID"
         },
       });
 
@@ -290,7 +291,7 @@ class CommissionRepository {
     try {
       return await prismaClient.commissionPayment.update({
         where: { id: paymentId },
-        data: { status: 'VOIDED' },
+        data: { status: "VOIDED" },
       });
     } catch (err) {
       throw new APIError(

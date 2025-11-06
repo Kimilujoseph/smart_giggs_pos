@@ -5,15 +5,23 @@ const prisma = new PrismaClient();
 
 class FinancialReportingRepository {
 
-  async getAggregatedAnalytics({ startDate, endDate }) {
+  async getAggregatedAnalytics({ startDate, endDate, type }) {
     try {
-      return await prisma.dailySalesAnalytics.aggregate({
-        where: {
-          date: {
-            gte: startDate,
-            lt: endDate,
-          },
+      const whereClause = {
+        date: {
+          gte: startDate,
+          lt: endDate,
         },
+      };
+
+      if (type === 'sales') {
+        whereClause.totalRevenue = { gt: 0 };
+      } else if (type === 'returns') {
+        whereClause.totalRevenue = { lt: 0 };
+      }
+
+      return await prisma.dailySalesAnalytics.aggregate({
+        where: whereClause,
         _sum: {
           totalRevenue: true,
           grossProfit: true,
@@ -98,9 +106,9 @@ class FinancialReportingRepository {
             gte: startDate,
             lte: endDate,
           },
-          // status: {
-          //   not: "VOID"
-          // }
+          status: {
+            not: "VOIDED"
+          }
         },
         _sum: {
           amount: true,
@@ -119,6 +127,9 @@ class FinancialReportingRepository {
             gte: startDate,
             lte: endDate,
           },
+          status: {
+            not: "VOIDED"
+          }
         },
         _sum: {
           amountPaid: true,

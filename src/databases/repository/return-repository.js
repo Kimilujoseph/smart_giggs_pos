@@ -46,7 +46,7 @@ class ReturnRepository {
           refundAmount,
           restock,
           processedBy: processedById,
-          customerId,
+          customerId: customerId || 1,
           ...(saleType === 'mobile' ? { mobileSaleId: saleId } : { accessorySaleId: saleId }),
         },
       })
@@ -99,27 +99,56 @@ class ReturnRepository {
       const productDetails = await productModel.findUnique({ where: { id: originalSale.productID } });
       const costPerUnit = Number(productDetails.productCost);
       const costToReverse = costPerUnit * quantity;
-      const returnDate = new Date();
-      returnDate.setHours(0, 0, 0, 0);
+      const now = new Date();
+      const returnDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
 
-      await tx.dailySalesAnalytics.create({
-        data: {
-          date: returnDate,
-          productId: originalSale.productID,
-          categoryId: originalSale.categoryId,
-          shopId: originalSale.shopID,
-          sellerId: originalSale.sellerId,
-          financeId: originalSale.financerId,
-          financeStatus: `RETURNED: ${originalSale.financeStatus}`,
-          totalUnitsSold: -quantity,
-          totalRevenue: -revenueToReverse,
-          totalCostOfGoods: -costToReverse,
-          grossProfit: -profitToReverse,
-          totalCommission: -commissionToReverse,
-          totalfinanceAmount: -financeAmountToReverse,
+      const financeStatusForReturn = `RETURNED: ${originalSale.financeStatus}`;
+
+      const existingRecord = await tx.dailySalesAnalytics.findUnique({
+        where: {
+          date_categoryId_shopId_sellerId_financeId_financeStatus: {
+            date: returnDate,
+            categoryId: originalSale.categoryId,
+            shopId: originalSale.shopID,
+            sellerId: originalSale.sellerId,
+            financeId: originalSale.financerId,
+            financeStatus: financeStatusForReturn,
+          },
         },
       });
-
+      //console.log("existingRecord", existingRecord)
+      if (existingRecord) {
+        await tx.dailySalesAnalytics.update({
+          where: {
+            id: existingRecord.id,
+          },
+          data: {
+            totalUnitsSold: { decrement: quantity },
+            totalRevenue: { decrement: revenueToReverse },
+            totalCostOfGoods: { decrement: costToReverse },
+            grossProfit: { decrement: profitToReverse },
+            totalCommission: { decrement: commissionToReverse },
+            totalfinanceAmount: { decrement: financeAmountToReverse },
+          },
+        });
+      } else {
+        await tx.dailySalesAnalytics.create({
+          data: {
+            date: returnDate,
+            categoryId: originalSale.categoryId,
+            shopId: originalSale.shopID,
+            sellerId: originalSale.sellerId,
+            financeId: originalSale.financerId,
+            financeStatus: financeStatusForReturn,
+            totalUnitsSold: -quantity,
+            totalRevenue: -revenueToReverse,
+            totalCostOfGoods: -costToReverse,
+            grossProfit: -profitToReverse,
+            totalCommission: -commissionToReverse,
+            totalfinanceAmount: -financeAmountToReverse,
+          },
+        });
+      }
       return returnRecord;
     });
   }

@@ -27,7 +27,7 @@ class salesmanagment {
   async createBulkSale(salePayload, user) {
     const { shopName, customerdetails, bulksales } = salePayload;
     const { id: sellerId } = user;
-    console.log("bulk sales@@@@@@", JSON.stringify(salePayload))
+    //console.log("bulk sales@@@@@@", JSON.stringify(salePayload))
     const shop = await this.shop.findShop({ name: shopName });
     if (!shop) {
       throw new APIError("Shop not found", STATUS_CODE.NOT_FOUND, "The specified shop does not exist.");

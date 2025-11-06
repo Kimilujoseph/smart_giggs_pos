@@ -10,7 +10,7 @@ class SalaryService {
 
   async createSalaryPayment(paymentData) {
     const { employeeId, processedById } = paymentData;
-
+    const updatedPaymentDate = { ...paymentData, status: "PAID" };
     // 1. Verify users exist
     const [employee, processor] = await Promise.all([
       this.userRepository.findUserById({ id: employeeId }),
@@ -30,7 +30,7 @@ class SalaryService {
     // }
 
     // 3. Create the salary payment
-    return this.repository.createSalaryPayment(paymentData);
+    return this.repository.createSalaryPayment(updatedPaymentDate);
   }
 
   async getSalaryPayments(options) {
