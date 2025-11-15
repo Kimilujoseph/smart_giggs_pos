@@ -31,6 +31,7 @@ class FinancialReportingService {
           type: 'returns',
         });
       }
+      console.log("historical return", historicalReturnsData)
 
       if (end >= today) {
         const liveStartDate = start > today ? start : today;

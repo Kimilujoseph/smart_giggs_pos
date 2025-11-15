@@ -9,7 +9,7 @@ const handleGetFinancialSummary = async (req, res, next) => {
     const { startDate, endDate } = req.dateQuery;
 
     const summary = await financialReportingService.generateFinancialSummary({ startDate, endDate });
-    console.log("Financial Summary:", summary);
+    //console.log("Financial Summary:", summary);
     handleResponse({
       res,
       message: "Financial summary retrieved successfully",
