@@ -27,7 +27,7 @@ class salesmanagment {
   async createBulkSale(salePayload, user) {
     const { shopName, customerdetails, bulksales } = salePayload;
     const { id: sellerId } = user;
-    //console.log("bulk sales@@@@@@", JSON.stringify(salePayload))
+
     const shop = await this.shop.findShop({ name: shopName });
     if (!shop) {
       throw new APIError("Shop not found", STATUS_CODE.NOT_FOUND, "The specified shop does not exist.");
@@ -49,135 +49,140 @@ class salesmanagment {
       const analyticsAggregator = new Map();
 
       for (const sale of bulksales) {
-        const { itemType, items, paymentmethod, transactionId, CategoryId } = sale;
+        const { itemType, items, payments, CategoryId } = sale;
 
-        const totalAmount = items.reduce((acc, item) => acc + (item.soldprice * 1), 0);
+        if (items.length !== 1) {
+          throw new APIError("Bad Request", STATUS_CODE.BAD_REQUEST, "Each sale object in bulksales must contain exactly one item.");
+        }
+        const item = items[0];
+        const { productId, soldprice, soldUnits, itemId, financeAmount, financeStatus, financeId } = item;
 
-        const payment = await tx.payment.create({
-          data: {
-            amount: totalAmount,
-            paymentMethod: paymentmethod,
-            status: 'completed',
-            transactionId: transactionId,
-            updatedAt: new Date(),
-          },
-        });
+        const totalPaid = payments.reduce((acc, p) => acc + p.amount, 0);
+        if (totalPaid < soldprice) {
+          throw new APIError("Bad Request", STATUS_CODE.BAD_REQUEST, `Total payment (${totalPaid}) is less than the sold price (${soldprice}).`);
+        }
 
-        for (const item of items) {
-          const { productId, soldprice, soldUnits, itemId, financeAmount, financeStatus, financeId } = item;
+        const itemToSell = itemType === 'mobiles'
+          ? await tx.mobileItems.findUnique({ where: { id: parseInt(itemId) } })
+          : await tx.accessoryItems.findUnique({ where: { id: parseInt(itemId) } });
 
-          const itemToSell = itemType === 'mobiles'
-            ? await tx.mobileItems.findUnique({ where: { id: parseInt(itemId) } })
-            : await tx.accessoryItems.findUnique({ where: { id: parseInt(itemId) } });
+        if (!itemToSell) {
+          throw new APIError("Not Found", STATUS_CODE.NOT_FOUND, "Item not found.");
+        }
+        if (itemToSell.status === 'sold' && itemToSell.quantity === 0) {
+          throw new APIError("Bad Request", STATUS_CODE.BAD_REQUEST, "Item has already been sold.");
+        }
 
-          if (!itemToSell) {
-            throw new APIError("Not Found", STATUS_CODE.NOT_FOUND, "Item not found.");
-          }
-          if (itemToSell.status === 'sold' && itemToSell.quantity === 0) {
-            throw new APIError("Bad Request", STATUS_CODE.BAD_REQUEST, "Item has already been sold.");
-          }
-          const categoryDetails = await tx.categories.findUnique({ where: { id: parseInt(CategoryId) } })
-          const productDetails = itemType === 'mobiles'
-            ? await tx.mobiles.findUnique({ where: { id: parseInt(productId) } })
-            : await tx.accessories.findUnique({ where: { id: parseInt(productId) } });
+        const categoryDetails = await tx.categories.findUnique({ where: { id: parseInt(CategoryId) } });
+        const productDetails = itemType === 'mobiles'
+          ? await tx.mobiles.findUnique({ where: { id: parseInt(productId) } })
+          : await tx.accessories.findUnique({ where: { id: parseInt(productId) } });
 
-          if (!productDetails) {
-            throw new APIError("Not Found", STATUS_CODE.NOT_FOUND, `Product with ID ${productId} not found`);
-          }
+        if (!productDetails || !["available", "distributed"].includes(productDetails.stockStatus)) {
+          throw new APIError("Not Found", STATUS_CODE.NOT_FOUND, `Product with ID ${productId} not found or not available.`);
+        }
 
-          const profit = soldprice - (productDetails.productCost * soldUnits);
-          const commission = productDetails.commission * soldUnits;
+        const profit = soldprice - (productDetails.productCost * soldUnits);
+        const commission = productDetails.commission * soldUnits;
 
-          const saleData = {
-            productID: parseInt(productId),
-            shopID: shop.id,
-            sellerId,
-            soldPrice: soldprice,
-            quantity: soldUnits,
-            customerId: customer.id,
-            paymentId: payment.id,
-            categoryId: parseInt(CategoryId),
-            profit,
-            commission,
-            financeAmount: financeAmount ? parseInt(financeAmount) : 0,
-            financeStatus: financeStatus,
-            financerId: financeId ? parseInt(financeId) : null,
-          };
+        const saleData = {
+          productID: parseInt(productId),
+          shopID: shop.id,
+          sellerId,
+          soldPrice: soldprice,
+          quantity: soldUnits,
+          customerId: customer.id,
+          categoryId: parseInt(CategoryId),
+          profit,
+          commission,
+          financeAmount: financeAmount ? parseInt(financeAmount) : 0,
+          financeStatus: financeStatus,
+          financerId: financeId ? parseInt(financeId) : null,
+        };
 
-          //console.log("#$receiving sales Data", saleData)
-
-          let createdSale;
-          if (itemType === 'mobiles') {
-            const updateId = itemToSell.id;
-            createdSale = await tx.mobilesales.create({ data: saleData });
-            //console.log("sales created", createdSale)
-            await tx.mobileItems.updateMany({
-              where: { id: updateId },
-              data: { status: "sold", quantity: { decrement: soldUnits } },
-            });
-
-            await tx.mobiles.update({
-              where: { id: parseInt(itemToSell.mobileID) },
-              data: { stockStatus: "sold" }
-            })
-          } else {
-            const updateId = itemToSell.id;
-            createdSale = await tx.accessorysales.create({ data: saleData });
-
-            await tx.accessoryItems.update({
-              where: { id: updateId },
-              data: { status: itemToSell.quantity - soldUnits > 0 ? "confirmed" : "sold", quantity: { decrement: soldUnits } },
-            });
-          }
-
-
-          const now = new Date();
-          const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-          const parsedFinanceId = financeId ? parseInt(financeId) : null;
-          const financeIdKey = parsedFinanceId === null ? 'null' : parsedFinanceId;
-          const financeStatusKey = financeStatus === null ? 'null' : financeStatus;
-
-          const analyticsKey = `${today.toISOString()}-${CategoryId}-${shop.id}-${sellerId}-${financeStatusKey}-${financeIdKey}`;
-
-          const currentAnalytics = analyticsAggregator.get(analyticsKey) || {
-            date: today,
-            categoryId: parseInt(CategoryId),
-            shopId: shop.id,
-            sellerId: sellerId,
-            financeStatus: financeStatus,
-            financeId: parsedFinanceId,
-            totalUnitsSold: 0,
-            totalRevenue: 0,
-            totalCostOfGoods: 0,
-            grossProfit: 0,
-            totalCommission: 0,
-            totalfinanceAmount: 0,
-          };
-
-          currentAnalytics.totalUnitsSold += soldUnits;
-          currentAnalytics.totalRevenue += soldprice;
-          currentAnalytics.totalCostOfGoods += productDetails.productCost * soldUnits;
-          currentAnalytics.grossProfit += profit;
-          currentAnalytics.totalCommission += commission;
-          currentAnalytics.totalfinanceAmount += financeAmount ? parseInt(financeAmount) : 0;
-
-          analyticsAggregator.set(analyticsKey, currentAnalytics);
-
-          allSalesResults.push({
-            status: 'fulfilled',
-            value: {
-              ...createdSale,
-              sellerName: user.name,
-              customerName: customer.name ? customer.name : "walk-in-customer",
-              customerphoneNumber: customer.phoneNumber ? customer.phoneNumber : "walk-in-customer",
-              shopName: shopName,
-              batchIMEI: productDetails.batchNumber ? productDetails.batchNumber : productDetails,
-              productName: categoryDetails.itemName,
-              productModel: categoryDetails.itemModel,
-              brand: categoryDetails.brand
-            }
+        let createdSale;
+        if (itemType === 'mobiles') {
+          createdSale = await tx.mobilesales.create({ data: saleData });
+          await tx.mobileItems.updateMany({
+            where: { id: parseInt(itemId) },
+            data: { status: "sold", quantity: { decrement: soldUnits } },
+          });
+          await tx.mobiles.update({
+            where: { id: parseInt(itemToSell.mobileID) },
+            data: { stockStatus: "sold" }
+          });
+        } else {
+          createdSale = await tx.accessorysales.create({ data: saleData });
+          await tx.accessoryItems.update({
+            where: { id: parseInt(itemId) },
+            data: { status: itemToSell.quantity - soldUnits > 0 ? "confirmed" : "sold", quantity: { decrement: soldUnits } },
           });
         }
+
+        const paymentPromises = payments.map(p => {
+          const paymentData = {
+            amount: p.amount,
+            paymentMethod: p.paymentMethod,
+            status: 'completed',
+            transactionId: p.transactionId,
+          };
+          if (itemType === 'mobiles') {
+            paymentData.mobileSaleId = createdSale.id;
+          } else {
+            paymentData.accessorySaleId = createdSale.id;
+          }
+          return tx.payment.create({ data: paymentData });
+        });
+
+        const createdPayments = await Promise.all(paymentPromises);
+
+        const now = new Date();
+        const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+        const parsedFinanceId = financeId ? parseInt(financeId) : null;
+        const financeIdKey = parsedFinanceId === null ? 'null' : parsedFinanceId;
+        const financeStatusKey = financeStatus === null ? 'null' : financeStatus;
+
+        const analyticsKey = `${today.toISOString()}-${CategoryId}-${shop.id}-${sellerId}-${financeStatusKey}-${financeIdKey}`;
+
+        const currentAnalytics = analyticsAggregator.get(analyticsKey) || {
+          date: today,
+          categoryId: parseInt(CategoryId),
+          shopId: shop.id,
+          sellerId: sellerId,
+          financeStatus: financeStatus,
+          financeId: parsedFinanceId,
+          totalUnitsSold: 0,
+          totalRevenue: 0,
+          totalCostOfGoods: 0,
+          grossProfit: 0,
+          totalCommission: 0,
+          totalfinanceAmount: 0,
+        };
+
+        currentAnalytics.totalUnitsSold += soldUnits;
+        currentAnalytics.totalRevenue += soldprice;
+        currentAnalytics.totalCostOfGoods += productDetails.productCost * soldUnits;
+        currentAnalytics.grossProfit += profit;
+        currentAnalytics.totalCommission += commission;
+        currentAnalytics.totalfinanceAmount += financeAmount ? parseInt(financeAmount) : 0;
+
+        analyticsAggregator.set(analyticsKey, currentAnalytics);
+
+        allSalesResults.push({
+          status: 'fulfilled',
+          value: {
+            ...createdSale,
+            sellerName: user.name,
+            customerName: customer.name ? customer.name : "walk-in-customer",
+            customerphoneNumber: customer.phoneNumber ? customer.phoneNumber : "walk-in-customer",
+            shopName: shopName,
+            batchIMEI: productDetails.batchNumber ? productDetails.batchNumber : productDetails,
+            productName: categoryDetails.itemName,
+            productModel: categoryDetails.itemModel,
+            brand: categoryDetails.brand,
+            paymentData: createdPayments
+          }
+        });
       }
 
       // Perform a find-then-update/create for each aggregated analytic entry

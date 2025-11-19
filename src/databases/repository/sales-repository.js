@@ -147,7 +147,7 @@ class Sales {
                 name: true
               }
             },
-            Payment: true
+            //Payment: true
           }
           : {
             accessories: true,
@@ -175,7 +175,7 @@ class Sales {
                 name: true
               },
             },
-            Payment: true
+            //Payment: true
           };
       const [results, totals] = await Promise.all([
         salesModel.findMany({

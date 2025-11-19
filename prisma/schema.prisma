@@ -101,15 +101,20 @@ model Notification {
 }
 
 model Payment {
-  id             Int              @id @default(autoincrement())
-  amount         Decimal          @db.Decimal(10, 2)
-  paymentMethod  String
-  status         String           @default("completed")
-  transactionId  String?
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime?        @default(now()) @db.DateTime(0)
-  accessorysales accessorysales[]
-  mobilesales    mobilesales[]
+  id              Int              @id @default(autoincrement())
+  amount          Decimal          @db.Decimal(10, 2)
+  paymentMethod   String
+  status          String           @default("completed")
+  transactionId   String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime?        @default(now()) @db.DateTime(0)
+  mobileSaleId    Int?
+  accessorySaleId Int?
+  mobileSale      mobilesales?     @relation(fields: [mobileSaleId], references: [id])
+  accessorySale   accessorysales?  @relation(fields: [accessorySaleId], references: [id])
+
+  @@index([mobileSaleId])
+  @@index([accessorySaleId])
 }
 
 model Return {
@@ -244,21 +249,19 @@ model accessorysales {
   financeAmount                      Int?                                 @default(0)
   customerId                         Int?
   financerId                         Int?
-  paymentId                          Int?
   commissionPaid                     Int?                                 @default(0)
   CommissionPaymentsOnAccessorySales CommissionPaymentsOnAccessorySales[]
   Return                             Return[]
   Customer                           Customer?                            @relation(fields: [customerId], references: [id])
   Financer                           Financer?                            @relation(fields: [financerId], references: [id])
-  Payment                            Payment?                             @relation(fields: [paymentId], references: [id])
   accessories                        accessories                          @relation(fields: [productID], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_accessorysales_1")
   actors                             actors                               @relation(fields: [sellerId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_accessorysales_2")
   shops                              shops                                @relation(fields: [shopID], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_accessorysales_3")
   categories                         categories?                          @relation(fields: [categoryId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_accessorysales_category")
+  payments                           Payment[]
 
   @@index([customerId])
   @@index([financerId])
-  @@index([paymentId])
   @@index([productID], map: "fk_accessorysales_1_idx")
   @@index([sellerId], map: "fk_accessorysales_2_idx")
   @@index([shopID], map: "fk_accessorysales_3_idx")
@@ -446,7 +449,6 @@ model mobilesales {
   status                          String?                           @default("COMPLETED") @db.VarChar(100)
   customerId                      Int?
   financerId                      Int?
-  paymentId                       Int?
   commissionPaid                  Int?                              @default(0)
   CommissionPaymentsOnMobileSales CommissionPaymentsOnMobileSales[]
   Return                          Return[]
@@ -456,7 +458,7 @@ model mobilesales {
   shops                           shops                             @relation(fields: [shopID], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_mobilesales_3")
   Customer                        Customer?                         @relation(fields: [customerId], references: [id])
   Financer                        Financer?                         @relation(fields: [financerId], references: [id])
-  Payment                         Payment?                          @relation(fields: [paymentId], references: [id])
+  payments                        Payment[]
 
   @@index([categoryId], map: "fk_mobileSales_category")
   @@index([productID], map: "fk_mobilesales_1_idx")
@@ -466,7 +468,6 @@ model mobilesales {
   @@index([financeStatus], map: "idx_sales_finance_status")
   @@index([customerId])
   @@index([financerId])
-  @@index([paymentId])
 }
 
 model mobiletransferHistory {
