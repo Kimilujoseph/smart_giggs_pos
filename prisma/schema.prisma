@@ -86,6 +86,7 @@ model Financer {
   updatedAt      DateTime         @default(now()) @db.DateTime(0)
   accessorysales accessorysales[]
   mobilesales    mobilesales[]
+  SellerPerformanceKPI SellerPerformanceKPI[]
 }
 
 model Notification {
@@ -328,6 +329,7 @@ model actors {
   mobilesales                                                           mobilesales[]
   mobiletransferHistory_mobiletransferHistory_confirmedByToactors       mobiletransferHistory[]    @relation("mobiletransferHistory_confirmedByToactors")
   mobiletransferHistory_mobiletransferHistory_transferdByToactors       mobiletransferHistory[]    @relation("mobiletransferHistory_transferdByToactors")
+  SellerPerformanceKPI                                                  SellerPerformanceKPI[]
 }
 
 model assignment {
@@ -359,6 +361,7 @@ model categories {
   accessorysales accessorysales[]
   mobiles        mobiles[]
   mobilesales    mobilesales[]
+  SellerPerformanceKPI SellerPerformanceKPI[]
 }
 
 model mobileHistory {
@@ -539,6 +542,39 @@ model DailySalesAnalytics {
   @@index([date], map: "idx_date")
   @@index([sellerId], map: "idx_sellerId")
   @@index([shopId], map: "idx_shopId")
+}
+
+model SellerPerformanceKPI {
+  id                          Int      @id @default(autoincrement())
+  sellerId                    Int
+  financerId                  Int? // Nullable for non-financed sales
+  categoryId                  Int // The category of products sold
+  calculationDate             DateTime @db.Date
+  period                      Period // e.g., DAILY, WEEKLY, MONTHLY
+  totalSalesRevenue           Decimal @db.Decimal(18, 2)
+  totalUnitsSold              Int
+  averageDealSize             Decimal @db.Decimal(18, 2)
+  totalGrossProfit            Decimal @db.Decimal(18, 2)
+  profitMargin                Decimal @db.Decimal(5, 2)
+  returnRate                  Decimal @db.Decimal(5, 2)
+  totalCommissionPaid         Decimal @db.Decimal(18, 2)
+  commissionAsPercentageOfSales Decimal @db.Decimal(5, 2)
+  seller                      actors     @relation(fields: [sellerId], references: [id])
+  financer                    Financer?  @relation(fields: [financerId], references: [id])
+  category                    categories @relation(fields: [categoryId], references: [id])
+
+  @@unique([sellerId, financerId, categoryId, calculationDate, period])
+  @@index([sellerId])
+  @@index([financerId])
+  @@index([categoryId])
+  @@index([calculationDate])
+}
+
+enum Period {
+  DAILY
+  WEEKLY
+  MONTHLY
+  YEARLY
 }
 
 enum Expense_category {
