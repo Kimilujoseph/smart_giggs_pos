@@ -152,20 +152,12 @@ export async function calculateAndStoreKPIs(calculationDate = new Date()) {
 
   } catch (error) {
     console.error('Error calculating KPIs:', error);
-  } finally {
-    // 6. Ensure the database connection is closed
-    await prisma.$disconnect();
-    console.log('Database connection closed.');
   }
 }
 
-// Allow the script to be run directly from the command line
-const currentFileUrl = import.meta.url;
-const currentFilePath = fileURLToPath(currentFileUrl);
-const scriptPath = process.argv[1];
+// --- New Main Execution Logic ---
 
-if (scriptPath === currentFilePath) {
-  // If a date is provided as a command-line argument, use it. Otherwise, use yesterday.
+async function main() {
   const argDate = process.argv[2] ? new Date(process.argv[2]) : null;
 
   if (argDate && isNaN(argDate.getTime())) {
@@ -173,8 +165,42 @@ if (scriptPath === currentFilePath) {
     process.exit(1);
   }
 
-  const dateToProcess = argDate || new Date(Date.now() - 86400000); // Default to yesterday
+  if (argDate) {
+    // If a specific date is provided, only process that single day.
+    // This is useful for manual backfills or debugging.
+    console.log(`Manually processing KPIs for single date: ${argDate.toISOString().split('T')[0]}`);
+    await calculateAndStoreKPIs(argDate);
+  } else {
+    // If no date is provided, process a rolling window of the last 30 days.
+    const lookbackDays = 30;
+    console.log(`Processing KPIs for the last ${lookbackDays} days to ensure data accuracy...`);
 
-  calculateAndStoreKPIs(dateToProcess);
+    for (let i = lookbackDays; i >= 1; i--) {
+      const dateToProcess = new Date();
+      dateToProcess.setDate(dateToProcess.getDate() - i);
+      // The await here ensures we process one day completely before starting the next.
+      await calculateAndStoreKPIs(dateToProcess);
+    }
+  }
 }
 
+// Run the main function and handle final cleanup
+const currentFileUrl = import.meta.url;
+const currentFilePath = fileURLToPath(currentFileUrl);
+const scriptPath = process.argv[1];
+
+if (scriptPath === currentFilePath) {
+  main()
+    .then(() => {
+      console.log('Nightly KPI recalculation process completed successfully.');
+    })
+    .catch((error) => {
+      console.error('An unexpected error occurred during the KPI recalculation process:', error);
+      process.exit(1);
+    })
+    .finally(async () => {
+      // Disconnect from the database once, after all operations are done.
+      await prisma.$disconnect();
+      console.log('Database connection closed.');
+    });
+}
