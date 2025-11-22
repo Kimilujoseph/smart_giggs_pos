@@ -235,7 +235,7 @@ class salesmanagment {
     const parsedEndDate = new Date(endDate);
 
 
-    const historicalEndDate = parsedEndDate < today ? parsedEndDate : today;
+    const historicalEndDate = parsedEndDate < today ? parsedEndDate : new Date(today.getTime() - 86400000);
     const historicalTotals = await this.analytics.getSalesAnalytics({
       startDate: parsedStartDate,
       endDate: historicalEndDate,

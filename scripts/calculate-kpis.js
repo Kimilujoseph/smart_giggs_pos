@@ -7,11 +7,11 @@ const prisma = new PrismaClient();
 export async function calculateAndStoreKPIs(calculationDate = new Date()) {
   console.log(`Starting KPI calculation for ${calculationDate.toISOString().split('T')[0]}...`);
 
-  // Define the time period for the calculation (the entirety of the given day)
+  // Define the time period for the calculation (the entirety of the given day in UTC)
   const startDate = new Date(calculationDate);
-  startDate.setHours(0, 0, 0, 0);
+  startDate.setUTCHours(0, 0, 0, 0);
   const endDate = new Date(calculationDate);
-  endDate.setHours(23, 59, 59, 999);
+  endDate.setUTCHours(23, 59, 59, 999);
 
   try {
     // 1. Fetch and aggregate mobile sales data
@@ -19,8 +19,8 @@ export async function calculateAndStoreKPIs(calculationDate = new Date()) {
       by: ['sellerId', 'financerId', 'categoryId'],
       where: {
         createdAt: { gte: startDate, lte: endDate },
-        status: 'COMPLETED', // Only consider completed sales
-        categoryId: { not: null } // Ensure category is not null
+        status: { not: "RETURNED" },
+        categoryId: { not: null }
       },
       _sum: {
         soldPrice: true,
@@ -38,7 +38,7 @@ export async function calculateAndStoreKPIs(calculationDate = new Date()) {
       by: ['sellerId', 'financerId', 'categoryId'],
       where: {
         createdAt: { gte: startDate, lte: endDate },
-        status: 'COMPLETED',
+        status: { not: "RETURNED" },
         categoryId: { not: null }
       },
       _sum: {
@@ -172,7 +172,7 @@ async function main() {
     await calculateAndStoreKPIs(argDate);
   } else {
     // If no date is provided, process a rolling window of the last 30 days.
-    const lookbackDays = 30;
+    const lookbackDays = 90;
     console.log(`Processing KPIs for the last ${lookbackDays} days to ensure data accuracy...`);
 
     for (let i = lookbackDays; i >= 1; i--) {

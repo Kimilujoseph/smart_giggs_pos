@@ -22,15 +22,23 @@ export const getSellerPerformance = async (req, res) => {
       ...req.query,
       startDate: req.salesQuery.startDate,
       endDate: req.salesQuery.endDate,
+      page: req.salesQuery.page,
+      limit: req.salesQuery.limit,
     };
+
+    // Normalize the 'period' query parameter to be case-insensitive
+    if (req.query.Period && !req.query.period) {
+      filters.period = req.query.Period;
+      delete filters.Period;
+    }
 
     // If no sellerId is provided, and the user is not a superuser, default to the user's own ID
     if (!sellerId && role !== 'superuser') {
       filters.sellerId = userId;
     }
 
-    const kpis = await kpiService.getSellerPerformance(filters);
-    console.log("KPIs retrieved:", kpis);
+    const { kpis, totalKpis } = await kpiService.getSellerPerformance(filters);
+    //console.log("KPIs retrieved:", kpis);
 
     handleResponse({
       res,
@@ -38,7 +46,7 @@ export const getSellerPerformance = async (req, res) => {
         sales: kpis,
         page: req.salesQuery.page,
         limit: req.salesQuery.limit,
-        total: kpis.length,
+        total: totalKpis,
       },
     });
   } catch (error) {

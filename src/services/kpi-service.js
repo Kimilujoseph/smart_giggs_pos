@@ -13,9 +13,8 @@ class KpiService {
    */
   async getSellerPerformance(filters) {
     try {
-      const kpis = await this.repository.getSellerPerformance(filters);
-      // You can add any additional business logic or data transformation here if needed.
-      return kpis;
+      const { kpis, total } = await this.repository.getSellerPerformance(filters);
+      return { kpis, totalKpis: total };
     } catch (error) {
       console.error("Service error while fetching seller performance:", error);
       throw new Error("Failed to get seller performance data.");
