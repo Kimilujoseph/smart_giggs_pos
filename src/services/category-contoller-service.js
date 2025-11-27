@@ -23,7 +23,7 @@ class CategoryManagementService {
                 throw new APIError("not found", STATUS_CODE.BAD_REQUEST, "not item found");
             }
 
-            const allowedItemTypes = ['accessories', 'mobiles'];
+            const allowedItemTypes = ['accessories', 'mobiles', 'smartphones', 'smallphones', 'simcards'];
             if (!itemDetails.itemType || !allowedItemTypes.includes(itemDetails.itemType)) {
                 throw new APIError(
                     "Invalid itemType",

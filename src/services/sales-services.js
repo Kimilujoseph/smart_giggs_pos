@@ -258,7 +258,7 @@ class salesmanagment {
         financerId,
         financeStatus,
         page: 1,
-        limit: 10000, // A large limit to get all of today's sales
+        limit: 500, // A large limit to get all of today's sales
       };
 
       const [mobileSales, accessorySales] = await Promise.all([
@@ -279,7 +279,6 @@ class salesmanagment {
       };
     }
 
-    // 3. Get paginated sales data for the view (from transactional tables)
     const paginatedSalesDetails = {
       startDate: parsedStartDate,
       endDate: parsedEndDate,
@@ -302,6 +301,7 @@ class salesmanagment {
     ]);
 
     const combinedSales = [...paginatedMobileSales.data, ...paginatedAccessorySales.data];
+
     combinedSales.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     const paginatedSales = combinedSales.slice(0, limit);
     const totalItemsForPagination = (paginatedMobileSales.totals.totalItems || 0) + (paginatedAccessorySales.totals.totalItems || 0);

@@ -133,7 +133,8 @@ class Sales {
                 itemName: true,
                 itemModel: true,
                 itemType: true,
-                brand: true
+                brand: true,
+                category: true
               }
             },
             actors: {
@@ -161,7 +162,8 @@ class Sales {
                 itemName: true,
                 itemModel: true,
                 itemType: true,
-                brand: true
+                brand: true,
+                category: true
               }
             },
             actors: {
@@ -211,6 +213,7 @@ class Sales {
           financer: sale.Financer?.name || "N/A",
         },
       });
+
       return {
         data: results.map(transformSale),
         totals: {
@@ -299,7 +302,8 @@ class Sales {
                 itemName: true,
                 itemModel: true,
                 itemType: true,
-                brand: true
+                brand: true,
+                category: true
               }
             },
             actors: {
@@ -327,7 +331,8 @@ class Sales {
                 itemName: true,
                 itemModel: true,
                 itemType: true,
-                brand: true
+                brand: true,
+                category: true
               }
             },
             actors: {

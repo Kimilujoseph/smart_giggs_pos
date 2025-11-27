@@ -592,6 +592,8 @@ enum CategoryStatus {
      } 
 
 enum categories_itemType {
+  smartphones
+  smallphones
   mobiles
   accessories
 }

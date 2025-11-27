@@ -54,3 +54,36 @@ export const getSellerPerformance = async (req, res) => {
     handleError(res, "internal server error");
   }
 };
+export const getKpiAchievementReport = async (req, res) => {
+  try {
+    const { id: userId, role } = req.user;
+    const { sellerId } = req.query;
+
+    if (sellerId && userId.toString() !== sellerId && role !== 'superuser') {
+      return handleError(res, "Forbidden: You are not authorized to view this seller's achievement", 403);
+    }
+
+    const filters = {
+      ...req.query,
+      startDate: req.salesQuery.startDate,
+      endDate: req.salesQuery.endDate,
+    };
+
+    if (!sellerId && role !== 'superuser') {
+      filters.sellerId = userId;
+    }
+     if (!filters.sellerId) {
+      return handleError(res, "Seller ID is required", 400);
+    }
+
+    const report = await kpiService.getKpiAchievementReport(filters);
+
+    handleResponse({
+      res,
+      data: report,
+    });
+  } catch (error) {
+    console.error("Controller error in getKpiAchievementReport:", error);
+    handleError(res, "internal server error");
+  }
+};

@@ -55,6 +55,88 @@ class KpiRepository {
       await this.prisma.$disconnect();
     }
   }
+
+  async getSalesForKpiReport({ sellerId, startDate, endDate }) {
+    try {
+      const whereClause = {
+        sellerId: parseInt(sellerId, 10),
+        createdAt: {
+          gte: new Date(startDate),
+          lte: new Date(endDate),
+        },
+      };
+
+      const mobileSales = await this.prisma.mobilesales.groupBy({
+        by: ['categoryId'],
+        where: whereClause,
+        _sum: {
+          quantity: true,
+        },
+      });
+
+      const accessorySales = await this.prisma.accessorysales.groupBy({
+        by: ['categoryId'],
+        where: whereClause,
+        _sum: {
+          quantity: true,
+        },
+      });
+
+      const categoryIds = [...new Set([...mobileSales.map(s => s.categoryId), ...accessorySales.map(s => s.categoryId)])];
+      if (categoryIds.length === 0) {
+        return [];
+      }
+      const categories = await this.prisma.categories.findMany({
+        where: {
+          id: {
+            in: categoryIds,
+          },
+        },
+        select: {
+          id: true,
+          itemType: true,
+        },
+      });
+
+      const categoryMap = categories.reduce((acc, category) => {
+        acc[category.id] = category.itemType;
+        return acc;
+      }, {});
+
+      const aggregatedSales = {};
+
+      for (const sale of mobileSales) {
+        const itemType = categoryMap[sale.categoryId];
+        if (itemType) {
+          if (!aggregatedSales[itemType]) {
+            aggregatedSales[itemType] = 0;
+          }
+          aggregatedSales[itemType] += sale._sum.quantity || 0;
+        }
+      }
+
+      for (const sale of accessorySales) {
+        const itemType = categoryMap[sale.categoryId];
+        if (itemType) {
+          if (!aggregatedSales[itemType]) {
+            aggregatedSales[itemType] = 0;
+          }
+          aggregatedSales[itemType] += sale._sum.quantity || 0;
+        }
+      }
+
+      return Object.entries(aggregatedSales).map(([itemType, count]) => ({
+        itemType,
+        count,
+      }));
+
+    } catch (error) {
+      console.error("Error fetching sales for KPI report:", error);
+      throw new Error("Could not fetch sales for KPI report.");
+    } finally {
+      await this.prisma.$disconnect();
+    }
+  }
 }
 
 export { KpiRepository };
