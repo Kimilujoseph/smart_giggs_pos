@@ -1,4 +1,5 @@
 import { KpiRepository } from '../databases/repository/kpi-repository.js';
+import { APIError } from '../Utils/app-error.js';
 
 class KpiService {
   constructor() {
@@ -22,17 +23,21 @@ class KpiService {
   }
 
   async getKpiAchievementReport(filters) {
-    const { sellerId, startDate, endDate, period = 'daily' } = filters;
+    const { sellerId, startDate, endDate, period = 'today' } = filters;
+
+    if (period.toLowerCase() === 'year') {
+      throw new APIError('Unsupported feature', 400, 'a year kpi will be available soon');
+    }
 
     const kpiTargets = {
-      daily: { smartphones: 2, smallphones: 2, accessories: 3 },
-      weekly: { smartphones: 12, smallphones: 12, accessories: 18 },
-      monthly: { smartphones: 52, smallphones: 52, accessories: 78 },
+      day: { smartphones: 2, smallphones: 2, accessories: 3 },
+      week: { smartphones: 12, smallphones: 12, accessories: 18 },
+      month: { smartphones: 52, smallphones: 52, accessories: 78 },
     };
 
     const targets = kpiTargets[period.toLowerCase()];
     if (!targets) {
-      throw new Error("Invalid period specified. Must be one of 'daily', 'weekly', 'monthly'.");
+      throw new Error("Invalid period specified. Must be one of 'day', 'week', 'month'.");
     }
 
     const salesData = await this.repository.getSalesForKpiReport({ sellerId, startDate, endDate });

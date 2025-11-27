@@ -84,6 +84,6 @@ export const getKpiAchievementReport = async (req, res) => {
     });
   } catch (error) {
     console.error("Controller error in getKpiAchievementReport:", error);
-    handleError(res, "internal server error");
+    handleError(res, error);
   }
 };

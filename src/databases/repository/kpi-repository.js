@@ -1,8 +1,8 @@
-import { PrismaClient } from '@prisma/client';
+import prisma from '../client.js';
 
 class KpiRepository {
   constructor() {
-    this.prisma = new PrismaClient();
+    this.prisma = prisma;
   }
 
   async getSellerPerformance(filters) {
@@ -51,12 +51,14 @@ class KpiRepository {
     } catch (error) {
       console.error("Error fetching seller performance KPIs:", error);
       throw new Error("Could not fetch seller performance KPIs.");
-    } finally {
-      await this.prisma.$disconnect();
     }
   }
 
   async getSalesForKpiReport({ sellerId, startDate, endDate }) {
+    if (!startDate || !endDate) {
+      console.error("Error: startDate and endDate must be defined for KPI report.");
+      throw new Error("Could not fetch sales for KPI report due to missing date range.");
+    }
     try {
       const whereClause = {
         sellerId: parseInt(sellerId, 10),
@@ -133,8 +135,6 @@ class KpiRepository {
     } catch (error) {
       console.error("Error fetching sales for KPI report:", error);
       throw new Error("Could not fetch sales for KPI report.");
-    } finally {
-      await this.prisma.$disconnect();
     }
   }
 }
