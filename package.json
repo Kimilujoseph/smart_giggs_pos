@@ -9,7 +9,8 @@
     "dev": "NODE_ENV=dev nodemon src/index.js",
     "start": "nodemon src/index.js",
     "test": "jest",
-    "backfill:analytics": "node scripts/backfill-analytics.js"
+    "backfill:analytics": "node -r dotenv/config                   │
+│    scripts/backfill-analytics.js"
   },
   "keywords": [],
   "author": {
