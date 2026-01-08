@@ -339,97 +339,232 @@ class CategoryManagementRepository {
       );
     }
   }
-  async getCategoryByShop(categoryId, shopName) {
-    try {
-      const category = await prisma.categories.findFirst({
-        where: {
-          id: categoryId,
-          mobiles: {
-            some: {
-              mobileItems: {
-                some: {
-                  shops: {
-                    shopName: shopName,
-                  },
-                  status: {
-                    in: ["pending", "confirmed"],
-                  },
-                },
-              },
-            },
-          },
-        },
-        include: {
-          mobiles: {
-            where: {
-              mobileItems: {
-                some: {
-                  shops: {
-                    shopName: shopName,
-                  },
-                  status: {
-                    in: ["pending", "confirmed"],
-                  },
-                },
-              },
-            },
-            select: {
-              id: true,
-              discount: true,
-              commission: true,
-              availableStock: true,
-              updatedAt: true,
-              createdAt: true,
-              batchNumber: true,
-              stockStatus: true,
-              color: true,
-              IMEI: true,
-              mobileItems: {
-                where: {
-                  shops: {
-                    shopName: shopName,
-                  },
-                  status: {
-                    in: ["pending", "confirmed"],
-                  },
-                },
-                select: {
-                  shops: {
-                    select: {
-                      shopName: true,
-                      address: true,
+    async getCategoryByShop(categoryId, shopName) {
+      try {
+        const category = await prisma.categories.findFirst({
+          where: {
+            id: categoryId,
+            mobiles: {
+              some: {
+                mobileItems: {
+                  some: {
+                    shops: {
+                      shopName: shopName,
+                    },
+                    status: {
+                      in: ["pending", "confirmed"],
                     },
                   },
-                  status: true,
-                  createdAt: true,
-                  updatedAt: true,
                 },
               },
             },
           },
-        },
-      });
-      if (!category) {
+          include: {
+            mobiles: {
+              where: {
+                mobileItems: {
+                  some: {
+                    shops: {
+                      shopName: shopName,
+                    },
+                    status: {
+                      in: ["pending", "confirmed"],
+                    },
+                  },
+                },
+              },
+              select: {
+                id: true,
+                discount: true,
+                commission: true,
+                availableStock: true,
+                updatedAt: true,
+                createdAt: true,
+                batchNumber: true,
+                stockStatus: true,
+                color: true,
+                IMEI: true,
+                mobileItems: {
+                  where: {
+                    shops: {
+                      shopName: shopName,
+                    },
+                    status: {
+                      in: ["pending", "confirmed"],
+                    },
+                  },
+                  select: {
+                    shops: {
+                      select: {
+                        shopName: true,
+                        address: true,
+                      },
+                    },
+                    status: true,
+                    createdAt: true,
+                    updatedAt: true,
+                  },
+                },
+              },
+            },
+          },
+        });
+        if (!category) {
+          throw new APIError(
+            "Not Found",
+            STATUS_CODE.NOT_FOUND,
+            "Category not found in this shop"
+          );
+        }
+        //console.log("Filtered Category:", category);
+        return category;
+      } catch (err) {
+        console.log("erer", err);
+        if (err instanceof APIError) {
+          throw err;
+        }
         throw new APIError(
-          "Not Found",
-          STATUS_CODE.NOT_FOUND,
-          "Category not found in this shop"
+          "Service Error",
+          STATUS_CODE.INTERNAL_ERROR,
+          "Internal server error"
         );
       }
-      //console.log("Filtered Category:", category);
-      return category;
-    } catch (err) {
-      console.log("erer", err);
-      if (err instanceof APIError) {
-        throw err;
-      }
-      throw new APIError(
-        "Service Error",
-        STATUS_CODE.INTERNAL_ERROR,
-        "Internal server error"
-      );
     }
-  }
-}
+  
+        async searchForCategory(searchItem) {
+  
+          try {
+  
+            const categories = await prisma.categories.findMany({
+  
+              where: {
+  
+                OR: [
+  
+                  {
+  
+                    itemName: {
+  
+                      contains: searchItem,
+  
+                    },
+  
+                  },
+  
+                  {
+  
+                    itemModel: {
+  
+                      contains: searchItem,
+  
+                    },
+  
+                  },
+  
+                  {
+  
+                    brand: {
+  
+                      contains: searchItem,
+  
+                    },
+  
+                  },
+  
+                ],
+  
+              },
+  
+            });
+  
+      
+  
+            if (!categories || categories.length === 0) {
+  
+              return [];
+  
+            }
+  
+      
+  
+            const categoryIds = categories.map(c => c.id);
+  
+      
+  
+            const accessoryStock = await prisma.accessories.groupBy({
+  
+              by: ['CategoryId'],
+  
+              _sum: {
+  
+                availableStock: true,
+  
+              },
+  
+              where: {
+  
+                CategoryId: { in: categoryIds }
+  
+              }
+  
+            });
+  
+      
+  
+            const mobileStock = await prisma.mobiles.groupBy({
+  
+              by: ['CategoryId'],
+  
+              _sum: {
+  
+                availableStock: true,
+  
+              },
+  
+              where: {
+  
+                CategoryId: { in: categoryIds }
+  
+              }
+  
+            });
+  
+      
+  
+            const accessoryStockMap = new Map(accessoryStock.map(item => [item.CategoryId, item._sum.availableStock || 0]));
+  
+            const mobileStockMap = new Map(mobileStock.map(item => [item.CategoryId, item._sum.availableStock || 0]));
+  
+      
+  
+            const categoriesWithStock = categories.map(category => ({
+  
+              ...category,
+  
+              availableStock: (accessoryStockMap.get(category.id) || 0) + (mobileStockMap.get(category.id) || 0)
+  
+            }));
+  
+      
+  
+            return categoriesWithStock;
+  
+          } catch (err) {
+  
+            console.log(err);
+  
+            throw new APIError(
+  
+              "Service Error",
+  
+              STATUS_CODE.INTERNAL_ERROR,
+  
+              "Internal server error"
+  
+            );
+  
+          }
+  
+        }  }
 
 export { CategoryManagementRepository };

@@ -2,12 +2,14 @@ import { InvetorymanagementService } from "../../services/invetory-controller-se
 import { MobilemanagementService } from "../../services/mobile-controller-service.js";
 import { userManagmentService } from "../../services/usermanagement-controller-services.js";
 import { ShopmanagementService } from "../../services/shop-services.js";
+import { CategoryManagementService } from "../../services/category-contoller-service.js";
 import { APIError } from "../../Utils/app-error.js";
 
 const inventoryService = new InvetorymanagementService();
 const mobileService = new MobilemanagementService();
 const userService = new userManagmentService();
 const shopService = new ShopmanagementService();
+const categoryService = new CategoryManagementService();
 
 
 const getUrl = (category, id) => {
@@ -41,6 +43,9 @@ const searchProduct = async (req, res) => {
         break;
       case "shop":
         searchResult = await shopService.findproductbysearch(searchItem, req.query.name);
+        break;
+      case "category":
+        searchResult = await categoryService.searchForCategory(searchItem);
         break;
 
       default:

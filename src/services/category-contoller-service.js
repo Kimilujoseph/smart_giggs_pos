@@ -181,6 +181,22 @@ class CategoryManagementService {
             )
         }
     }
+
+    async searchForCategory(searchItem) {
+        try {
+            const results = await this.repository.searchForCategory(searchItem);
+            return results;
+        } catch (err) {
+            if (err instanceof APIError) {
+                throw err
+            }
+            throw new APIError(
+                "service error",
+                STATUS_CODE.INTERNAL_ERROR,
+                "internal server error"
+            )
+        }
+    }
 }
 
 export {
