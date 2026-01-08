@@ -47,21 +47,24 @@ class CategoryManagementService {
     }
 
     //fetch all categories available
-    async getAllCategories(userRole) {
+    async getAllCategories(userRole, page, limit) {
         try {
-            const allCategoriesWithStock = await this.repository.getAllCategories(userRole);
+            const { categoriesWithStock, totalItems } = await this.repository.getAllCategories(userRole, page, limit);
 
-            const result = allCategoriesWithStock.map(c => ({
-                id: c.id,
-                itemName: c.itemName,
-                itemModel: c.itemModel,
-                minPrice: c.minPrice,
-                maxPrice: c.maxPrice,
-                brand: c.brand,
-                category: c.category,
-                availableStock: c.availableStock,
-                status: c.status
-            }));
+            const result = {
+                categories: categoriesWithStock.map(c => ({
+                    id: c.id,
+                    itemName: c.itemName,
+                    itemModel: c.itemModel,
+                    minPrice: c.minPrice,
+                    maxPrice: c.maxPrice,
+                    brand: c.brand,
+                    category: c.category,
+                    availableStock: c.availableStock,
+                    status: c.status
+                })),
+                totalItems
+            };
 
             return result;
         }

@@ -15,6 +15,6 @@ router.put('/update/:id', verifyUser, updateCategory);
 router.get("/get-category/shop/:shopName/:categoryId", getCategoryByShop)
 
 // // Delete a category
-router.delete('/:id',verifyUser, deleteCategory);
+router.delete('/:id', verifyUser, deleteCategory);
 
 export default router;

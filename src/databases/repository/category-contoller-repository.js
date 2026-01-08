@@ -104,7 +104,7 @@ class CategoryManagementRepository {
   //     }
   // }
   //fetch all categories id
-  async getAllCategories(userRole) {
+  async getAllCategories(userRole, page = 1, limit = 10) {
     try {
 
       let whereClause = {};
@@ -116,7 +116,17 @@ class CategoryManagementRepository {
         };
       }
 
-      const categories = await prisma.categories.findMany({ where: whereClause });
+      const skip = (page - 1) * limit;
+      const take = limit;
+
+      const [categories, totalItems] = await prisma.$transaction([
+        prisma.categories.findMany({
+          where: whereClause,
+          skip,
+          take,
+        }),
+        prisma.categories.count({ where: whereClause })
+      ]);
 
       if (!categories || categories.length === 0) {
         throw new APIError(
@@ -127,7 +137,7 @@ class CategoryManagementRepository {
       }
 
       const categoryIds = categories.map(c => c.id);
-      //console.log("categoryIds", categoryIds);
+      // console.log("categoryIds", categoryIds);
       //Just go through the accessories table, group them by their CategoryId, and give me the sum of availableStock for each group.
       //and do the same for the mobiles
       const accessoryStock = await prisma.accessories.groupBy({
@@ -139,7 +149,7 @@ class CategoryManagementRepository {
           CategoryId: { in: categoryIds }
         }
       });
-
+      //it will result to an array of objects
       const mobileStock = await prisma.mobiles.groupBy({
         by: ['CategoryId'],
         _sum: {
@@ -149,17 +159,17 @@ class CategoryManagementRepository {
           CategoryId: { in: categoryIds }
         }
       });
-
+      console.log("mobile stock", mobileStock)
       const accessoryStockMap = new Map(accessoryStock.map(item => [item.CategoryId, item._sum.availableStock || 0]));
       //console.log("accessoryStockMap", accessoryStockMap);
       const mobileStockMap = new Map(mobileStock.map(item => [item.CategoryId, item._sum.availableStock || 0]));
-
+      //console.log("mobileStockMap", mobileStockMap);
       const categoriesWithStock = categories.map(category => ({
         ...category,
         availableStock: (accessoryStockMap.get(category.id) || 0) + (mobileStockMap.get(category.id) || 0)
       }));
       //console.log("categoriesWithStock", categoriesWithStock);
-      return categoriesWithStock;
+      return { categoriesWithStock, totalItems };
     } catch (err) {
       console.log("err", err);
       throw new APIError(

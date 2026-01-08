@@ -37,7 +37,7 @@ const createCategory = async (req, res) => {
 const getAllCategories = async (req, res) => {
     try {
         const user = req.user;
-        console.log(user);
+        //console.log(user);
         if (user.role !== "superuser" && user.role !== "manager") {
             throw new APIError(
                 "not authorised",
@@ -45,10 +45,15 @@ const getAllCategories = async (req, res) => {
                 "not allowed to get all categories"
             )
         }
-        const allProducts = await category.getAllCategories(user.role)
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const { categories, totalItems } = await category.getAllCategories(user.role, page, limit)
         res.status(200).json({
             message: "all categories retrieved successfully",
-            data: allProducts
+            data: categories,
+            totalItems,
+            currentPage: page,
+            totalPages: Math.ceil(totalItems / limit)
         })
     } catch (err) {
 
@@ -97,7 +102,7 @@ const updateCategory = async (req, res) => {
 const getCategoryById = async (req, res) => {
     try {
         const user = req.user;
-        console.log(user);
+        // console.log(user);
         // if (user.role !== "superuser" && user.role !== "manager") {
         //     throw new APIError(
         //         "not authorised",
@@ -111,7 +116,7 @@ const getCategoryById = async (req, res) => {
             data: categoryData
         })
     } catch (err) {
-        console.log("@@", err)
+        // console.log("@@", err)
         if (err instanceof APIError) {
             return res
                 .status(err.statusCode)
