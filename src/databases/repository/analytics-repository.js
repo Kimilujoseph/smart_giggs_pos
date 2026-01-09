@@ -29,6 +29,8 @@ class AnalyticsRepository {
         whereClause.financeStatus = financeStatus;
       }
 
+      console.log("whre clause generated", whereClause)
+
       const result = await prisma.dailySalesAnalytics.aggregate({
         where: whereClause,
         _sum: {

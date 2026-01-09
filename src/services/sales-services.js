@@ -328,6 +328,7 @@ class salesmanagment {
 
   async generategeneralsales(filters) {
     try {
+      console.log("filter when fetching general sales ", filters)
       return await this._getHybridSalesData(filters);
     } catch (err) {
       this.handleServiceError(err);
@@ -336,8 +337,9 @@ class salesmanagment {
 
   async getUserSales(filters) {
     try {
-
+      console.log("get user sales called", filters)
       return await this._getHybridSalesData(filters);
+
     } catch (err) {
       //console.log(err)
       this.handleServiceError(err);
