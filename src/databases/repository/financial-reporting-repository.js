@@ -19,7 +19,8 @@ class FinancialReportingRepository {
       } else if (type === 'returns') {
         whereClause.totalRevenue = { lt: 0 };
       }
-      consolee.log("where clause for aggregated analytics", whereClause)
+      console.log("where clause for aggregated analytics", whereClause)
+
       return await prisma.dailySalesAnalytics.aggregate({
         where: whereClause,
         _sum: {
@@ -30,6 +31,7 @@ class FinancialReportingRepository {
         },
       });
     } catch (err) {
+
       throw new APIError("Database Error", STATUS_CODE.INTERNAL_ERROR, "Could not fetch aggregated sales analytics.");
     }
   }
