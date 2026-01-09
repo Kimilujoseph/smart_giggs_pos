@@ -46,7 +46,7 @@ async function backfillSales(salesTable) {
       const commission = Number(productDetails.commission) || 0;
       const financeAmount = Number(sale.financeAmount) || 0;
 
-      const totalRevenue = soldPrice * quantity;
+      const totalRevenue = soldPrice * 1;
       const totalCostOfGoods = productCost * quantity;
       const grossProfit = totalRevenue - totalCostOfGoods;
       const totalCommission = commission * quantity;
@@ -110,6 +110,10 @@ async function backfillSales(salesTable) {
 
 async function main() {
   console.log('Starting historical analytics backfill...');
+
+  console.log('Clearing existing analytics data...');
+  await prisma.dailySalesAnalytics.deleteMany({});
+
   await backfillSales('mobilesales');
   await backfillSales('accessorysales');
   console.log('Historical analytics backfill finished successfully!');
