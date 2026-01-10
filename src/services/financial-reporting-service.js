@@ -10,16 +10,21 @@ class FinancialReportingService {
     try {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-
+      console.log("todays", today)
       let historicalSalesData = { _sum: { totalRevenue: 0, grossProfit: 0, totalCommission: 0, totalCostOfGoods: 0 } };
       let historicalReturnsData = { _sum: { totalRevenue: 0, grossProfit: 0, totalCommission: 0, totalCostOfGoods: 0 } };
       let todayData = { totalRevenue: 0, grossProfit: 0, totalCommission: 0, costOfGoodsSold: 0 };
 
-      const start = new Date(startDate);
-      const end = new Date(endDate);
-
+      const start = startDate;
+      //start.setHours(0, 0, 0, 0)
+      const end = endDate;
+      // console.log("start", start, "end", end);
+      // console.log("is it true", start < today)
       if (start < today) {
+
         const historicalEndDate = end < today ? end : today;
+        // console.log("historical end date", historicalEndDate);
+        // console.log("fetching historical data", start)
         historicalSalesData = await this.repository.getAggregatedAnalytics({
           startDate: start,
           endDate: historicalEndDate,
@@ -31,7 +36,7 @@ class FinancialReportingService {
           type: 'returns',
         });
       }
-      //console.log("historical return", historicalReturnsData)
+      // console.log("is this true ", end > today)
 
       if (end >= today) {
         const liveStartDate = start > today ? start : today;

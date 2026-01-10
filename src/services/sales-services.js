@@ -231,11 +231,12 @@ class salesmanagment {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const parsedStartDate = new Date(startDate);
-    const parsedEndDate = new Date(endDate);
+    const parsedStartDate = startDate;
+    const parsedEndDate = endDate;
 
+    console.log("parsed start date", parsedStartDate, "parsed end date", parsedEndDate)
 
-    const historicalEndDate = parsedEndDate < today ? parsedEndDate : new Date(today.getTime() - 86400000);
+    const historicalEndDate = parsedEndDate < today ? parsedEndDate : today;
     const historicalTotals = await this.analytics.getSalesAnalytics({
       startDate: parsedStartDate,
       endDate: historicalEndDate,
@@ -246,7 +247,7 @@ class salesmanagment {
       financeStatus,
     });
 
-    //console.log("historical  sales data", historicalTotals)
+    // console.log("historical  sales data", parsedEndDate >= today)
     let todaysTotals = { totalRevenue: 0, grossProfit: 0, totalCommission: 0, totalCommissionPaid: 0, totalItems: 0, totalFinanceAmount: 0 };
     if (parsedEndDate >= today) {
       const todaySalesDetails = {
