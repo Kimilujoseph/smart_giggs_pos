@@ -6,49 +6,8 @@ import fs from "fs";
 let usermanagement = new userManagmentService();
 
 //gettting to the landing page
-const createmainUser = async (req, res, next) => {
-  try {
-
-    const {
-      name,
-      email,
-      password,
-      phonenumber,
-      nextofkinphonenumber,
-      nextofkinname,
-    } = req.body;
-
-    const newUser = await usermanagement.createSuperUser({
-      name,
-      password,
-      email,
-      phonenumber,
-      nextofkinphonenumber,
-      nextofkinname,
-      phone: phonenumber,
-    });
-    return res.status(201).json({
-      status: 201,
-      message: newUser,
-    });
-  } catch (err) {
-    console.log(err);
-    if (err instanceof APIError) {
-      return res
-        .status(err.statusCode)
-        .json({ message: err.message, error: true });
-    } else {
-      return res.status(500).json({ message: "Internal Server Error" });
-    }
-  }
-};
 const createSeller = async (req, res, next) => {
   try {
-    const user = req.user;
-    console.log("user", user)
-    if (user.role !== "superuser" && user.role !== "manager") {
-      throw new APIError("unauthorised", 403, "you cannot create seller");
-    }
     const {
       name,
       password,
@@ -66,23 +25,14 @@ const createSeller = async (req, res, next) => {
       phonenumber,
       phone: phonenumber,
     });
-    console.log(newUser);
+    //console.log(newUser);
     return res.status(201).json({
       status: 201,
       message: "successfully created",
       newuser: newUser,
     });
   } catch (err) {
-    console.log("@controller", err)
-    if (err instanceof APIError) {
-      return res.status(err.statusCode).json({
-        message: err.message,
-        statuscode: err.statusCode,
-        error: true,
-      });
-    } else {
-      return res.status(500).json({ message: "Internal Server Error" });
-    }
+    next(err);
   }
 };
 const findAllUsers = async (req, res, next) => {
@@ -374,7 +324,6 @@ export {
   findAllUsers,
   getUserProfile,
   UserLogin,
-  createmainUser,
   createSeller,
   userUpdateStatus,
   userUpdateRole,
