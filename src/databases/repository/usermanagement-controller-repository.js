@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import { DuplicationError } from "../../Utils/app-error.js";
 import { APIError, STATUS_CODE } from "../../Utils/app-error.js";
 const prisma = new PrismaClient();
 class usermanagemenRepository {
@@ -26,14 +27,12 @@ class usermanagemenRepository {
       });
       return newUser;
     } catch (err) {
-      console.log("error", err);
+      //console.log("error", err);
       if (err.code === "P2002") {
         // Prisma error code for unique constraint violation
-        const duplicateField = err.meta.target[0];
-        throw new APIError(
-          "Duplicate Key Error",
-          STATUS_CODE.BAD_REQUEST,
-          `The ${duplicateField} "${email}" is already in use.`
+        const duplicateField = err.meta.target[0]
+        throw new DuplicationError(
+          `${email} is already in use.`
         );
       } else {
         throw new APIError(
@@ -68,14 +67,18 @@ class usermanagemenRepository {
 
       return newseller;
     } catch (err) {
-      console.log("@@@", err);
+
       if (err.code === "P2002") {
-        // Prisma error code for unique constraint violation
-        const duplicateField = err.meta.target[0];
-        throw new APIError(
-          "Duplicate Key Error",
-          STATUS_CODE.BAD_REQUEST,
-          `The ${duplicateField} "${email}" is already in use.`
+
+        const duplicatedField = err.meta.target;
+        let duplicatedValue;
+        if (duplicatedField === "actors_email_key") {
+          duplicatedValue = email
+        } else {
+          duplicatedValue = phonenumber
+        }
+        throw new DuplicationError(
+          `${duplicatedValue} is already in use.`
         );
       } else {
         throw new APIError(
