@@ -71,6 +71,7 @@ class ReturnRepository {
           soldPrice: { decrement: revenueToReverse },
           profit: { decrement: profitToReverse },
           commissionPaid: { decrement: commissionToReverse },
+          commission: { decrement: commissionToReverse },
           financeAmount: { decrement: financeAmountToReverse },
         },
       });
@@ -84,6 +85,7 @@ class ReturnRepository {
           });
           if (soldItem) {
             await tx.mobileItems.update({ where: { id: soldItem.id }, data: { status: 'available' } });
+            await tx.mobiles.update({ where: { id: originalSale.productID }, data: { stockStatus: "distributed" } })
           }
           await productModel.update({ where: { id: originalSale.productID }, data: { availableStock: { increment: 1 } } });
         } else if (saleType === 'accessory') {
