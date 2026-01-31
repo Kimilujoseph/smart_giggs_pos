@@ -39,6 +39,7 @@ class ValidationError extends APIError {
   }
 }
 
+
 class NotFoundError extends APIError {
   constructor(
     description
@@ -71,6 +72,14 @@ class DuplicationError extends APIError {
   }
 }
 
+class InternalServerError extends APIError {
+  constructor(
+    description = "Internal Server Error"
+  ) {
+    super("InternalServerError", 500, description, true);
+  }
+}
+
 const STATUS_CODE = {
   OK: 200,
   BAD_REQUEST: 400,
@@ -80,4 +89,4 @@ const STATUS_CODE = {
   INTERNAL_ERROR: 500,
 };
 
-export { AppError, APIError, STATUS_CODE, ValidationError, NotFoundError, AuthorizationError, AuthenticationError, DuplicationError };
+export { AppError, APIError, STATUS_CODE, ValidationError, NotFoundError, AuthorizationError, AuthenticationError, DuplicationError, InternalServerError };

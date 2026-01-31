@@ -2,7 +2,7 @@ import prisma from "../databases/client.js";
 import { InventorymanagementRepository } from "../databases/repository/invetory-controller-repository.js";
 import { ShopmanagementRepository } from "../databases/repository/shop-repository.js";
 import { phoneinventoryrepository } from "../databases/repository/mobile-inventory-repository.js";
-import { APIError, STATUS_CODE } from "../Utils/app-error.js";
+import { APIError, NotFoundError, ValidationError, STATUS_CODE } from "../Utils/app-error.js";
 
 class distributionService {
   constructor() {
@@ -17,12 +17,7 @@ class distributionService {
     //async _validateAndFetchShops(manr)
 
     return prisma.$transaction(async (tx) => {
-      const findMainShop = await this.shop.findShop({ name: "WareHouse" }, tx);
-      const findMiniShop = await this.shop.findShop({ name: distributedShop }, tx);
-
-      if (!findMainShop || !findMiniShop) {
-        throw new APIError("Shop not found", STATUS_CODE.NOT_FOUND, "One of the shops could not be found.");
-      }
+      const { firstShop, secondShop } = await this.findShopsByName(mainShop, distributedShop, tx);
 
       const results = [];
       for (const item of bulkDistribution) {
@@ -40,8 +35,8 @@ class distributionService {
         // Step 1: Create the transfer history (now without side effects)
         const stockTransferHistory = await this.mobile.createTransferHistory(productId, {
           quantity: 1,
-          fromShop: findMainShop.id,
-          toShop: findMiniShop.id,
+          fromShop: firstShop.id,
+          toShop: secondShop.id,
           status: "pending",
           transferdBy: userId,
           type: "distribution",
@@ -58,7 +53,7 @@ class distributionService {
           productID: productId,
           categoryId: stockItem.CategoryId,
           quantity: 1,
-          shopID: findMiniShop.id,
+          shopID: secondShop.id,
           status: "pending",
           transferId: stockTransferHistory.id,
           productStatus: "new stock",
@@ -72,16 +67,12 @@ class distributionService {
   }
 
   async createBulkAccessoryDistribution(bulkDetails) {
-    console.log("bulk", bulkDetails)
+    //console.log("bulk", bulkDetails)
     const { bulkDistribution, mainShop, distributedShop, userId } = bulkDetails;
 
     return prisma.$transaction(async (tx) => {
-      const findMainShop = await this.shop.findShop({ name: "WareHouse" }, tx);
-      const findMiniShop = await this.shop.findShop({ name: distributedShop }, tx);
+      const { firstShop, secondShop } = await this.findShopsByName(mainShop, distributedShop, tx);
 
-      if (!findMainShop || !findMiniShop) {
-        throw new APIError("Shop not found", STATUS_CODE.NOT_FOUND, "One of the shops could not be found.");
-      }
 
       const results = [];
       for (const item of bulkDistribution) {
@@ -90,17 +81,17 @@ class distributionService {
         const stockItem = await this.repository.findProductById(productId, tx);
 
         if (!stockItem) {
-          throw new APIError("Product not found", STATUS_CODE.NOT_FOUND, `Accessory with ID ${productId} not found.`);
+          throw new NotFoundError(`Accessory with ID ${productId} not found.`);
         }
         if (stockItem.availableStock === 0 || stockItem.stockStatus !== 'available') {
-          throw new APIError("Product not available", STATUS_CODE.BAD_REQUEST, `Accessory with batch number ${stockItem.batchNumber} is not available for distribution.`);
+          throw new ValidationError(`Accessory with ID ${productId} is not available for distribution.`);
         }
 
 
         const stockTransferHistory = await this.repository.createTransferHistory(productId, {
           quantity: item.quantity,
-          fromShop: findMainShop.id,
-          toShop: findMiniShop.id,
+          fromShop: firstShop.id,
+          toShop: secondShop.id,
           status: "pending",
           transferdBy: userId,
           type: "distribution",
@@ -111,7 +102,7 @@ class distributionService {
         const newItem = await this.shop.addNewAccessory(findMiniShop.id, {
           productID: productId,
           quantity: item.quantity,
-          shopID: findMiniShop.id,
+          shopID: secondShop.id,
           status: "pending",
           transferId: stockTransferHistory.id,
           productStatus: "new stock",
@@ -122,6 +113,17 @@ class distributionService {
 
       return results;
     });
+  }
+
+  async findShopsByName(firstShopName, secondShopName, tx) {
+    const firstShop = await this.shop.findShop({ name: firstShopName }, tx);
+    const secondShop = await this.shop.findShop({ name: secondShopName }, tx);
+
+    if (!firstShop || !secondShop) {
+      throw new NotFoundError("One or both shops not found");
+    }
+
+    return { firstShop, secondShop };
   }
 }
 

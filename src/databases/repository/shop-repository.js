@@ -1,5 +1,5 @@
 import prisma from "../client.js";
-import { APIError, STATUS_CODE } from "../../Utils/app-error.js";
+import { APIError, STATUS_CODE, InternalServerError } from "../../Utils/app-error.js";
 
 class ShopmanagementRepository {
   constructor() {
@@ -89,15 +89,8 @@ class ShopmanagementRepository {
       //console.log("findShop result:", findShop);
       return findShop;
     } catch (err) {
-      console.log(err);
-      if (err instanceof APIError) {
-        throw err;
-      }
-      throw new APIError(
-        "API Error",
-        STATUS_CODE.INTERNAL_ERROR,
-        err.message || "Unable to find the shop"
-      );
+
+      throw new InternalServerError();
     }
   }
 

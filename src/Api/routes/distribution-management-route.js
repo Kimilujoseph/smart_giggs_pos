@@ -3,6 +3,7 @@ import express from "express"
 const router = express.Router();
 
 import verifyUser from "../../middleware/verification.js"
+import { Authorization } from "../../middleware/Authorization.js";
 
 
 import {
@@ -11,6 +12,6 @@ import {
 
 
 
-router.post("/bulk-distribution", verifyUser, handleBulkDistibution)
+router.post("/bulk-distribution", verifyUser, Authorization, handleBulkDistibution)
 
 export default router;
