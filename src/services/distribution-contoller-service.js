@@ -14,6 +14,8 @@ class distributionService {
   async createBulkMobileDistribution(bulkDetails) {
     const { bulkDistribution, mainShop, distributedShop, userId } = bulkDetails;
 
+    //async _validateAndFetchShops(manr)
+
     return prisma.$transaction(async (tx) => {
       const findMainShop = await this.shop.findShop({ name: "WareHouse" }, tx);
       const findMiniShop = await this.shop.findShop({ name: distributedShop }, tx);
