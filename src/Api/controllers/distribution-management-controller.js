@@ -1,6 +1,8 @@
 import { distributionService } from "../../services/distribution-contoller-service.js";
 import { APIError, STATUS_CODE, ValidationError } from "../../Utils/app-error.js";
+import { reversalDetails } from "../../Utils/joivalidation.js";
 const distributionManager = new distributionService();
+
 
 const handleBulkDistibution = async (req, res, next) => {
   try {
@@ -45,4 +47,24 @@ const handleBulkDistibution = async (req, res, next) => {
   }
 };
 
-export { handleBulkDistibution };
+const handleReversal = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { error, value } = reversalDetails(req.body)
+    if (error) {
+      throw new ValidationError(error.details.map((detail) => detail.message).join(", "));
+    }
+    const updatedDistributionDetails = { ...value, userId };
+    console.log("updatedDistributionDetails", updatedDistributionDetails)
+    const reverseDistributionDetails = await distributionManager.createReverseDistribution(updatedDistributionDetails);
+    return res.status(200).json({
+      message: reverseDistributionDetails,
+      error: false
+    })
+
+  } catch (err) {
+    next(err)
+  }
+}
+
+export { handleBulkDistibution, handleReversal };

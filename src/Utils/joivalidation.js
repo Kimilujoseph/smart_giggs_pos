@@ -59,4 +59,15 @@ function validateSalesPayload(req, res, next) {
   next();
 }
 
-export { userinputvalidation, validateSalesPayload };
+
+const reversalDetails = (data) => {
+  const schema = Joi.object({
+    productItemId: Joi.number().integer().positive().required(),
+    quantity: Joi.number().integer().positive().required(),
+    productType: Joi.string().valid('mobile', 'accessory').required(),
+    fromShop: Joi.string().trim().min(1).required(),
+  });
+  return schema.validate(data);
+}
+
+export { userinputvalidation, validateSalesPayload, reversalDetails };

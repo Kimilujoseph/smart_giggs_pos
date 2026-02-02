@@ -16,7 +16,7 @@ if (process.env.NODE_ENV === 'production') {
   if (!global.prisma) {
     global.prisma = new PrismaClient({
       transactionOptions: {
-        timeout: 20000,
+        timeout: 50000,
       },
     });
   }

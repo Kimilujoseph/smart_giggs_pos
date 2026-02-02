@@ -2,7 +2,7 @@
 //import { PrismaClient } from "@prisma/client";
 import prisma from "../client.js"
 //const prisma = new PrismaClient();
-import { APIError, STATUS_CODE } from "../../Utils/app-error.js";
+import { APIError, STATUS_CODE, InternalServerError } from "../../Utils/app-error.js";
 
 class InventorymanagementRepository {
   constructor() {
@@ -36,11 +36,8 @@ class InventorymanagementRepository {
       return accessoryItem
     }
     catch (err) {
-      throw new APIError(
-        "finding the uniques accessory Item",
-        STATUS_CODE.INTERNAL_ERROR,
-        "Internal server error"
-      )
+      //console.log(err)
+      throw new InternalServerError()
     }
   }
 
@@ -597,6 +594,24 @@ class InventorymanagementRepository {
         STATUS_CODE.INTERNAL_ERROR,
         "Failed to update accessory item status"
       );
+    }
+  }
+
+  //update accessories 
+  async updateAccessoriesOnReversal(productId, quantity, tx) {
+    try {
+      return await this.prisma.accessories.update({
+        where: {
+          id: productId
+        },
+        data: {
+          availableStock: {
+            increment: quantity,
+          },
+        }
+      })
+    } catch (err) {
+      throw new InternalServerError()
     }
   }
 }

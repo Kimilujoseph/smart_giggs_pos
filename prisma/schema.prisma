@@ -601,6 +601,8 @@ enum categories_itemType {
 enum accessorytransferhistory_type {
   distribution
   transfer
+  return
+  reverse
 }
 
 enum assignment_status {
@@ -617,6 +619,7 @@ enum mobiletransferHistory_type {
   distribution
   transfer
   return
+  reverse
 }
 
 enum accessorysales_commisssionStatus {

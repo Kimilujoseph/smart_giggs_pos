@@ -114,7 +114,49 @@ class distributionService {
       return results;
     });
   }
+  async createReverseDistribution(distributionDetails) {
+    const { productItemId, userId, quantity, productType, fromShop } = distributionDetails
+    return prisma.$transaction(async (tx) => {
+      const isMobile = productType === "mobile"
+      const { firstShop, secondShop } = await this.findShopsByName("WareHouse", fromShop, tx)
+      const stockItem = isMobile ? await this.mobile.findMobileItem(productItemId, tx)
+        : await this.repository.findAccessoryItemProduct(productItemId, tx);
 
+      if (!stockItem || stockItem.shopID !== secondShop.id) {
+        throw new NotFoundError("Product item not found");
+      }
+      if (stockItem.status === 'sold') {
+        throw new ValidationError("The selected Item is already sold and cannot be reversed.");
+      }
+
+
+      const productId = isMobile ? stockItem.mobileID : stockItem.accessoryID;
+
+      const updatedProduct = isMobile ? await this.mobile.deleteMobileItem(productItemId, tx) : await this.repository.updateStockQuantityInAshop(productItemId, quantity, tx);
+      //create a transfer hsitory for reverse
+
+      const createdReverse = isMobile ? await this.mobile.createTransferHistory(productId, {
+        quantity: quantity,
+        fromShop: secondShop.id,
+        toShop: firstShop.id,
+        status: "completed",
+        transferdBy: userId,
+        type: "reverse",
+      }, tx) :
+        await this.repository.createTransferHistory(productId, {
+          quantity: quantity,
+          fromShop: secondShop.id,
+          toShop: firstShop.id,
+          status: "completed",
+          transferdBy: userId,
+          type: "reverse ",
+        }, tx);
+      const updateQuanatity = isMobile ? await this.mobile.updateMobileReversalStock(productId, quantity, tx) :
+        await this.repository.updateAccessoriesOnReversal(productId, quantity, tx);
+      return "Reversal completed successfully";
+    })
+
+  }
   async findShopsByName(firstShopName, secondShopName, tx) {
     const firstShop = await this.shop.findShop({ name: firstShopName }, tx);
     const secondShop = await this.shop.findShop({ name: secondShopName }, tx);
