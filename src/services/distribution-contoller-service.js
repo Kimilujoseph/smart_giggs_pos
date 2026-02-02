@@ -15,9 +15,10 @@ class distributionService {
     const { bulkDistribution, mainShop, distributedShop, userId } = bulkDetails;
 
     //async _validateAndFetchShops(manr)
+    console.log("mainshop", mainShop, distributedShop)
 
     return prisma.$transaction(async (tx) => {
-      const { firstShop, secondShop } = await this.findShopsByName(mainShop, distributedShop, tx);
+      const { firstShop, secondShop } = await this.findShopsByName("WareHouse", distributedShop, tx);
 
       const results = [];
       for (const item of bulkDistribution) {
@@ -71,7 +72,7 @@ class distributionService {
     const { bulkDistribution, mainShop, distributedShop, userId } = bulkDetails;
 
     return prisma.$transaction(async (tx) => {
-      const { firstShop, secondShop } = await this.findShopsByName(mainShop, distributedShop, tx);
+      const { firstShop, secondShop } = await this.findShopsByName("WareHouse", distributedShop, tx);
 
 
       const results = [];
