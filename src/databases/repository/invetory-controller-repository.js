@@ -572,7 +572,7 @@ class InventorymanagementRepository {
 
       return updatedProduct;
     } catch (err) {
-      console.log("$%43", err);
+      //console.log("$%43", err);
       throw new APIError("Database Error", 500);
     }
   }
