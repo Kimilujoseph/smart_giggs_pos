@@ -149,7 +149,7 @@ class distributionService {
           toShop: firstShop.id,
           status: "completed",
           transferdBy: userId,
-          type: "reverse ",
+          type: "reverse",
         }, tx);
       const updateQuanatity = isMobile ? await this.mobile.updateMobileReversalStock(productId, quantity, tx) :
         await this.repository.updateAccessoriesOnReversal(productId, quantity, tx);

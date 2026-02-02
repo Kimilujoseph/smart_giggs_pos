@@ -600,7 +600,9 @@ class InventorymanagementRepository {
   //update accessories 
   async updateAccessoriesOnReversal(productId, quantity, tx) {
     try {
-      return await this.prisma.accessories.update({
+
+      const prismaClient = tx || this.prisma
+      return await prismaClient.accessories.update({
         where: {
           id: productId
         },
