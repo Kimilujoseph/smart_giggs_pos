@@ -100,7 +100,7 @@ class distributionService {
 
         await this.repository.updateStockQuantity(productId, item.quantity, tx);
 
-        const newItem = await this.shop.addNewAccessory(findMiniShop.id, {
+        const newItem = await this.shop.addNewAccessory(secondShop.id, {
           productID: productId,
           quantity: item.quantity,
           shopID: secondShop.id,
