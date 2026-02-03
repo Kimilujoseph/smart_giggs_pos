@@ -1,5 +1,5 @@
 import prisma from "../client.js";
-import { APIError, STATUS_CODE } from "../../Utils/app-error.js";
+import { APIError, STATUS_CODE, InternalServerError } from "../../Utils/app-error.js";
 
 class phoneinventoryrepository {
   constructor() {
@@ -492,10 +492,10 @@ class phoneinventoryrepository {
           }
         },
       });
-      console.log(productFound);
+      //console.log(productFound);
       return productFound;
     } catch (err) {
-      console.log("error", err);
+      //console.log("error", err);
       if (err instanceof APIError) {
         throw err;
       }
@@ -760,6 +760,46 @@ class phoneinventoryrepository {
         STATUS_CODE.INTERNAL_ERROR,
         "Failed to update mobile item status"
       );
+    }
+  }
+
+  //delete  mobileItem
+  async deleteMobileItem(mobileItemId, tx) {
+    try {
+      const prismaClient = tx || this.prisma;
+      return await prismaClient.mobileItems.delete({
+        where: {
+          id: mobileItemId
+        }
+      })
+    } catch (err) {
+      console.log("error deleting mobile item", err)
+      throw new InternalServerError()
+    }
+  }
+
+  //update mobile upon reversall
+
+  async updateMobileReversalStock(id, quantity, tx) {
+    const prismaClient = tx || this.prisma;
+    try {
+      //prismaClient.mobiles
+      const updatedPhone = await prismaClient.mobiles.update({
+        where: {
+          id: id,
+        },
+        data: {
+          availableStock: {
+            increment: quantity,
+          },
+          stockStatus: "available",
+          updatedAt: new Date(),
+        },
+      });
+      return updatedPhone;
+    } catch (err) {
+      console.log("error displayed", err)
+      throw new InternalServerError();
     }
   }
 }

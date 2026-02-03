@@ -11,38 +11,27 @@ class userManagmentService {
     this.repository = new usermanagemenRepository();
   }
   async createSeller(sellerdetails) {
-    try {
-      const {
-        name,
-        email,
-        password,
-        phonenumber,
-        nextofkinname,
-        nextofkinphonenumber,
-      } = sellerdetails;
-      const salt = await GenerateSalt();
-      const hashedpassword = await Generatepassword(salt, password);
 
-      const newUser = await this.repository.createSeller({
-        name,
-        email,
-        hashedpassword,
-        phonenumber,
-        nextofkinname,
-        nextofkinphonenumber,
-      });
-      return newUser;
-    } catch (err) {
-      console.log("sevice", err);
-      if (err instanceof APIError) {
-        throw err;
-      }
-      throw new APIError(
-        "Service Error",
-        STATUS_CODE.INTERNAL_ERROR,
-        "An error occurred during the signup process"
-      );
-    }
+    const {
+      name,
+      email,
+      password,
+      phonenumber,
+      nextofkinname,
+      nextofkinphonenumber,
+    } = sellerdetails;
+    const salt = await GenerateSalt();
+    const hashedpassword = await Generatepassword(salt, password);
+
+    const newUser = await this.repository.createSeller({
+      name,
+      email,
+      hashedpassword,
+      phonenumber,
+      nextofkinname,
+      nextofkinphonenumber,
+    });
+
   }
   async findAllUser(page, limit) {
     try {

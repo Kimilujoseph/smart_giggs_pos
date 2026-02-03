@@ -3,14 +3,14 @@ dotenv.config();
 import jwt from "jsonwebtoken";
 import config from "../Config/index.js";
 const { APP_SECRET } = config;
+import { AuthenticationError } from "../../src/Utils/app-error.js";
 const verifyUser = async (req, res, next) => {
     const token = req.cookies.usertoken;
-    console.log("token", token)
+    // console.log("token", token)
     if (token) {
         try {
             jwt.verify(token, APP_SECRET, (err, user) => {
-                console.log("error", err)
-                if (err) return res.status(401).send("Access Denied")
+                if (err) return next(new AuthenticationError("Invalid token, authentication failed"));
                 req.user = user;
                 next();
             });

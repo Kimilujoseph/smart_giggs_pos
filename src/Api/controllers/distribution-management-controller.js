@@ -1,25 +1,17 @@
 import { distributionService } from "../../services/distribution-contoller-service.js";
-import { APIError, STATUS_CODE } from "../../Utils/app-error.js";
+import { APIError, STATUS_CODE, ValidationError } from "../../Utils/app-error.js";
+import { reversalDetails } from "../../Utils/joivalidation.js";
 const distributionManager = new distributionService();
 
-const handleBulkDistibution = async (req, res) => {
+
+const handleBulkDistibution = async (req, res, next) => {
   try {
-    const user = req.user;
+    const user = req.user
     const { bulkDistribution, shopDetails, category } = req.body;
 
-    if (!["manager", "superuser"].includes(user.role)) {
-      throw new APIError(
-        "unauthorised",
-        STATUS_CODE.UNAUTHORIZED,
-        `DEAR ${user.name} you are not authorised to commit a distribution`
-      );
-    }
+
     if (!bulkDistribution || bulkDistribution.length === 0) {
-      throw new APIError(
-        "BAD REQUEST",
-        STATUS_CODE.BAD_REQUEST,
-        "distribution entries empty"
-      );
+      throw new ValidationError("Bulk distribution data is required and cannot be empty.");
     }
 
     if (category === "mobiles") {
@@ -51,12 +43,28 @@ const handleBulkDistibution = async (req, res) => {
       });
     }
   } catch (err) {
-    // If the transaction fails for ANY reason, this catch block will be executed
-    console.error("Distribution failed and was rolled back:", err);
-    const statusCode = err instanceof APIError ? err.statusCode : 500;
-    const message = err.message || "An unexpected error occurred during the distribution process.";
-    res.status(statusCode).json({ error: true, message: message });
+    next(err);
   }
 };
 
-export { handleBulkDistibution };
+const handleReversal = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { error, value } = reversalDetails(req.body)
+    if (error) {
+      throw new ValidationError(error.details.map((detail) => detail.message).join(", "));
+    }
+    const updatedDistributionDetails = { ...value, userId };
+    console.log("updatedDistributionDetails", updatedDistributionDetails)
+    const reverseDistributionDetails = await distributionManager.createReverseDistribution(updatedDistributionDetails);
+    return res.status(200).json({
+      message: reverseDistributionDetails,
+      error: false
+    })
+
+  } catch (err) {
+    next(err)
+  }
+}
+
+export { handleBulkDistibution, handleReversal };

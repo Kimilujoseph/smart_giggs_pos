@@ -3,7 +3,6 @@ import verifyUser from "../../middleware/verification.js";
 import {
   findAllUsers,
   createSeller,
-  createmainUser,
   UserLogin,
   userUpdateStatus,
   userUpdateRole,
@@ -13,6 +12,7 @@ import {
   addIdImagebackward,
   getUserProfile,
 } from "../controllers/usermanagement-controller.js";
+import { Authorization } from "../../middleware/Authorization.js";
 import upload from "../../Utils/multer.js";
 const router = express.Router();
 router.get("/all", verifyUser, findAllUsers);
@@ -39,7 +39,7 @@ router.put(
   addprofilepicture
 );
 router.post("/user/signin", UserLogin);
-router.post("/seller/signup", verifyUser, createSeller);
-router.post("/superuser/signup", createmainUser);
+router.post("/seller/signup", verifyUser, Authorization, createSeller);
+//router.post("/superuser/signup", createmainUser);
 
 export default router;
