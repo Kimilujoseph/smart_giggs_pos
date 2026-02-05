@@ -156,7 +156,7 @@ class AccessoryManagementService {
         );
       }
     }
-
+    console.log(validUpdates["faultyItems"])
     if (validUpdates["faultyItems"] > 0) {
       if (validUpdates["faultyItems"] > accessoryFound.availableStock) {
         throw new ValidationError(
@@ -170,6 +170,8 @@ class AccessoryManagementService {
       return update;
     }
     else {
+      //remove a property from the validUpdates i.e faultyItems
+      delete validUpdates["faultyItems"];
       const updatedAccessory = await this.accessory.updateTheAccessoryStock(
         accessoryId,
         validUpdates,
