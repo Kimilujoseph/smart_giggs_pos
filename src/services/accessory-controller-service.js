@@ -1,7 +1,7 @@
 import { AccessoryInventoryRepository } from "../databases/repository/accessory-inventory-repository.js";
 import { ShopmanagementRepository } from "../databases/repository/shop-repository.js";
 import { CategoryManagementRepository } from "../databases/repository/category-contoller-repository.js";
-import { APIError, STATUS_CODE } from "../Utils/app-error.js";
+import { APIError, STATUS_CODE, ValidationError, NotFoundError } from "../Utils/app-error.js";
 import { validateUpdateInputs, validateItemsInputs } from "../helpers/updateValidationHelper.js";
 import prisma from "../databases/client.js";
 
@@ -95,11 +95,9 @@ class AccessoryManagementService {
         id,
       });
       if (history.length === 0) {
-        throw new APIError(
+        throw new NotFoundError(
           "No history found for this product",
-          STATUS_CODE.NOT_FOUND,
-          "No history found"
-        );
+        )
       }
       return history;
     } catch (err) {
@@ -117,55 +115,61 @@ class AccessoryManagementService {
 
 
   async updateAccessoryStock(id, updates, userId) {
-    try {
-      const accessoryId = Number(id);
-      const user = parseInt(userId, 10);
-      if (isNaN(accessoryId)) {
-        throw new APIError(
-          "Service Error",
-          STATUS_CODE.BAD_REQUEST,
-          "Invalid value provided"
+
+    const accessoryId = Number(id);
+    const user = parseInt(userId, 10);
+    if (isNaN(accessoryId)) {
+      throw new ValidationError(
+        "Invalid value provided"
+      )
+    }
+
+    const [shopFound, accessoryFound] = await Promise.all([
+      this.shop.findShop({ name: "WareHouse" }),
+      this.accessory.findItem(accessoryId),
+    ]);
+    if (!shopFound) {
+      throw new NotFoundError(
+        "Shop not found",
+      );
+    }
+    const shopId = shopFound.id;
+    if (!accessoryFound) {
+      throw new NotFoundError(
+        "Accessory not found"
+      );
+    }
+    if (
+      accessoryFound.stockStatus === "sold" &&
+      validUpdates.stockStatus !== "sold"
+    ) {
+      throw new ValidationError(
+
+        `Accessory ${accessoryFound.batchNumber} already sold, please contact the admin`
+      );
+    }
+    const validUpdates = validateItemsInputs(updates);
+    if (validUpdates.productCost && validUpdates.commission) {
+      if (validUpdates.commission > accessoryFound.productCost * 0.2) {
+        throw new ValidationError(
+          "Commission cannot exceed 20% of product cost"
         );
       }
-      const validUpdates = validateItemsInputs(updates);
-      const [shopFound, accessoryFound] = await Promise.all([
-        this.shop.findShop({ name: "WareHouse" }),
-        this.accessory.findItem(accessoryId),
-      ]);
-      if (!shopFound) {
-        throw new APIError(
-          "Shop not found",
-          STATUS_CODE.NOT_FOUND,
-          "Shop not found"
+    }
+
+    if (validUpdates["faultyItems"] > 0) {
+      if (validUpdates["faultyItems"] > accessoryFound.availableStock) {
+        throw new ValidationError(
+          "Faulty items cannot exceed available stock",
         );
       }
-      const shopId = shopFound.id;
-      if (!accessoryFound) {
-        throw new APIError(
-          "Not Found",
-          STATUS_CODE.NOT_FOUND,
-          "Accessory not found"
-        );
-      }
-      if (
-        accessoryFound.stockStatus === "sold" &&
-        validUpdates.stockStatus !== "sold"
-      ) {
-        throw new APIError(
-          "Bad Request",
-          STATUS_CODE.BAD_REQUEST,
-          `Accessory ${accessoryFound.batchNumber} already sold, please contact the admin`
-        );
-      }
-      if (validUpdates.productCost && validUpdates.commission) {
-        if (validUpdates.commission > accessoryFound.productCost * 0.2) {
-          throw new APIError(
-            "Commission cannot exceed 20% of product cost",
-            STATUS_CODE.BAD_REQUEST,
-            "Commission cannot exceed 20% of product cost"
-          );
-        }
-      }
+      const update = await prisma.$transaction(async (tx) => {
+        const faultStockUpdates = await this.accessory.updateFaultyAccessoryStock(accessoryId, validUpdates, user, shopId, tx);
+        return faultStockUpdates;
+      })
+      return update;
+    }
+    else {
       const updatedAccessory = await this.accessory.updateTheAccessoryStock(
         accessoryId,
         validUpdates,
@@ -173,16 +177,6 @@ class AccessoryManagementService {
         shopId
       );
       return updatedAccessory;
-    } catch (err) {
-      console.log("error", err)
-      if (err instanceof APIError) {
-        throw err;
-      }
-      throw new APIError(
-        "Service Error",
-        STATUS_CODE.INTERNAL_ERROR,
-        err.message || "Unable to update accessory stock"
-      );
     }
   }
 

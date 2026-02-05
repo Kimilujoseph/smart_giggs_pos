@@ -10,6 +10,7 @@ import {
   findSpecificProductTransferHistory,
   findSpecificProductHistory,
 } from "../controllers/accessory-management-controller.js";
+import { Authorization } from "../../middleware/Authorization.js";
 
 const router = express.Router();
 
@@ -27,6 +28,6 @@ router.delete(
   createNewSoftDeletion
 );
 router.post("/confirm/accessory/", verifyUser, confirmAccessoryArrival);
-router.put("/update-accessory-product/:id", verifyUser, createNewProductUpdate);
+router.put("/update-accessory-product/:id", verifyUser, Authorization, createNewProductUpdate);
 
 export default router;

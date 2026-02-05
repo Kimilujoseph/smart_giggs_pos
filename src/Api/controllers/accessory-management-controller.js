@@ -140,13 +140,7 @@ const createNewProductUpdate = async (req, res, next) => {
     const id = req.params.id;
     const updates = req.body;
 
-    if (!["manager", "superuser"].includes(user.role)) {
-      throw new APIError(
-        "Not authorised",
-        STATUS_CODE.UNAUTHORIZED,
-        "Not authorised to commit an update"
-      );
-    }
+
     const updatedAccessory = await accessoryManagementService.updateAccessoryStock(
       id,
       updates,
@@ -159,11 +153,7 @@ const createNewProductUpdate = async (req, res, next) => {
       message: "Accessory stock updated successfully",
     });
   } catch (err) {
-    if (err instanceof APIError) {
-      return res.status(err.statusCode).json({ message: err.message });
-    } else {
-      return res.status(STATUS_CODE.INTERNAL_ERROR).json({ message: "Internal Server Error" });
-    }
+    next(err);
   }
 };
 

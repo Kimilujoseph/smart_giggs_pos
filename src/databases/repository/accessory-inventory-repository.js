@@ -284,6 +284,41 @@ class AccessoryInventoryRepository {
     }
   }
 
+  async updateFaultyAccessoryStock(accessoryId, updates, user, shopId, tx) {
+    try {
+      const prismaClient = tx || prisma;
+      const { faultyItems } = updates;
+      const updatedAccessory = await prismaClient.accessories.update({
+        where: {
+          id: accessoryId,
+        },
+        data: {
+          faultyItems: { increment: faultyItems },
+          availableStock: { decrement: faultyItems },
+          // stockStatus: updates?.stockStatus || "availble",
+          // productType: updates?.productType || "accessories",
+          updatedAt: new Date(),
+        },
+      });
+      await this.createHistory({
+        user,
+        shopId,
+        quantity: faultyItems,
+        productId: accessoryId,
+        type: "faulty",
+
+      }, tx);
+      return updatedAccessory;
+
+    } catch (err) {
+      throw new APIError(
+        "Database Error",
+        STATUS_CODE.INTERNAL_ERROR,
+        err.message || "Internal server error"
+      );
+    }
+  }
+
   async findAccessoryTransferHistory(id) {
     try {
       const accessoryItems = await prisma.accessorytransferhistory.findUnique({

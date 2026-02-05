@@ -68,7 +68,7 @@ const validateUpdateInputs = (updates) => {
 };
 
 const validateItemsInputs = (accessoryDetails) => {
-  console.log("accessory", accessoryDetails)
+  //console.log("accessory", accessoryDetails)
   if (
     !accessoryDetails ||
     typeof accessoryDetails !== "object" ||
@@ -83,7 +83,6 @@ const validateItemsInputs = (accessoryDetails) => {
   const validObjects = {
     CategoryId: (value) => !isNaN(value) && value >= 0,
     supplierId: (value) => !isNaN(value) && value >= 0,
-    CategoryId: (value) => !isNaN(value) && value >= 0,
     //availableStock: (value) => !isNaN(value) && value >= 0,
     stockStatus: (value) =>
       ["available", "suspended", "faulty"].includes(value) && typeof value === "string",
