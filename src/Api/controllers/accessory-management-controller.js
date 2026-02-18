@@ -8,15 +8,9 @@ const confirmAccessoryArrivalManagement = new ConfirmAccessorymanagementService(
 const addNewAccessoryProduct = async (req, res, next) => {
   try {
     const user = req.user;
-    if (!["superuser", "manager"].includes(user.role)) {
-      throw new APIError(
-        "Not authorised",
-        STATUS_CODE.UNAUTHORIZED,
-        "Not authorised to add new accessory"
-      );
-    }
+
     const accessoryDetails = req.body;
-    const newAccessoryProduct = await accessoryManagementService.createNewAccessoryProduct(
+    await accessoryManagementService.createNewAccessoryProduct(
       {
         accessoryDetails,
         user: user.id,
@@ -24,22 +18,11 @@ const addNewAccessoryProduct = async (req, res, next) => {
     );
     res.status(201).json({
       message: "Accessory successfully added",
-      data: {
-        id: newAccessoryProduct.id,
-        batchNumber: newAccessoryProduct.batchNumber,
-      },
+
       error: false,
     });
   } catch (err) {
-    if (err instanceof APIError) {
-      return res
-        .status(err.statusCode)
-        .json({ message: err.message, error: true });
-    } else {
-      return res
-        .status(STATUS_CODE.INTERNAL_ERROR)
-        .json({ message: "Internal Server Error", error: true });
-    }
+    next(err)
   }
 };
 
@@ -48,18 +31,12 @@ const findSpecificAccessoryProduct = async (req, res, next) => {
     const productID = req.params.id;
     const id = parseInt(productID, 10);
     const user = req.user;
-    if (user.role !== "manager" && user.role !== "superuser") {
-      throw new APIError("Not allowed", 403, "Not allowed to view the product");
-    }
+
     const foundProduct =
       await accessoryManagementService.findSpecificAccessoryProduct(id);
     return res.status(200).json({ status: 200, data: foundProduct });
   } catch (err) {
-    if (err instanceof APIError) {
-      return res.status(err.statusCode).json({ message: err.message });
-    } else {
-      return res.status(STATUS_CODE.INTERNAL_ERROR).json({ message: "Internal Server Error" });
-    }
+    next(err)
   }
 };
 
@@ -71,15 +48,7 @@ const findSpecificProductHistory = async (req, res, next) => {
     });
     return res.status(200).json({ message: productHistory, error: false });
   } catch (err) {
-    if (err instanceof APIError) {
-      return res
-        .status(err.statusCode)
-        .json({ message: err.message, error: true });
-    } else {
-      return res
-        .status(STATUS_CODE.INTERNAL_ERROR)
-        .json({ message: "Internal Server Error", error: false });
-    }
+    next(err)
   }
 };
 
@@ -109,13 +78,7 @@ const findAllAccessoryProduct = async (req, res, next) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const user = req.user;
-    if (user.role !== "superuser" && user.role !== "manager") {
-      throw new APIError(
-        "Unauthorized",
-        STATUS_CODE.UNAUTHORIZED,
-        "Not allowed to distribute the product"
-      );
-    }
+
     const { filteredItem, totalItems } =
       await accessoryManagementService.findAllAccessoryProduct(page, limit);
     res.status(200).json({
@@ -125,11 +88,7 @@ const findAllAccessoryProduct = async (req, res, next) => {
       page,
     });
   } catch (err) {
-    if (err instanceof APIError) {
-      return res.status(err.statusCode).json({ message: err.message });
-    } else {
-      return res.status(STATUS_CODE.INTERNAL_ERROR).json({ message: "Internal Server Error" });
-    }
+    next(err)
   }
 };
 

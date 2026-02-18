@@ -14,103 +14,71 @@ class AccessoryManagementService {
 
   async createNewAccessoryProduct(newAccessoryProduct) {
     return prisma.$transaction(async (tx) => {
-      try {
-        const { accessoryDetails, user } = newAccessoryProduct;
 
-        const { CategoryId, supplierId } = accessoryDetails;
+      const { accessoryDetails, user } = newAccessoryProduct;
 
-        const category = parseInt(CategoryId, 10);
-        const categoryExist = await this.category.getCategoryById(category, tx);
-        if (!categoryExist) {
-          throw new APIError(
-            "Invalid category",
-            STATUS_CODE.BAD_REQUEST,
-            "Invalid category"
-          );
-        }
-        const shopFound = await this.shop.findShop({ name: "WareHouse" }, tx);
-        if (!shopFound) {
-          throw new APIError(
-            "Shop not found",
-            STATUS_CODE.NOT_FOUND,
-            "Shop not found"
-          );
-        }
-        const shopId = shopFound.id;
-        const payload = {
-          ...accessoryDetails,
-          shopId,
-          user,
-          supplierId: parseInt(supplierId, 10),
-        };
-        const newProduct = await this.accessory.createAccessoryHistoryDetails(
-          payload,
-          tx
-        );
-        return newProduct;
-      } catch (err) {
-        console.log(err)
-        if (err instanceof APIError) {
-          throw err;
-        }
-        throw new APIError("Service Error", STATUS_CODE.INTERNAL_ERROR, err);
+      const { CategoryId, supplierId } = accessoryDetails;
+
+      const category = parseInt(CategoryId, 10);
+      await this.category.getCategoryById(category, tx);
+      // if (!categoryExist) {
+      //   throw new ValidationError(
+      //     "Invalid category",
+
+      //   );
+      // }
+      const shopFound = await this.shop.findShop({ name: "WareHouse" }, tx);
+      if (!shopFound) {
+        throw new NotFoundError("shop seems is not available")
       }
+      const shopId = shopFound.id;
+      const payload = {
+        ...accessoryDetails,
+        shopId,
+        user,
+        supplierId: parseInt(supplierId, 10),
+      };
+      const newProduct = await this.accessory.createAccessoryHistoryDetails(
+        payload,
+        tx
+      );
+      return newProduct;
     });
   }
 
   async findSpecificAccessoryProduct(id) {
-    try {
-      const findSpecificProduct =
-        await this.accessory.captureSpecificAccessoryForDetails(id);
-      return findSpecificProduct;
-    } catch (error) {
-      throw new APIError(
-        "Error finding specific accessory product",
-        STATUS_CODE.INTERNAL_ERROR,
-        "Internal server error"
-      );
-    }
+    const findSpecificProduct =
+      await this.accessory.captureSpecificAccessoryForDetails(id);
+    return findSpecificProduct;
+
   }
 
   async getProductTransferHistory({ id }) {
-    try {
-      const transferHistory =
-        await this.accessory.captureSpecificAccessoryForTransferHistory({ id });
-      return transferHistory;
-    } catch (err) {
-      if (err instanceof APIError) {
-        throw err;
-      }
-      throw new APIError(
-        "Item Service Error",
-        STATUS_CODE.INTERNAL_ERROR,
-        "Cannot find item"
-      );
+
+    const transferHistory =
+      await this.accessory.captureSpecificAccessoryForTransferHistory({ id });
+    if (transferHistory.length === 0 || !transferHistory) {
+      throw new NotFoundError(
+        "No transfer history for this product found"
+      )
     }
+    return transferHistory;
   }
 
+
   async getProductHistory({ id }) {
-    try {
-      const history = await this.accessory.captureSpecificAccessoryForHistory({
-        id,
-      });
-      if (history.length === 0) {
-        throw new NotFoundError(
-          "No history found for this product",
-        )
-      }
-      return history;
-    } catch (err) {
-      if (err instanceof APIError) {
-        throw err;
-      }
-      throw new APIError(
-        "Item Service Error",
-        STATUS_CODE.INTERNAL_ERROR,
-        "Cannot find item"
-      );
+
+    const history = await this.accessory.captureSpecificAccessoryForHistory({
+      id,
+    });
+    if (history.length === 0) {
+      throw new NotFoundError(
+        "No history found for this product",
+      )
     }
+    return history;
   }
+
 
 
 
@@ -183,27 +151,18 @@ class AccessoryManagementService {
   }
 
   async findAllAccessoryProduct(page, limit) {
-    try {
-      const { stockAvailable, totalItems } =
-        await this.accessory.findAllAccessoryStockAvailable(page, limit);
-      const filteredItem = stockAvailable.filter(
-        (item) =>
-          item !== null ||
-          item.history !== null ||
-          item.stockStatus === "Deleted"
-      );
-      return { filteredItem, totalItems, page, limit };
-    } catch (err) {
-      if (err instanceof APIError) {
-        throw err;
-      }
-      throw new APIError(
-        "Item Service Error",
-        STATUS_CODE.INTERNAL_ERROR,
-        "Cannot find item"
-      );
-    }
+
+    const { stockAvailable, totalItems } =
+      await this.accessory.findAllAccessoryStockAvailable(page, limit);
+    const filteredItem = stockAvailable.filter(
+      (item) =>
+        item !== null ||
+        item.history !== null ||
+        item.stockStatus === "Deleted"
+    );
+    return { filteredItem, totalItems, page, limit };
   }
+
 
   async createNewSoftDeletion(itemId) {
     try {
