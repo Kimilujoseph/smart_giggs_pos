@@ -19,7 +19,7 @@ class FinancialReportingRepository {
       } else if (type === 'returns') {
         whereClause.totalRevenue = { lt: 0 };
       }
-      console.log("where clause for aggregated analytics", whereClause)
+      // console.log("where clause for aggregated analytics", whereClause)
 
       return await prisma.dailySalesAnalytics.aggregate({
         where: whereClause,

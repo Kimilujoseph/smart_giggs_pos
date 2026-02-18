@@ -10,7 +10,7 @@ class FinancialReportingService {
     try {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      console.log("todays", today)
+      //console.log("todays", today)
       let historicalSalesData = { _sum: { totalRevenue: 0, grossProfit: 0, totalCommission: 0, totalCostOfGoods: 0 } };
       let historicalReturnsData = { _sum: { totalRevenue: 0, grossProfit: 0, totalCommission: 0, totalCostOfGoods: 0 } };
       let todayData = { totalRevenue: 0, grossProfit: 0, totalCommission: 0, costOfGoodsSold: 0 };

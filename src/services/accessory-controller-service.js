@@ -124,7 +124,7 @@ class AccessoryManagementService {
         );
       }
     }
-    console.log(validUpdates["faultyItems"])
+    //console.log(validUpdates["faultyItems"])
     if (validUpdates["faultyItems"] > 0) {
       if (validUpdates["faultyItems"] > accessoryFound.availableStock) {
         throw new ValidationError(
