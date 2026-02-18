@@ -61,15 +61,7 @@ const findSpecificProductTransferHistory = async (req, res, next) => {
       .status(200)
       .json({ message: productTransferHistory, error: false });
   } catch (err) {
-    if (err instanceof APIError) {
-      return res
-        .status(err.statusCode)
-        .json({ message: err.message, error: true });
-    } else {
-      return res
-        .status(STATUS_CODE.INTERNAL_ERROR)
-        .json({ message: "Internal Server Error", error: false });
-    }
+    next(err)
   }
 };
 
@@ -144,16 +136,7 @@ const confirmAccessoryArrival = async (req, res, next) => {
 
 const createNewSoftDeletion = async (req, res, next) => {
   try {
-    const user = req.user;
-
-    if (user.role !== "superuser" && user.role !== "manager") {
-      throw new APIError(
-        "Unauthorized",
-        STATUS_CODE.UNAUTHORIZED,
-        "Not allowed to update the product"
-      );
-    }
-
+    // const user = req.user;
     const accessoryId = req.params.id;
 
     await accessoryManagementService.createNewSoftDeletion(accessoryId);
@@ -163,12 +146,7 @@ const createNewSoftDeletion = async (req, res, next) => {
       data: "Successfully deleted the product",
     });
   } catch (err) {
-    if (err instanceof APIError) {
-      return res.status(err.statusCode).json({ message: err.message });
-    }
-    else {
-      return res.status(STATUS_CODE.INTERNAL_ERROR).json({ message: "Internal Server Error" });
-    }
+    next(err)
   }
 };
 

@@ -165,19 +165,11 @@ class AccessoryManagementService {
 
 
   async createNewSoftDeletion(itemId) {
-    try {
-      const deletedItem = await this.accessory.softCopyOfAccessoryItem({ id: itemId });
-      return deletedItem;
-    } catch (err) {
-      if (err instanceof APIError) {
-        throw err;
-      }
-      throw new APIError(
-        "Distribution Service Error",
-        STATUS_CODE.INTERNAL_ERROR,
-        err
-      );
+    const deletedItem = await this.accessory.softCopyOfAccessoryItem({ id: itemId });
+    if (!deletedItem) {
+      throw new NotFoundError("product not found for deletion")
     }
+    return deletedItem;
   }
 
   async searchForAccessory(searchItem) {

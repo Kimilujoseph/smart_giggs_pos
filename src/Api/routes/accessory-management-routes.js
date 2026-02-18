@@ -25,7 +25,7 @@ router.get(
 );
 router.delete(
   "/create-accessory-deletion/:id",
-  verifyUser,
+  verifyUser, Authorization,
   createNewSoftDeletion
 );
 router.post("/confirm/accessory/", verifyUser, confirmAccessoryArrival);

@@ -200,9 +200,7 @@ class AccessoryInventoryRepository {
       });
       return updatedTransferHistory;
     } catch (err) {
-      throw new APIError(
-        "Internal Server Error",
-        STATUS_CODE.INTERNAL_ERROR,
+      throw new InternalServerError(
         "Internal server error "
       );
     }
@@ -225,9 +223,7 @@ class AccessoryInventoryRepository {
       });
       return updatedAccessory;
     } catch (err) {
-      throw new APIError(
-        "Database Error",
-        STATUS_CODE.INTERNAL_ERROR,
+      throw new InternalServerError(
         "Internal server error"
       );
     }
@@ -489,14 +485,7 @@ class AccessoryInventoryRepository {
 
       return productFound;
     } catch (err) {
-      if (err instanceof APIError) {
-        throw err;
-      }
-      throw new APIError(
-        "Database Error",
-        STATUS_CODE.INTERNAL_ERROR,
-        "Internal server error"
-      );
+      throw new InternalServerError("internal server error")
     }
   }
 
@@ -522,14 +511,9 @@ class AccessoryInventoryRepository {
           },
         },
       });
-
-
-
       return productHistory;
     } catch (err) {
-      if (err instanceof NotFoundError) {
-        throw err;
-      }
+
       throw new InternalServerError(
 
         "Internal server error"
@@ -552,9 +536,7 @@ class AccessoryInventoryRepository {
       });
       return updatedTransfer;
     } catch (err) {
-      throw new APIError(
-        "Database Transfer Error",
-        STATUS_CODE.INTERNAL_ERROR,
+      throw new InternalServerError(
         "Internal server error"
       );
     }
@@ -692,23 +674,10 @@ class AccessoryInventoryRepository {
         },
       });
 
-      if (!deletedAccessory) {
-        throw new APIError(
-          "Product not found",
-          STATUS_CODE.NOT_FOUND,
-          "Product not found"
-        );
-      }
+
       return deletedAccessory;
     } catch (err) {
-      if (err instanceof APIError) {
-        throw err;
-      }
-      throw new APIError(
-        "Database Error",
-        STATUS_CODE.INTERNAL_ERROR,
-        "Internal server error"
-      );
+      throw new InternalServerError("Internal server error")
     }
   }
 }
