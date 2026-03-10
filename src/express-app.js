@@ -86,7 +86,7 @@ const App = async (app) => {
   // Enable CORS
   app.use(
     cors({
-      origin: ["http://localhost:4422", "https://augustusstores.co.ke"],
+      origin: ["http://localhost:4422", "https://augustusstores.co.ke","https://smart-giggs-front-bkwbms9e0-kimilujosephs-projects.vercel.app"],
       credentials: true,
     })
   );
