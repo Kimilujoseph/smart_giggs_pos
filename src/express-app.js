@@ -24,6 +24,7 @@ import returnRoutes from "./Api/routes/return-routes.js";
 import financialReportRoutes from "./Api/routes/financial-report-routes.js";
 import paymentRoutes from "./Api/routes/payment-routes.js";
 import kpiRoutes from "./Api/routes/kpi-routes.js";
+import expenseRoutes from "./Api/routes/expense-routes.js";
 import config from "./Config/index.js";
 const { APP_SECRET, MONGO_URL } = config;
 import path from "path";
@@ -86,7 +87,7 @@ const App = async (app) => {
   // Enable CORS
   app.use(
     cors({
-      origin: ["http://localhost:4422", "https://augustusstores.co.ke","https://smartgiggs.co.ke","https://gamitch-front-end.vercel.app","https://smart-giggs-front-bkwbms9e0-kimilujosephs-projects.vercel.app"],
+      origin: ["http://localhost:4422", "https://augustusstores.co.ke", "https://smartgiggs.co.ke", "https://gamitch-front-end.vercel.app", "https://smart-giggs-front-bkwbms9e0-kimilujosephs-projects.vercel.app"],
       credentials: true,
     })
   );
@@ -124,6 +125,7 @@ const App = async (app) => {
   app.use("/api/payments", paymentRoutes);
   app.use("/api", financialReportRoutes);
   app.use("/api/kpi", kpiRoutes);
+  app.use("/api/expenses", expenseRoutes);
   app.use("/api/status", (req, res) => {
     res.status(200).json({ message: "Server is up and running" });
   });

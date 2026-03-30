@@ -1,12 +1,19 @@
 import { ExpenseService } from '../../services/expense-service.js';
 import { handleResponse } from '../../helpers/responseUtils.js';
 import { checkRole } from '../../helpers/authorisation.js';
-import { APIError, STATUS_CODE } from '../../Utils/app-error.js';
+import { APIError, STATUS_CODE, ValidationError } from '../../Utils/app-error.js';
+import { expenseInput } from '../../Utils/joivalidation.js';
+
 
 const expenseService = new ExpenseService();
 
 const handleCreateExpense = async (req, res, next) => {
+
     try {
+        const { error } = expenseInput(req.body);
+        if (error) {
+            throw new ValidationError(error.details.map(detail => detail.message).join(", "));
+        }
         const expenseData = {
             ...req.body,
             processedById: req.user.id,

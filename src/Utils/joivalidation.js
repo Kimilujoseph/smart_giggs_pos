@@ -1,3 +1,4 @@
+import { Expense_category } from "@prisma/client";
 import Joi from "joi";
 const userinputvalidation = (data) => {
   const schema = Joi.object({
@@ -70,4 +71,14 @@ const reversalDetails = (data) => {
   return schema.validate(data);
 }
 
-export { userinputvalidation, validateSalesPayload, reversalDetails };
+const expenseInput = (data) => {
+  const schema = Joi.object({
+    shopId: Joi.number().integer().positive().required(),
+    amount: Joi.number().positive().required(),
+    category: Joi.string().valid(...Object.values(Expense_category)).required(),
+    description: Joi.string().trim().min(1).required(),
+  });
+  return schema.validate(data);
+}
+
+export { userinputvalidation, validateSalesPayload, reversalDetails, expenseInput };
