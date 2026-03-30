@@ -51,6 +51,7 @@ class FinancialReportingService {
       const accruedCommission = Number(historicalSalesData._sum.totalCommission || 0) + Number(historicalReturnsData._sum.totalCommission || 0) + Number(todayData.totalCommission);
 
       const expensesData = await this.repository.getExpenses({ startDate: start, endDate: end });
+      // console.log("expenses data", expensesData)
       const salariesData = await this.repository.getSalaries({ startDate: start, endDate: end });
       const commissionData = await this.repository.getCommissionPayments({ startDate: start, endDate: end });
       const accountsReceivable = await this.repository.getAccountsReceivable();

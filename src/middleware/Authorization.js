@@ -18,4 +18,11 @@ const generalAuthorization = (req, res, next) => {
     next();
 }
 
-export { Authorization, generalAuthorization }
+const authorizeFinancials = (req, res, next) => {
+    if (!checkRole(req.user.role, ["manager", "superuser"])) {
+        return res.status(403).json({ message: "You are not authorized to view financial reports." });
+    }
+    next();
+};
+
+export { Authorization, generalAuthorization, authorizeFinancials }
