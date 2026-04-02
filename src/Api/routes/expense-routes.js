@@ -6,6 +6,6 @@ import { parseDateQuery } from '../../middleware/query-parser.js';
 const router = express.Router();
 
 router.post('/create', verifyUser, handleCreateExpense);
-router.get('/:shopId', verifyUser, parseDateQuery, handleGetExpenses);
+router.get('/', verifyUser, parseDateQuery, handleGetExpenses);
 
 export default router;

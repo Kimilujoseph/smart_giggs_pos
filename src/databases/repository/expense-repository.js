@@ -40,6 +40,11 @@ class ExpenseRepository {
                             name: true,
                         },
                     },
+                    shops: {
+                        select: {
+                            shopName: true,
+                        },
+                    }
                 },
                 skip: (page - 1) * limit,
                 take: limit,

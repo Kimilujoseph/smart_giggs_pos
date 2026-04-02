@@ -38,8 +38,8 @@ const handleGetExpenses = async (req, res, next) => {
             throw new APIError("Not authorized", STATUS_CODE.UNAUTHORIZED, "You are not authorized to view expenses.");
         }
 
-        const { shopId } = req.params;
-        const { page = 1, limit = 10, employeeId } = req.query;
+
+        const { page = 1, limit = 10, employeeId, shopId } = req.query;
         const { startDate, endDate } = req.dateQuery;
 
         const options = {
