@@ -37,14 +37,6 @@ class ExpenseRepository {
           actors: { select: { id: true, name: true, email: true } },
           shops: { select: { id: true, shopName: true } },
           approvedBy: { select: { id: true, name: true, email: true } },
-          attachments: {
-            include: { uploadedBy: { select: { id: true, name: true } } },
-            orderBy: { uploadedAt: "desc" },
-          },
-          comments: {
-            include: { user: { select: { id: true, name: true } } },
-            orderBy: { createdAt: "desc" },
-          },
         },
       });
 
@@ -299,7 +291,7 @@ class ExpenseRepository {
     try {
       const where = {
         deletedAt: null,
-        status: "PENDING",
+        status: "APPROVED",
         ...(shopId && { shopId }),
         ...(startDate &&
           endDate && {

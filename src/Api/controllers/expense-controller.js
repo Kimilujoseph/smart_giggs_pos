@@ -172,7 +172,9 @@ const handleRejectExpense = async (req, res, next) => {
 const handleGetAuditLogs = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const logs = await expenseService.getAuditLogs(id, req.user);
+    const expenseId = parseInt(id, 10);
+    const logs = await expenseService.getAuditLogs(expenseId, req.user);
+    console.log(logs);
 
     handleResponse({
       res,
@@ -190,7 +192,8 @@ const handleGetAnalytics = async (req, res, next) => {
     const { error } = analyticsQuery(req.query);
     if (error) {
       throw new ValidationError(
-        error.details.map((detail) => detail.message).join(", ")
+        //error.details.map((detail) => detail.message).join(", ")
+        "please correct your input"
       );
     }
 
