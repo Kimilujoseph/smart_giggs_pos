@@ -61,18 +61,54 @@ model Customer {
 }
 
 model Expense {
-  id            Int              @id @default(autoincrement())
-  description   String
-  amount        Decimal          @db.Decimal(10, 2)
-  category      Expense_category
-  expenseDate   DateTime
-  shopId        Int?
-  processedById Int
-  actors        actors           @relation(fields: [processedById], references: [id])
-  shops         shops?           @relation(fields: [shopId], references: [id])
+  id              Int                   @id @default(autoincrement())
+  description     String
+  amount          Decimal               @db.Decimal(10, 2)
+  category        Expense_category
+  subcategory     String?               @db.VarChar(100)
+  expenseDate     DateTime
+  status          ExpenseStatus         @default(PENDING)
+  paymentMethod   ExpensesPaymentMethod?
+  vendorName      String?               @db.VarChar(255)
+  vendorContact   String?               @db.VarChar(100)
+  taxAmount       Decimal?              @db.Decimal(10, 2)
+  reference       String?               @db.VarChar(255)
+  shopId          Int?
+  processedById   Int
+  approvedById    Int?
+  approvedAt      DateTime?
+  rejectionReason String?               @db.VarChar(500)
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @default(now()) @updatedAt
+  deletedAt       DateTime?
+  actors          actors                @relation(fields: [processedById], references: [id])
+  approvedBy      actors?               @relation("Expense_approvedBy", fields: [approvedById], references: [id])
+  shops           shops?                @relation(fields: [shopId], references: [id])
+  auditLogs       ExpenseAuditLog[]
 
   @@index([processedById])
   @@index([shopId])
+  @@index([status])
+  @@index([expenseDate])
+  @@index([category])
+}
+
+model ExpenseAuditLog {
+  id          Int                @id @default(autoincrement())
+  expenseId   Int
+  action      ExpenseAuditAction
+  changedById Int
+  changedAt   DateTime           @default(now())
+  oldValue    String?            @db.Text
+  newValue    String?            @db.Text
+  reason      String?            @db.VarChar(500)
+  expense     Expense            @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  changedBy   actors             @relation("ExpenseAuditLog_changedBy", fields: [changedById], references: [id])
+
+  @@index([expenseId])
+  @@index([changedById])
+  @@index([action])
+  @@index([changedAt])
 }
 
 model Financer {
@@ -313,6 +349,8 @@ model actors {
   CommissionPayment_CommissionPayment_processedByIdToactors             CommissionPayment[]        @relation("CommissionPayment_processedByIdToactors")
   CommissionPayment_CommissionPayment_sellerIdToactors                  CommissionPayment[]        @relation("CommissionPayment_sellerIdToactors")
   Expense                                                               Expense[]
+  Expense_approvedBy                                                    Expense[]                  @relation("Expense_approvedBy")
+  ExpenseAuditLog_changedBy                                             ExpenseAuditLog[]          @relation("ExpenseAuditLog_changedBy")
   Notification                                                          Notification[]
   Return                                                                Return[]
   SalaryPayment_SalaryPayment_employeeIdToactors                        SalaryPayment[]            @relation("SalaryPayment_employeeIdToactors")
@@ -575,6 +613,29 @@ enum Period {
   WEEKLY
   MONTHLY
   YEARLY
+}
+
+enum ExpenseStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ExpensesPaymentMethod {
+  CASH
+  CARD
+  TRANSFER
+  MPESA
+  AIRTELMONEY
+}
+
+enum ExpenseAuditAction {
+  CREATED
+  UPDATED
+  DELETED
+  APPROVED
+  REJECTED
+  STATUS_CHANGED
 }
 
 enum Expense_category {

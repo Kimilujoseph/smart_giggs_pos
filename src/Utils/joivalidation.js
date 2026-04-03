@@ -1,4 +1,4 @@
-import { Expense_category } from "@prisma/client";
+import { Expense_category, ExpensePaymentMethod } from "@prisma/client";
 import Joi from "joi";
 const userinputvalidation = (data) => {
   const schema = Joi.object({
@@ -76,9 +76,55 @@ const expenseInput = (data) => {
     shopId: Joi.number().integer().positive().required(),
     amount: Joi.number().positive().required(),
     category: Joi.string().valid(...Object.values(Expense_category)).required(),
+    subcategory: Joi.string().trim().max(100).optional(),
     description: Joi.string().trim().min(1).required(),
+    paymentMethod: Joi.string().valid(...Object.values(ExpensePaymentMethod)).optional(),
+    vendor: Joi.string().trim().max(255).optional(),
+    taxAmount: Joi.number().positive().optional(),
+    reference: Joi.string().trim().max(255).optional(),
+    expenseDate: Joi.date().optional(),
   });
   return schema.validate(data);
 }
 
-export { userinputvalidation, validateSalesPayload, reversalDetails, expenseInput };
+const expenseUpdateInput = (data) => {
+  const schema = Joi.object({
+    amount: Joi.number().positive().optional(),
+    category: Joi.string().valid(...Object.values(Expense_category)).optional(),
+    subcategory: Joi.string().trim().max(100).optional(),
+    description: Joi.string().trim().min(1).optional(),
+    paymentMethod: Joi.string().valid(...Object.values(ExpensePaymentMethod)).optional(),
+    vendor: Joi.string().trim().max(255).optional(),
+    taxAmount: Joi.number().positive().optional(),
+    reference: Joi.string().trim().max(255).optional(),
+    expenseDate: Joi.date().optional(),
+  }).min(1);
+  return schema.validate(data);
+}
+
+const rejectionReasonInput = (data) => {
+  const schema = Joi.object({
+    reason: Joi.string().trim().min(5).max(500).required(),
+  });
+  return schema.validate(data);
+}
+
+const analyticsQuery = (data) => {
+  const schema = Joi.object({
+    startDate: Joi.date().optional(),
+    endDate: Joi.date().optional(),
+    groupBy: Joi.string().valid('category', 'subcategory', 'paymentMethod', 'shop').default('category'),
+    shopId: Joi.number().integer().positive().optional(),
+  });
+  return schema.validate(data);
+}
+
+export {
+  userinputvalidation,
+  validateSalesPayload,
+  reversalDetails,
+  expenseInput,
+  expenseUpdateInput,
+  rejectionReasonInput,
+  analyticsQuery,
+};
