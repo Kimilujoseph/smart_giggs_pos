@@ -14,12 +14,12 @@ import {
 } from "../controllers/expense-controller.js";
 import verifyUser from "../../middleware/verification.js";
 import { parseDateQuery } from "../../middleware/query-parser.js";
-import { Authorization } from "../../middleware/Authorization.js";
+import { Authorization,generalAuthorization } from "../../middleware/Authorization.js";
 
 const router = express.Router();
 
 // Create expense
-router.post("/create", verifyUser, Authorization, handleCreateExpense);
+router.post("/create", verifyUser, generalAuthorization, handleCreateExpense);
 
 router.get("/", verifyUser, parseDateQuery, handleGetExpenses);
 
