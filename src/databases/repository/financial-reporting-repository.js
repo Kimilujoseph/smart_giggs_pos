@@ -4,7 +4,6 @@ import { APIError, STATUS_CODE } from "../../Utils/app-error.js";
 const prisma = new PrismaClient();
 
 class FinancialReportingRepository {
-
   async getAggregatedAnalytics({ startDate, endDate, type }) {
     try {
       const whereClause = {
@@ -14,9 +13,9 @@ class FinancialReportingRepository {
         },
       };
 
-      if (type === 'sales') {
+      if (type === "sales") {
         whereClause.totalRevenue = { gt: 0 };
-      } else if (type === 'returns') {
+      } else if (type === "returns") {
         whereClause.totalRevenue = { lt: 0 };
       }
       // console.log("where clause for aggregated analytics", whereClause)
@@ -31,8 +30,11 @@ class FinancialReportingRepository {
         },
       });
     } catch (err) {
-
-      throw new APIError("Database Error", STATUS_CODE.INTERNAL_ERROR, "Could not fetch aggregated sales analytics.");
+      throw new APIError(
+        "Database Error",
+        STATUS_CODE.INTERNAL_ERROR,
+        "Could not fetch aggregated sales analytics."
+      );
     }
   }
 
@@ -66,37 +68,56 @@ class FinancialReportingRepository {
         },
       });
 
-      const [mobileResult, accessoryResult] = await Promise.all([mobileSales, accessorySales]);
+      const [mobileResult, accessoryResult] = await Promise.all([
+        mobileSales,
+        accessorySales,
+      ]);
 
-      const totalRevenue = Number(mobileResult._sum.soldPrice || 0) + Number(accessoryResult._sum.soldPrice || 0);
-      const grossProfit = Number(mobileResult._sum.profit || 0) + Number(accessoryResult._sum.profit || 0);
+      const totalRevenue =
+        Number(mobileResult._sum.soldPrice || 0) +
+        Number(accessoryResult._sum.soldPrice || 0);
+      const grossProfit =
+        Number(mobileResult._sum.profit || 0) +
+        Number(accessoryResult._sum.profit || 0);
       return {
         totalRevenue,
         grossProfit,
-        totalCommission: (mobileResult._sum.commission || 0) + (accessoryResult._sum.commission || 0),
+        totalCommission:
+          (mobileResult._sum.commission || 0) +
+          (accessoryResult._sum.commission || 0),
         costOfGoodsSold: totalRevenue - grossProfit,
       };
     } catch (err) {
-      throw new APIError("Database Error", STATUS_CODE.INTERNAL_ERROR, "Could not fetch live sales.");
+      throw new APIError(
+        "Database Error",
+        STATUS_CODE.INTERNAL_ERROR,
+        "Could not fetch live sales."
+      );
     }
   }
 
   async getExpenses({ startDate, endDate }) {
     try {
+      //console.log("@@@@@@", startDate);
       return await prisma.expense.groupBy({
-        by: ['category'],
+        by: ["category"],
         where: {
           expenseDate: {
             gte: startDate,
             lte: endDate,
           },
+          status: "APPROVED",
         },
         _sum: {
           amount: true,
         },
       });
     } catch (err) {
-      throw new APIError("Database Error", STATUS_CODE.INTERNAL_ERROR, "Could not fetch expenses.");
+      throw new APIError(
+        "Database Error",
+        STATUS_CODE.INTERNAL_ERROR,
+        "Could not fetch expenses."
+      );
     }
   }
 
@@ -109,15 +130,19 @@ class FinancialReportingRepository {
             lte: endDate,
           },
           status: {
-            not: "VOIDED"
-          }
+            not: "VOIDED",
+          },
         },
         _sum: {
           amount: true,
         },
       });
     } catch (err) {
-      throw new APIError("Database Error", STATUS_CODE.INTERNAL_ERROR, "Could not fetch salaries.");
+      throw new APIError(
+        "Database Error",
+        STATUS_CODE.INTERNAL_ERROR,
+        "Could not fetch salaries."
+      );
     }
   }
 
@@ -130,15 +155,19 @@ class FinancialReportingRepository {
             lte: endDate,
           },
           status: {
-            not: "VOIDED"
-          }
+            not: "VOIDED",
+          },
         },
         _sum: {
           amountPaid: true,
         },
       });
     } catch (err) {
-      throw new APIError("Database Error", STATUS_CODE.INTERNAL_ERROR, "Could not fetch commission payments.");
+      throw new APIError(
+        "Database Error",
+        STATUS_CODE.INTERNAL_ERROR,
+        "Could not fetch commission payments."
+      );
     }
   }
 
@@ -146,7 +175,7 @@ class FinancialReportingRepository {
     try {
       const mobileReceivable = prisma.mobilesales.aggregate({
         where: {
-          financeStatus: 'pending',
+          financeStatus: "pending",
         },
         _sum: {
           financeAmount: true,
@@ -155,18 +184,28 @@ class FinancialReportingRepository {
 
       const accessoryReceivable = prisma.accessorysales.aggregate({
         where: {
-          financeStatus: 'pending',
+          financeStatus: "pending",
         },
         _sum: {
           financeAmount: true,
         },
       });
 
-      const [mobileResult, accessoryResult] = await Promise.all([mobileReceivable, accessoryReceivable]);
+      const [mobileResult, accessoryResult] = await Promise.all([
+        mobileReceivable,
+        accessoryReceivable,
+      ]);
 
-      return (mobileResult._sum.financeAmount || 0) + (accessoryResult._sum.financeAmount || 0);
+      return (
+        (mobileResult._sum.financeAmount || 0) +
+        (accessoryResult._sum.financeAmount || 0)
+      );
     } catch (err) {
-      throw new APIError("Database Error", STATUS_CODE.INTERNAL_ERROR, "Could not fetch accounts receivable.");
+      throw new APIError(
+        "Database Error",
+        STATUS_CODE.INTERNAL_ERROR,
+        "Could not fetch accounts receivable."
+      );
     }
   }
 }

@@ -58,7 +58,7 @@ class ExpenseService {
 
   async getExpenses(options, user) {
     const { role, id: userId } = user;
-
+    //console.log(options.employeeId);
     if (!["manager", "superuser"].includes(role)) {
       options.employeeId = userId;
     }
