@@ -14,16 +14,19 @@ async function deleteZeroQuantityRows(model, modelName) {
         take: BATCH_SIZE,
       });
 
+      //console.log(records);
+
       if (records.length === 0) break;
 
-      const ids = records.map((r) => r._id);
+      const ids = records.map((r) => r.id);
+      //console.log(ids);
       const results = await model.deleteMany({
         where: { id: { in: ids } },
       });
 
       totalDeleted += results.count;
       console.log(
-        `[${modelName}] Deleted batch of ${result.count} rows (total so far: ${totalDeleted})`
+        `[${modelName}] Deleted batch of ${results.count} rows (total so far: ${totalDeleted})`
       );
       await new Promise((resolve) => setTimeout(resolve, 1000));
     }
