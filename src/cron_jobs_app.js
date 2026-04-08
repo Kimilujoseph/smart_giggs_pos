@@ -5,8 +5,12 @@ import { cleanupZeroQuantityItems } from "../scripts/deleteZeroQuantityRow";
 cron.schedule(
   "0 1 * * *",
   async () => {
-    console.log("[KPI] Starting...");
-    await calculateAndStoreKPIs();
+    try {
+      const yesterday = new Date(Date.now() - 86400000);
+      await calculateAndStoreKPIs(yesterday);
+    } catch (err) {
+      console.log("KPI calculation  failed");
+    }
   },
   { timezone: "Africa/Nairobi" }
 );
@@ -14,8 +18,12 @@ cron.schedule(
 cron.schedule(
   "0 */4 * * *",
   async () => {
-    console.log("[Cleanup] Starting...");
-    await cleanupZeroQuantityItems();
+    try {
+      console.log("[Cleanup] Starting...");
+      await cleanupZeroQuantityItems();
+    } catch (err) {
+      console.log("cleanup failed");
+    }
   },
   { timezone: "Africa/Nairobi" }
 );
