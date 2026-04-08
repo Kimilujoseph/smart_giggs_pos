@@ -267,6 +267,7 @@ model accessoryItems {
   @@index([shopID], map: "fk_accessoryItems_1_idx")
   @@index([accessoryID], map: "fk_accessoryItems_2_idx")
   @@index([confirmedBy], map: "fk_confirmedBy_actor_2")
+  @@index([quantity])
 }
 
 model accessorysales {
@@ -440,6 +441,7 @@ model mobileItems {
   @@index([shopID], map: "fk_mobileItems_1_idx")
   @@index([mobileID], map: "fk_mobileItems_2_idx")
   @@index([confirmedBy], map: "fk_mobileItems_confirmedBy")
+  @@index([quantity])
 }
 
 model mobiles {

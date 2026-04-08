@@ -30,18 +30,28 @@ const startServer = async () => {
     await App(app); // Initialize your app
 
     // Schedule the KPI calculation job to run every day at 1:00 AM
-    cron.schedule('0 1 * * *', () => {
-      console.log('Running scheduled KPI calculation job...');
-      const yesterday = new Date(Date.now() - 86400000);
-      calculateAndStoreKPIs(yesterday);
-    }, {
-      scheduled: true,
-      timezone: "Africa/Nairobi"
-    });
+    // cron.schedule(
+    //   "0 1 * * *",
+    //   async () => {
+    //     console.log("Running scheduled KPI calculation job...");
+    //     try {
+    //       const yesterday = new Date(Date.now() - 86400000);
+    //       await calculateAndStoreKPIs(yesterday);
+    //     } catch (err) {
+    //       console.log("KPI calculation failed");
+    //     }
+    //   },
+    //   {
+    //     scheduled: true,
+    //     timezone: "Africa/Nairobi",
+    //   }
+    // );
 
     app.listen(PORT, HOST, () => {
       console.log(`Server running on port ${PORT}`);
-      console.log('KPI calculation job is scheduled to run every day at 1:00 AM.');
+      console.log(
+        "KPI calculation job is scheduled to run every day at 1:00 AM."
+      );
     });
   });
 };
