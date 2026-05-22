@@ -1,5 +1,9 @@
 import prisma from "../client.js";
-import { APIError, STATUS_CODE, InternalServerError } from "../../Utils/app-error.js";
+import {
+  APIError,
+  STATUS_CODE,
+  InternalServerError,
+} from "../../Utils/app-error.js";
 
 class phoneinventoryrepository {
   constructor() {
@@ -38,79 +42,78 @@ class phoneinventoryrepository {
   }
 
   async findMobileItem(mobileItemId, tx) {
-    const prismaClient = tx || this.prisma
+    const prismaClient = tx || this.prisma;
     try {
       const mobileItem = await prismaClient.mobileItems.findUnique({
         where: {
-          id: mobileItemId
-        }
-      })
+          id: mobileItemId,
+        },
+      });
       if (!mobileItem) {
         throw new APIError(
           "not found error",
           STATUS_CODE.NOT_FOUND,
           "product item not found"
-        )
+        );
       }
-      return mobileItem
-    }
-    catch (err) {
+      return mobileItem;
+    } catch (err) {
       if (err instanceof APIError) {
-        throw err
+        throw err;
       }
       throw new APIError(
         "database error",
         STATUS_CODE.INTERNAL_ERROR,
         "internal server error "
-      )
+      );
     }
   }
 
   async findProductExistInShop(mobileId, shopId, tx) {
-
-    const prismaClient = tx || this.prisma
+    const prismaClient = tx || this.prisma;
     try {
       const product = await prismaClient.mobileItems.findFirst({
         where: {
           mobileID: mobileId,
-          shopID: shopId
-        }
-      })
-      return product
+          shopID: shopId,
+        },
+      });
+      return product;
     } catch (err) {
-      console.log(err)
+      console.log(err);
       if (err instanceof APIError) {
-        throw err
+        throw err;
       }
       throw new APIError(
         "database error",
         STATUS_CODE.INTERNAL_ERROR,
         "Internal server error"
-      )
+      );
     }
   }
   async createTransferHistory(id, transferData, tx) {
     const prismaClient = tx || this.prisma;
     try {
-      const createdTransferHistory = await prismaClient.mobiletransferHistory.create({
-        data: {
-          quantity: transferData.quantity,
-          status: transferData.status,
-          type: transferData.type,
-          shops_mobiletransferHistory_fromshopToshops: {
-            connect: { id: transferData.fromShop },
+      const createdTransferHistory =
+        await prismaClient.mobiletransferHistory.create({
+          data: {
+            quantity: transferData.quantity,
+            status: transferData.status,
+            type: transferData.type,
+            shops_mobiletransferHistory_fromshopToshops: {
+              connect: { id: transferData.fromShop },
+            },
+            shops_mobiletransferHistory_toshopToshops: {
+              connect: { id: transferData.toShop },
+            },
+            actors_mobiletransferHistory_transferdByToactors: {
+              connect: { id: transferData.transferdBy },
+            },
+            mobiles: {
+              connect: { id: id },
+            },
           },
-          shops_mobiletransferHistory_toshopToshops: {
-            connect: { id: transferData.toShop },
-          },
-          actors_mobiletransferHistory_transferdByToactors: {
-            connect: { id: transferData.transferdBy },
-          },
-          mobiles: {
-            connect: { id: id },
-          },
-        },
-      });
+        });
       return createdTransferHistory;
     } catch (err) {
       console.log("err", err);
@@ -151,7 +154,11 @@ class phoneinventoryrepository {
   async createPhonewithFinaceDetails(payload) {
     try {
       const { phoneDetails, shopId, user, supplierId, paymentStatus } = payload;
-      const newMobileProduct = await this.createphoneStock({ ...phoneDetails, supplierId, paymentStatus });
+      const newMobileProduct = await this.createphoneStock({
+        ...phoneDetails,
+        supplierId,
+        paymentStatus,
+      });
       const createPhoneMetaData = await this.createHistory({
         user,
         shopId,
@@ -171,22 +178,25 @@ class phoneinventoryrepository {
     }
   }
 
-  async createphoneStock({
-    CategoryId,
-    IMEI,
-    productcost,
-    color,
-    commission,
-    discount,
-    availableStock,
-    faultyItems,
-    supplierName,
-    batchNumber,
-    productType,
-    storage,
-    supplierId,
-    paymentStatus,
-  }, tx) {
+  async createphoneStock(
+    {
+      CategoryId,
+      IMEI,
+      productcost,
+      color,
+      commission,
+      discount,
+      availableStock,
+      faultyItems,
+      supplierName,
+      batchNumber,
+      productType,
+      storage,
+      supplierId,
+      paymentStatus,
+    },
+    tx
+  ) {
     const prismaClient = tx || prisma;
     try {
       const category = parseInt(CategoryId, 10);
@@ -228,8 +238,6 @@ class phoneinventoryrepository {
       }
     }
   }
-
-
 
   async createHistory({ productId, user, type, shopId }, tx) {
     const prismaClient = tx || prisma;
@@ -482,14 +490,13 @@ class phoneinventoryrepository {
             select: {
               itemName: true,
               itemModel: true,
-
             },
           },
           Supplier: {
             select: {
-              name: true
-            }
-          }
+              name: true,
+            },
+          },
         },
       });
       //console.log(productFound);
@@ -764,17 +771,37 @@ class phoneinventoryrepository {
   }
 
   //delete  mobileItem
-  async deleteMobileItem(mobileItemId, tx) {
+  async decrementMobileItemQuantity(mobileItemId, quantityToDecrement, tx) {
     try {
       const prismaClient = tx || this.prisma;
-      return await prismaClient.mobileItems.delete({
-        where: {
-          id: mobileItemId
-        }
-      })
+      const mobileItem = await prismaClient.mobileItems.findUnique({
+        where: { id: mobileItemId },
+      });
+
+      if (!mobileItem) {
+        throw new NotFoundError("Mobile item not found for decrement.");
+      }
+
+      const newQuantity = mobileItem.quantity - quantityToDecrement;
+
+      if (newQuantity <= 0) {
+        return await prismaClient.mobileItems.delete({
+          where: { id: mobileItemId },
+        });
+      } else {
+        return await prismaClient.mobileItems.update({
+          where: { id: mobileItemId },
+          data: { quantity: newQuantity, updatedAt: new Date() },
+        });
+      }
     } catch (err) {
-      console.log("error deleting mobile item", err)
-      throw new InternalServerError()
+      if (err instanceof NotFoundError) {
+        throw err;
+      }
+      console.error("Error decrementing mobile item quantity:", err);
+      throw new InternalServerError(
+        "Failed to decrement mobile item quantity."
+      );
     }
   }
 
@@ -798,8 +825,69 @@ class phoneinventoryrepository {
       });
       return updatedPhone;
     } catch (err) {
-      console.log("error displayed", err)
+      console.log("error displayed", err);
       throw new InternalServerError();
+    }
+  }
+
+  async addOrIncrementMobileItemInShop(productId, shopId, quantityToAdd, tx) {
+    try {
+      const prismaClient = tx || this.prisma;
+
+      // Find if the mobile item already exists in the target shop
+      let mobileItemInShop = await prismaClient.mobileItems.findFirst({
+        where: {
+          mobileID: productId,
+          shopID: shopId,
+        },
+      });
+
+      if (mobileItemInShop) {
+        return await prismaClient.mobileItems.update({
+          where: { id: mobileItemInShop.id },
+          data: {
+            quantity: {
+              increment: quantityToAdd,
+            },
+            status: "confirmed",
+            updatedAt: new Date(),
+          },
+        });
+      } else {
+        // If it doesn't exist, create a new mobile item entry for the shop
+        // First, get category ID from the main mobile product
+        const mobileProduct = await prismaClient.mobiles.findUnique({
+          where: { id: productId },
+          select: { CategoryId: true },
+        });
+
+        if (!mobileProduct) {
+          throw new NotFoundError(
+            `Mobile product with ID ${productId} not found.`
+          );
+        }
+
+        return await prismaClient.mobileItems.create({
+          data: {
+            mobileID: productId,
+            shopID: shopId,
+            quantity: quantityToAdd,
+            status: "confirmed",
+            productStatus: "return of product",
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            // transferId could be null or linked to the reversal transfer history
+          },
+        });
+      }
+    } catch (err) {
+      console.error("Error adding or incrementing mobile item in shop:", err);
+      if (err instanceof NotFoundError) {
+        throw err;
+      }
+      throw new InternalServerError(
+        "Failed to add or increment mobile item in shop."
+      );
     }
   }
 }

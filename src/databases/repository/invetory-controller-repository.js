@@ -430,25 +430,35 @@ class InventorymanagementRepository {
       );
     }
   }
-  async updateStockQuantityInAshop(id, quatity, tx) {
+  async decrementAccessoryItemQuantity(accessoryItemId, quantityToDecrement, tx) {
     const prismaClient = tx || this.prisma;
     try {
-      const updateQuantity = await prismaClient.accessoryItems.update({
-        where: {
-          id: id,
-        },
-        data: {
-          quantity: {
-            decrement: quatity,
-          },
-        },
+      const accessoryItem = await prismaClient.accessoryItems.findUnique({
+        where: { id: accessoryItemId },
       });
+
+      if (!accessoryItem) {
+        throw new NotFoundError("Accessory item not found for decrement.");
+      }
+
+      const newQuantity = accessoryItem.quantity - quantityToDecrement;
+
+      if (newQuantity <= 0) {
+        return await prismaClient.accessoryItems.delete({
+          where: { id: accessoryItemId },
+        });
+      } else {
+        return await prismaClient.accessoryItems.update({
+          where: { id: accessoryItemId },
+          data: { quantity: newQuantity, updatedAt: new Date() },
+        });
+      }
     } catch (err) {
-      throw new APIError(
-        "database update error",
-        STATUS_CODE.INTERNAL_ERROR,
-        "internal server error"
-      );
+      if (err instanceof NotFoundError) {
+        throw err;
+      }
+      console.error("Error decrementing accessory item quantity:", err);
+      throw new InternalServerError("Failed to decrement accessory item quantity.");
     }
   }
   async updateTransferHistory(id, updates, tx) {
@@ -600,20 +610,70 @@ class InventorymanagementRepository {
   //update accessories 
   async updateAccessoriesOnReversal(productId, quantity, tx) {
     try {
-
-      const prismaClient = tx || this.prisma
+      const prismaClient = tx || this.prisma;
       return await prismaClient.accessories.update({
         where: {
-          id: productId
+          id: productId,
         },
         data: {
           availableStock: {
             increment: quantity,
           },
-        }
-      })
+        },
+      });
     } catch (err) {
-      throw new InternalServerError()
+      throw new InternalServerError();
+    }
+  }
+
+  async addOrIncrementAccessoryItemInShop(productId, shopId, quantityToAdd, tx) {
+    try {
+      const prismaClient = tx || this.prisma;
+
+      // Find if the accessory item already exists in the target shop
+      let accessoryItemInShop = await prismaClient.accessoryItems.findFirst({
+        where: {
+          accessoryID: productId,
+          shopID: shopId,
+        },
+      });
+
+      if (accessoryItemInShop) {
+        // If it exists, increment the quantity
+        return await prismaClient.accessoryItems.update({
+          where: { id: accessoryItemInShop.id },
+          data: {
+            quantity: {
+              increment: quantityToAdd,
+            },
+            status: "confirmed", // Assuming it becomes confirmed upon return
+            updatedAt: new Date(),
+          },
+        });
+      } else {
+        // If it doesn't exist, create a new accessory item entry for the shop
+        // First, get category ID from the main accessory product (if needed, currently not used in accessoryItems directly)
+        // For accessoryItems, CategoryId is not directly in the model as per schema.prisma, only accessoryID.
+        // So, we just create the item with productId and shopId
+        return await prismaClient.accessoryItems.create({
+          data: {
+            accessoryID: productId,
+            shopID: shopId,
+            quantity: quantityToAdd,
+            status: "confirmed", // Assuming it becomes confirmed upon return
+            productStatus: "return of product",
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            // transferId could be null or linked to the reversal transfer history
+          },
+        });
+      }
+    } catch (err) {
+      console.error("Error adding or incrementing accessory item in shop:", err);
+      if (err instanceof NotFoundError) {
+        throw err;
+      }
+      throw new InternalServerError("Failed to add or increment accessory item in shop.");
     }
   }
 }

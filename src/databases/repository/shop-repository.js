@@ -26,9 +26,10 @@ class ShopmanagementRepository {
     }
   }
 
-  async findShopById(id) {
+  async findShopById(id, tx) {
+    const prismaClient = tx || this.prisma;
     try {
-      const shopFound = await this.prisma.shops.findUnique({
+      const shopFound = await prismaClient.shops.findUnique({
         where: {
           id: id,
         },
