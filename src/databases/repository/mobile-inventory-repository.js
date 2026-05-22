@@ -1,5 +1,9 @@
 import prisma from "../client.js";
-import { APIError, STATUS_CODE, InternalServerError } from "../../Utils/app-error.js";
+import {
+  APIError,
+  STATUS_CODE,
+  InternalServerError,
+} from "../../Utils/app-error.js";
 
 class phoneinventoryrepository {
   constructor() {
@@ -38,79 +42,78 @@ class phoneinventoryrepository {
   }
 
   async findMobileItem(mobileItemId, tx) {
-    const prismaClient = tx || this.prisma
+    const prismaClient = tx || this.prisma;
     try {
       const mobileItem = await prismaClient.mobileItems.findUnique({
         where: {
-          id: mobileItemId
-        }
-      })
+          id: mobileItemId,
+        },
+      });
       if (!mobileItem) {
         throw new APIError(
           "not found error",
           STATUS_CODE.NOT_FOUND,
           "product item not found"
-        )
+        );
       }
-      return mobileItem
-    }
-    catch (err) {
+      return mobileItem;
+    } catch (err) {
       if (err instanceof APIError) {
-        throw err
+        throw err;
       }
       throw new APIError(
         "database error",
         STATUS_CODE.INTERNAL_ERROR,
         "internal server error "
-      )
+      );
     }
   }
 
   async findProductExistInShop(mobileId, shopId, tx) {
-
-    const prismaClient = tx || this.prisma
+    const prismaClient = tx || this.prisma;
     try {
       const product = await prismaClient.mobileItems.findFirst({
         where: {
           mobileID: mobileId,
-          shopID: shopId
-        }
-      })
-      return product
+          shopID: shopId,
+        },
+      });
+      return product;
     } catch (err) {
-      console.log(err)
+      console.log(err);
       if (err instanceof APIError) {
-        throw err
+        throw err;
       }
       throw new APIError(
         "database error",
         STATUS_CODE.INTERNAL_ERROR,
         "Internal server error"
-      )
+      );
     }
   }
   async createTransferHistory(id, transferData, tx) {
     const prismaClient = tx || this.prisma;
     try {
-      const createdTransferHistory = await prismaClient.mobiletransferHistory.create({
-        data: {
-          quantity: transferData.quantity,
-          status: transferData.status,
-          type: transferData.type,
-          shops_mobiletransferHistory_fromshopToshops: {
-            connect: { id: transferData.fromShop },
+      const createdTransferHistory =
+        await prismaClient.mobiletransferHistory.create({
+          data: {
+            quantity: transferData.quantity,
+            status: transferData.status,
+            type: transferData.type,
+            shops_mobiletransferHistory_fromshopToshops: {
+              connect: { id: transferData.fromShop },
+            },
+            shops_mobiletransferHistory_toshopToshops: {
+              connect: { id: transferData.toShop },
+            },
+            actors_mobiletransferHistory_transferdByToactors: {
+              connect: { id: transferData.transferdBy },
+            },
+            mobiles: {
+              connect: { id: id },
+            },
           },
-          shops_mobiletransferHistory_toshopToshops: {
-            connect: { id: transferData.toShop },
-          },
-          actors_mobiletransferHistory_transferdByToactors: {
-            connect: { id: transferData.transferdBy },
-          },
-          mobiles: {
-            connect: { id: id },
-          },
-        },
-      });
+        });
       return createdTransferHistory;
     } catch (err) {
       console.log("err", err);
@@ -151,7 +154,11 @@ class phoneinventoryrepository {
   async createPhonewithFinaceDetails(payload) {
     try {
       const { phoneDetails, shopId, user, supplierId, paymentStatus } = payload;
-      const newMobileProduct = await this.createphoneStock({ ...phoneDetails, supplierId, paymentStatus });
+      const newMobileProduct = await this.createphoneStock({
+        ...phoneDetails,
+        supplierId,
+        paymentStatus,
+      });
       const createPhoneMetaData = await this.createHistory({
         user,
         shopId,
@@ -171,22 +178,25 @@ class phoneinventoryrepository {
     }
   }
 
-  async createphoneStock({
-    CategoryId,
-    IMEI,
-    productcost,
-    color,
-    commission,
-    discount,
-    availableStock,
-    faultyItems,
-    supplierName,
-    batchNumber,
-    productType,
-    storage,
-    supplierId,
-    paymentStatus,
-  }, tx) {
+  async createphoneStock(
+    {
+      CategoryId,
+      IMEI,
+      productcost,
+      color,
+      commission,
+      discount,
+      availableStock,
+      faultyItems,
+      supplierName,
+      batchNumber,
+      productType,
+      storage,
+      supplierId,
+      paymentStatus,
+    },
+    tx
+  ) {
     const prismaClient = tx || prisma;
     try {
       const category = parseInt(CategoryId, 10);
@@ -228,8 +238,6 @@ class phoneinventoryrepository {
       }
     }
   }
-
-
 
   async createHistory({ productId, user, type, shopId }, tx) {
     const prismaClient = tx || prisma;
@@ -377,9 +385,10 @@ class phoneinventoryrepository {
       );
     }
   }
-  async findMobileTransferHistory(id) {
+  async findMobileTransferHistory(id, tx) {
     try {
-      const mobileItems = await prisma.mobiletransferHistory.findUnique({
+      const PrismaClient = tx || this.prisma;
+      const mobileItems = await PrismaClient.mobiletransferHistory.findUnique({
         where: {
           id: id,
         },
@@ -482,14 +491,13 @@ class phoneinventoryrepository {
             select: {
               itemName: true,
               itemModel: true,
-
             },
           },
           Supplier: {
             select: {
-              name: true
-            }
-          }
+              name: true,
+            },
+          },
         },
       });
       //console.log(productFound);
@@ -769,12 +777,12 @@ class phoneinventoryrepository {
       const prismaClient = tx || this.prisma;
       return await prismaClient.mobileItems.delete({
         where: {
-          id: mobileItemId
-        }
-      })
+          id: mobileItemId,
+        },
+      });
     } catch (err) {
-      console.log("error deleting mobile item", err)
-      throw new InternalServerError()
+      console.log("error deleting mobile item", err);
+      throw new InternalServerError();
     }
   }
 
@@ -798,7 +806,7 @@ class phoneinventoryrepository {
       });
       return updatedPhone;
     } catch (err) {
-      console.log("error displayed", err)
+      console.log("error displayed", err);
       throw new InternalServerError();
     }
   }
