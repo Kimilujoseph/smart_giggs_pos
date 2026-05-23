@@ -3,3 +3,4 @@ node_modules/
 .env.dev
 src/public/barcodes
 *.md
+node_cron_test.js

@@ -1,5 +1,5 @@
 import { PrismaClient } from "@prisma/client";
-import { APIError, STATUS_CODE } from "../../Utils/app-error.js";
+import { APIError, STATUS_CODE, InternalServerError } from "../../Utils/app-error.js";
 
 const prisma = new PrismaClient();
 
@@ -29,7 +29,7 @@ class AnalyticsRepository {
         whereClause.financeStatus = financeStatus;
       }
 
-      console.log("whre clause generated", whereClause)
+      // console.log("whre clause generated", whereClause)
 
       const result = await prisma.dailySalesAnalytics.aggregate({
         where: whereClause,
@@ -50,7 +50,7 @@ class AnalyticsRepository {
         totalfinanceAmount: Number(result._sum.totalfinanceAmount) || 0,
       };
     } catch (err) {
-      console.error("Analytics Repository Error:", err);
+      //console.error("Analytics Repository Error:", err);
       throw new APIError(
         "Database Error",
         STATUS_CODE.INTERNAL_ERROR,
@@ -94,7 +94,7 @@ class AnalyticsRepository {
 
       return results;
     } catch (err) {
-      console.error("Analytics Repository Error:", err);
+      // console.error("Analytics Repository Error:", err);
       throw new APIError(
         "Database Error",
         STATUS_CODE.INTERNAL_ERROR,
@@ -132,7 +132,7 @@ class AnalyticsRepository {
 
       return results;
     } catch (err) {
-      console.error("Analytics Repository Error:", err);
+      //console.error("Analytics Repository Error:", err);
       throw new APIError(
         "Database Error",
         STATUS_CODE.INTERNAL_ERROR,
@@ -174,7 +174,7 @@ class AnalyticsRepository {
 
       return results;
     } catch (err) {
-      console.error("Analytics Repository Error:", err);
+      //  console.error("Analytics Repository Error:", err);
       throw new APIError(
         "Database Error",
         STATUS_CODE.INTERNAL_ERROR,

@@ -1,6 +1,6 @@
 import { AnalyticsRepository } from '../databases/repository/analytics-repository.js';
 import { Sales } from '../databases/repository/sales-repository.js';
-import { APIError, STATUS_CODE } from '../Utils/app-error.js';
+import { APIError, STATUS_CODE, InternalServerError } from '../Utils/app-error.js';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
@@ -32,7 +32,7 @@ class AnalyticsService {
 
             const enrichedData = topProductsData.map(p => {
                 const details = categoryDetails.get(p.categoryId);
-                console.log("categories@@@@@@@@@@@", details)
+                // console.log("categories@@@@@@@@@@@", details)
                 return {
                     productId: p.productId,
                     productName: details ? `${details.brand} ${details.name}` : 'Unknown',
@@ -44,15 +44,7 @@ class AnalyticsService {
 
             return enrichedData;
         } catch (err) {
-            console.log("@#@@#", err)
-            if (err instanceof APIError) {
-                throw err;
-            }
-            throw new APIError(
-                "Service Error",
-                STATUS_CODE.INTERNAL_ERROR,
-                "Failed to get top products analytics"
-            );
+            throw new InternalServerError("Internal server error")
         }
     }
 
@@ -61,6 +53,8 @@ class AnalyticsService {
     async getShopPerformanceSummary(options) {
         try {
             const summaryData = await this.repository.getShopPerformanceSummary(options);
+
+            //console.log("$#$#$", summaryData)
 
             const shopIds = summaryData.map(s => s.shopId);
 
@@ -87,17 +81,10 @@ class AnalyticsService {
                     totalfinanceAmount: s._sum.totalfinanceAmount,
                 }
             });
-
+            //console.log("enriched data", enrichedData)
             return enrichedData;
         } catch (err) {
-            if (err instanceof APIError) {
-                throw err;
-            }
-            throw new APIError(
-                "Service Error",
-                STATUS_CODE.INTERNAL_ERROR,
-                "Failed to get shop performance summary"
-            );
+            throw new InternalServerError("Internal server error")
         }
     }
 
@@ -118,14 +105,7 @@ class AnalyticsService {
 
             return enrichedData;
         } catch (err) {
-            if (err instanceof APIError) {
-                throw err;
-            }
-            throw new APIError(
-                "Service Error",
-                STATUS_CODE.INTERNAL_ERROR,
-                "Failed to get sales by status"
-            );
+            throw new InternalServerError("Internal server error")
         }
     }
 }

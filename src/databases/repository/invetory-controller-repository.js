@@ -1,12 +1,16 @@
 // databases/repository/invetory-controller-repository.js
 //import { PrismaClient } from "@prisma/client";
-import prisma from "../client.js"
+import prisma from "../client.js";
 //const prisma = new PrismaClient();
-import { APIError, STATUS_CODE, InternalServerError } from "../../Utils/app-error.js";
+import {
+  APIError,
+  STATUS_CODE,
+  InternalServerError,
+} from "../../Utils/app-error.js";
 
 class InventorymanagementRepository {
   constructor() {
-    this.prisma = prisma
+    this.prisma = prisma;
   }
   async createAccesoryProduct(accessoryDetails, user, shopId) {
     try {
@@ -29,37 +33,34 @@ class InventorymanagementRepository {
 
   async findAccessoryItemProduct(accessoryId, tx) {
     try {
-      const prismaClient = tx || this.prisma
+      const prismaClient = tx || this.prisma;
       const accessoryItem = await prismaClient.accessoryItems.findUnique({
-        where: { id: accessoryId }
-      })
-      return accessoryItem
-    }
-    catch (err) {
+        where: { id: accessoryId },
+      });
+      return accessoryItem;
+    } catch (err) {
       //console.log(err)
-      throw new InternalServerError()
+      throw new InternalServerError();
     }
   }
 
-
   async findProductExistInShop(accessoryId, shopId, tx) {
-
-    const prismaClient = tx || this.prisma
+    const prismaClient = tx || this.prisma;
     try {
       const product = await prismaClient.accessoryItems.findFirst({
         where: {
           accessoryID: accessoryId,
-          shopID: shopId
-        }
-      })
-      return product
+          shopID: shopId,
+        },
+      });
+      return product;
     } catch (err) {
-      console.log(err)
+      console.log(err);
       throw new APIError(
         "database error",
         STATUS_CODE.INTERNAL_ERROR,
         "Internal server error"
-      )
+      );
     }
   }
   async createnewAccessoryStock(accessoryDetails) {
@@ -130,14 +131,15 @@ class InventorymanagementRepository {
   //update the sales of the accessory produtct
   async updateSalesAccessoryStock({ id, quantity, shopId, sellerId }) {
     try {
-      const updatedSalesoftheAccessory = await this.prisma.accessoryHistory.create({
-        data: {
-          productID: id,
-          quantity: quantity,
-          shopId: shopId,
-          addedBy: sellerId,
-        },
-      });
+      const updatedSalesoftheAccessory =
+        await this.prisma.accessoryHistory.create({
+          data: {
+            productID: id,
+            quantity: quantity,
+            shopId: shopId,
+            addedBy: sellerId,
+          },
+        });
       return updatedSalesoftheAccessory;
     } catch (err) {
       console.log("updateError", err);
@@ -282,6 +284,27 @@ class InventorymanagementRepository {
     }
   }
 
+  //a minimal way for fetching the history for a given purpose #i only need the from shop id
+
+  async findAccessoryTransferHistory(transferId, tx) {
+    try {
+      const prismaclient = tx || this.prisma;
+      const transferHistrory =
+        await prismaclient.accessorytransferhistory.findUnique({
+          where: {
+            id: transferId,
+          },
+        });
+      return transferHistrory;
+    } catch (err) {
+      throw new APIError(
+        "database error",
+        STATUS_CODE.INTERNAL_ERROR,
+        "internal server error"
+      );
+    }
+  }
+
   async capturespecificproductfortransferhistory({ id, page, limit }) {
     try {
       const productId = parseInt(id, 10);
@@ -379,7 +402,6 @@ class InventorymanagementRepository {
       const createdTransferHistory =
         await prismaClient.accessorytransferhistory.create({
           data: {
-
             quantity: transferData.quantity,
             status: transferData.status,
             type: transferData.type,
@@ -430,7 +452,11 @@ class InventorymanagementRepository {
       );
     }
   }
-  async decrementAccessoryItemQuantity(accessoryItemId, quantityToDecrement, tx) {
+  async decrementAccessoryItemQuantity(
+    accessoryItemId,
+    quantityToDecrement,
+    tx
+  ) {
     const prismaClient = tx || this.prisma;
     try {
       const accessoryItem = await prismaClient.accessoryItems.findUnique({
@@ -458,7 +484,9 @@ class InventorymanagementRepository {
         throw err;
       }
       console.error("Error decrementing accessory item quantity:", err);
-      throw new InternalServerError("Failed to decrement accessory item quantity.");
+      throw new InternalServerError(
+        "Failed to decrement accessory item quantity."
+      );
     }
   }
   async updateTransferHistory(id, updates, tx) {
@@ -607,7 +635,7 @@ class InventorymanagementRepository {
     }
   }
 
-  //update accessories 
+  //update accessories
   async updateAccessoriesOnReversal(productId, quantity, tx) {
     try {
       const prismaClient = tx || this.prisma;
@@ -626,7 +654,12 @@ class InventorymanagementRepository {
     }
   }
 
-  async addOrIncrementAccessoryItemInShop(productId, shopId, quantityToAdd, tx) {
+  async addOrIncrementAccessoryItemInShop(
+    productId,
+    shopId,
+    quantityToAdd,
+    tx
+  ) {
     try {
       const prismaClient = tx || this.prisma;
 
@@ -669,11 +702,16 @@ class InventorymanagementRepository {
         });
       }
     } catch (err) {
-      console.error("Error adding or incrementing accessory item in shop:", err);
+      console.error(
+        "Error adding or incrementing accessory item in shop:",
+        err
+      );
       if (err instanceof NotFoundError) {
         throw err;
       }
-      throw new InternalServerError("Failed to add or increment accessory item in shop.");
+      throw new InternalServerError(
+        "Failed to add or increment accessory item in shop."
+      );
     }
   }
 }

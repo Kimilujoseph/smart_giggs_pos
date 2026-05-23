@@ -234,7 +234,7 @@ class salesmanagment {
     const parsedStartDate = startDate;
     const parsedEndDate = endDate;
 
-    console.log("parsed start date", parsedStartDate, "parsed end date", parsedEndDate)
+    //console.log("parsed start date", parsedStartDate, "parsed end date", parsedEndDate)
 
     const historicalEndDate = parsedEndDate < today ? parsedEndDate : today;
     const historicalTotals = await this.analytics.getSalesAnalytics({
@@ -329,7 +329,7 @@ class salesmanagment {
 
   async generategeneralsales(filters) {
     try {
-      console.log("filter when fetching general sales ", filters)
+      //console.log("filter when fetching general sales ", filters)
       return await this._getHybridSalesData(filters);
     } catch (err) {
       this.handleServiceError(err);

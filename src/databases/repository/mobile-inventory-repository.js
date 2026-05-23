@@ -385,9 +385,10 @@ class phoneinventoryrepository {
       );
     }
   }
-  async findMobileTransferHistory(id) {
+  async findMobileTransferHistory(id, tx) {
     try {
-      const mobileItems = await prisma.mobiletransferHistory.findUnique({
+      const PrismaClient = tx || this.prisma;
+      const mobileItems = await PrismaClient.mobiletransferHistory.findUnique({
         where: {
           id: id,
         },

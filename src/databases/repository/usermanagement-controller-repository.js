@@ -145,6 +145,7 @@ class usermanagemenRepository {
             select: {
               shopName: true,
               address: true,
+              id: true
             },
           },
 

@@ -1,5 +1,6 @@
 import express from "express";
 import verifyUser from "../../middleware/verification.js";
+import { generalAuthorization, Authorization } from "../../middleware/Authorization.js";
 import {
   addNewAccessoryProduct,
   createNewProductUpdate,
@@ -11,11 +12,12 @@ import {
   findSpecificProductHistory,
 } from "../controllers/accessory-management-controller.js";
 
+
 const router = express.Router();
 
-router.post("/add-accessory-stock", verifyUser, addNewAccessoryProduct);
-router.get("/accessory", verifyUser, findAllAccessoryProduct);
-router.get("/profile/accessory/:id", verifyUser, findSpecificAccessoryProduct);
+router.post("/add-accessory-stock", verifyUser, Authorization, addNewAccessoryProduct);
+router.get("/accessory", verifyUser, Authorization, findAllAccessoryProduct);
+router.get("/profile/accessory/:id", verifyUser, Authorization, findSpecificAccessoryProduct);
 router.get("/accessory/item/history/:id", findSpecificProductHistory);
 router.get(
   "/accessory/item/transferhistory/:id",
@@ -23,10 +25,10 @@ router.get(
 );
 router.delete(
   "/create-accessory-deletion/:id",
-  verifyUser,
+  verifyUser, Authorization,
   createNewSoftDeletion
 );
 router.post("/confirm/accessory/", verifyUser, confirmAccessoryArrival);
-router.put("/update-accessory-product/:id", verifyUser, createNewProductUpdate);
+router.put("/update-accessory-product/:id", verifyUser, Authorization, createNewProductUpdate);
 
 export default router;

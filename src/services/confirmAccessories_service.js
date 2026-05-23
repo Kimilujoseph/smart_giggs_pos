@@ -1,6 +1,6 @@
 import { InventorymanagementRepository } from "../databases/repository/invetory-controller-repository.js";
 import { ShopmanagementRepository } from "../databases/repository/shop-repository.js";
-import { APIError, STATUS_CODE } from "../Utils/app-error.js";
+import { APIError, STATUS_CODE, ValidationError, NotFoundError, AuthorizationError } from "../Utils/app-error.js";
 import prisma from "../databases/client.js";
 
 class ConfirmAccessorymanagementService {
@@ -11,103 +11,81 @@ class ConfirmAccessorymanagementService {
     };
   }
   async confirmDistribution(confirmdeliverydetails) {
-    try {
-      const { id, shopname, userId, productId, quantity, transferId } =
-        confirmdeliverydetails;
 
-      const [
-        accessoryItemId,
+    const { id, shopname, userId, productId, quantity, transferId } =
+      confirmdeliverydetails;
+
+    const [
+      accessoryItemId,
+      stockId,
+      transferproductId,
+      parsedQuantity,
+      parsedTransferId,
+      parsedUserId,
+    ] = [
+        parseInt(id, 10),
+        parseInt(productId, 10),
+        parseInt(transferId, 10),
+        parseInt(quantity, 10),
+        parseInt(transferId, 10),
+        parseInt(userId, 10),
+      ];
+
+    if (
+      [accessoryItemId,
         stockId,
         transferproductId,
         parsedQuantity,
         parsedTransferId,
         parsedUserId,
-      ] = [
-          parseInt(id, 10),
-          parseInt(productId, 10),
-          parseInt(transferId, 10),
-          parseInt(quantity, 10),
-          parseInt(transferId, 10),
-          parseInt(userId, 10),
-        ];
-
-      if (
-        [accessoryItemId,
-          stockId,
-          transferproductId,
-          parsedQuantity,
-          parsedTransferId,
-          parsedUserId,
-        ].some(isNaN)
-      ) {
-        throw new APIError(
-          "bad request",
-          STATUS_CODE.BAD_REQUEST,
-          "Invalid values provided"
-        );
-      }
-
-      await prisma.$transaction(async (tx) => {
-        let [accessoryProduct, shopAccessoryItem, shopFound] = await Promise.all([
-          this.repository.inventory.findProductById(stockId, tx),
-          this.repository.inventory.findAccessoryItemProduct(accessoryItemId, tx),
-          this.repository.shop.findShop({ name: shopname }, tx),
-        ]);
-
-        this.validationProcess(accessoryProduct, shopFound, parsedUserId);
-        const newAccessory = this.findTheAccessory(
-          shopAccessoryItem,
-          shopFound,
-          parsedTransferId,
-          parsedQuantity
-        );
-        const shopId = parseInt(shopFound.id);
-        const accessoryId = newAccessory.accessoryID;
-        await this.transferProcess(
-          parsedTransferId,
-          parsedUserId,
-          shopId,
-          accessoryItemId,
-          tx
-        );
-      });
-    } catch (err) {
-      console.log("error", err)
-      if (err instanceof APIError) {
-        throw err;
-      }
-      throw new APIError(
-        "Distribution service error",
-        STATUS_CODE.INTERNAL_ERROR,
-        "Internal server error"
-      );
+      ].some(isNaN)
+    ) {
+      throw new ValidationError("invalid values provided")
     }
+
+    await prisma.$transaction(async (tx) => {
+      let [accessoryProduct, shopAccessoryItem, shopFound] = await Promise.all([
+        this.repository.inventory.findProductById(stockId, tx),
+        this.repository.inventory.findAccessoryItemProduct(accessoryItemId, tx),
+        this.repository.shop.findShop({ name: shopname }, tx),
+      ]);
+
+      this.validationProcess(accessoryProduct, shopFound, parsedUserId);
+      const newAccessory = this.findTheAccessory(
+        shopAccessoryItem,
+        shopFound,
+        parsedTransferId,
+        parsedQuantity
+      );
+      const shopId = parseInt(shopFound.id);
+      const accessoryId = newAccessory.accessoryID;
+      await this.transferProcess(
+        parsedTransferId,
+        parsedUserId,
+        shopId,
+        accessoryItemId,
+        tx
+      );
+    });
+
   }
 
   validationProcess(accessoryProduct, shopFound, parsedUserId) {
     if (!accessoryProduct) {
-      throw new APIError(
-        "Product not found",
-        STATUS_CODE.NOT_FOUND,
-        "Product not found"
-      );
+      throw new NotFoundError("accessory product not found")
     }
     if (["deleted", "suspended"].includes(accessoryProduct.stockStatus)) {
-      throw new APIError(
-        "Bad Request",
-        STATUS_CODE.BAD_REQUEST,
+      throw new ValidationError(
         `this product is ${accessoryProduct.stockStatus}`
       );
     }
     if (!shopFound) {
-      throw new APIError("not found", STATUS_CODE.NOT_FOUND, "SHOP NOT FOUND");
+      throw new NotFoundError("SHOP NOT FOUND");
     }
     if (
       !shopFound.assignment.some((seller) => seller.actors.id === parsedUserId)
     ) {
-      throw new APIError(
-        "Unauthorized",
-        STATUS_CODE.UNAUTHORIZED,
+      throw new AuthorizationError(
         "You are not authorized to confirm arrival"
       );
     }
@@ -116,24 +94,18 @@ class ConfirmAccessorymanagementService {
   findTheAccessory(newAccessory, shopFound, parsedTransferId, quantity) {
 
     if (!newAccessory) {
-      throw new APIError(
-        "not found",
-        STATUS_CODE.NOT_FOUND,
+      throw new NotFoundError(
         " NEW ACCESSORY  NOT FOUND"
       );
     }
     if (newAccessory.status === "confirmed" && newAccessory.shopID !== shopFound.id && newAccessory.transferId !== parsedTransferId) {
-      throw new APIError(
-        "Bad Request",
-        STATUS_CODE.BAD_REQUEST,
+      throw new ValidationError(
         "Accessory product is not available for confirmation."
       );
     }
 
     if (newAccessory.quantity < quantity) {
-      throw new APIError(
-        "Bad Request",
-        STATUS_CODE.BAD_REQUEST,
+      throw new ValidationError(
         "The quantity being confirmed exceeds the quantity that was transferred."
       );
     }

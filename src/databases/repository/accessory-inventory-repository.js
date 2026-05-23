@@ -1,5 +1,5 @@
 import { PrismaClient } from "@prisma/client";
-import { APIError, STATUS_CODE } from "../../Utils/app-error.js";
+import { APIError, DuplicationError, InternalServerError, NotFoundError, STATUS_CODE } from "../../Utils/app-error.js";
 
 const prisma = new PrismaClient();
 
@@ -22,14 +22,10 @@ class AccessoryInventoryRepository {
       return newAccessoryProduct;
     } catch (err) {
       //console.log("Error creating accessory with finance details:", err);
-      if (err instanceof APIError) {
+      if (err instanceof InternalServerError || err instanceof DuplicationError) {
         throw err;
       }
-      throw new APIError(
-        "Server Error",
-        STATUS_CODE.INTERNAL_ERROR,
-        "Unable to create new accessory"
-      );
+      throw new InternalServerError("Internal server error")
     }
   }
 
@@ -72,17 +68,9 @@ class AccessoryInventoryRepository {
       return stock;
     } catch (err) {
       if (err.code === "P2002") {
-        throw new APIError(
-          "Duplicate Key Error",
-          STATUS_CODE.BAD_REQUEST,
-          `An accessory with the same batch number already exists.`
-        );
+        throw new DuplicationError("same product batch may exist")
       }
-      throw new APIError(
-        "API Error",
-        STATUS_CODE.INTERNAL_ERROR,
-        "Unable to create new accessory stock"
-      );
+      throw new InternalServerError("internal server error")
     }
   }
 
@@ -123,12 +111,8 @@ class AccessoryInventoryRepository {
       });
       return createHistory;
     } catch (err) {
-      console.error("Error in createHistory:", err);
-      throw new APIError(
-        "Database Error",
-        STATUS_CODE.INTERNAL_ERROR,
-        "Internal server error"
-      );
+      //console.error("Error in createHistory:", err);
+      throw new InternalServerError("Internal server error")
     }
   }
 
@@ -216,9 +200,7 @@ class AccessoryInventoryRepository {
       });
       return updatedTransferHistory;
     } catch (err) {
-      throw new APIError(
-        "Internal Server Error",
-        STATUS_CODE.INTERNAL_ERROR,
+      throw new InternalServerError(
         "Internal server error "
       );
     }
@@ -241,9 +223,7 @@ class AccessoryInventoryRepository {
       });
       return updatedAccessory;
     } catch (err) {
-      throw new APIError(
-        "Database Error",
-        STATUS_CODE.INTERNAL_ERROR,
+      throw new InternalServerError(
         "Internal server error"
       );
     }
@@ -256,6 +236,7 @@ class AccessoryInventoryRepository {
           id: accessoryId,
         },
         data: {
+
           ...updates,
           updatedAt: new Date(),
         },
@@ -280,6 +261,41 @@ class AccessoryInventoryRepository {
         "Database Error",
         STATUS_CODE.INTERNAL_ERROR,
         err.message || "Unable to update the accessory"
+      );
+    }
+  }
+
+  async updateFaultyAccessoryStock(accessoryId, updates, user, shopId, tx) {
+    try {
+      const prismaClient = tx || prisma;
+      const { faultyItems } = updates;
+      const updatedAccessory = await prismaClient.accessories.update({
+        where: {
+          id: accessoryId,
+        },
+        data: {
+          faultyItems: { increment: faultyItems },
+          availableStock: { decrement: faultyItems },
+          // stockStatus: updates?.stockStatus || "availble",
+          // productType: updates?.productType || "accessories",
+          updatedAt: new Date(),
+        },
+      });
+      await this.createHistory({
+        user,
+        shopId,
+        quantity: faultyItems,
+        productId: accessoryId,
+        type: "faulty",
+
+      }, tx);
+      return updatedAccessory;
+
+    } catch (err) {
+      throw new APIError(
+        "Database Error",
+        STATUS_CODE.INTERNAL_ERROR,
+        err.message || "Internal server error"
       );
     }
   }
@@ -395,10 +411,8 @@ class AccessoryInventoryRepository {
 
       return { stockAvailable, totalItems };
     } catch (err) {
-      if (err instanceof APIError) {
-        throw err;
-      }
-      throw new APIError("Database Error", STATUS_CODE.INTERNAL_ERROR);
+
+      throw new InternalServerError("Internal server error");
     }
   }
 
@@ -426,16 +440,15 @@ class AccessoryInventoryRepository {
           }
         },
       });
+      if (!productFound) {
+        throw new NotFoundError("this spefic product is not found")
+      }
       return productFound;
     } catch (err) {
-      if (err instanceof APIError) {
+      if (err instanceof NotFoundError) {
         throw err;
       }
-      throw new APIError(
-        "Database Error",
-        STATUS_CODE.INTERNAL_ERROR,
-        "Internal server error"
-      );
+      throw new InternalServerError("internal server error")
     }
   }
 
@@ -469,19 +482,10 @@ class AccessoryInventoryRepository {
           },
         },
       });
-      if (!productFound) {
-        throw new APIError("Not Found", STATUS_CODE.NOT_FOUND, "Not found");
-      }
+
       return productFound;
     } catch (err) {
-      if (err instanceof APIError) {
-        throw err;
-      }
-      throw new APIError(
-        "Database Error",
-        STATUS_CODE.INTERNAL_ERROR,
-        "Internal server error"
-      );
+      throw new InternalServerError("internal server error")
     }
   }
 
@@ -509,12 +513,9 @@ class AccessoryInventoryRepository {
       });
       return productHistory;
     } catch (err) {
-      if (err instanceof APIError) {
-        throw err;
-      }
-      throw new APIError(
-        "Database Error",
-        STATUS_CODE.INTERNAL_ERROR,
+
+      throw new InternalServerError(
+
         "Internal server error"
       );
     }
@@ -535,9 +536,7 @@ class AccessoryInventoryRepository {
       });
       return updatedTransfer;
     } catch (err) {
-      throw new APIError(
-        "Database Transfer Error",
-        STATUS_CODE.INTERNAL_ERROR,
+      throw new InternalServerError(
         "Internal server error"
       );
     }
@@ -675,23 +674,10 @@ class AccessoryInventoryRepository {
         },
       });
 
-      if (!deletedAccessory) {
-        throw new APIError(
-          "Product not found",
-          STATUS_CODE.NOT_FOUND,
-          "Product not found"
-        );
-      }
+
       return deletedAccessory;
     } catch (err) {
-      if (err instanceof APIError) {
-        throw err;
-      }
-      throw new APIError(
-        "Database Error",
-        STATUS_CODE.INTERNAL_ERROR,
-        "Internal server error"
-      );
+      throw new InternalServerError("Internal server error")
     }
   }
 }
