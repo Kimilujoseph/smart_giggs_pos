@@ -195,7 +195,7 @@ class distributionService {
           "The selected Item is already sold and cannot be reversed."
         );
       }
-      console.log("stock item for reversal", stockItem);
+      // console.log("stock item for reversal", stockItem);
       const productId = isMobile ? stockItem.mobileID : stockItem.accessoryID;
       const originalTransferHistory = isMobile
         ? await this.mobile.findMobileTransferHistory(stockItem.transferId, tx)
@@ -210,12 +210,12 @@ class distributionService {
 
       let reverseToShopId;
       let warehouseShop;
-      console.log(
-        "original transfer history for reversal",
-        originalTransferHistory
-      );
+      // console.log(
+      //   "original transfer history for reversal",
+      //   originalTransferHistory
+      // );
 
-      if (originalTransferHistory.type === "distribution") {
+      if (originalTransferHistory.type === "distribution" || "reverse") {
         // Reversing a distribution: item goes back to warehouse
         warehouseShop = await this.shop.findShop({ name: "WareHouse" }, tx);
         if (!warehouseShop) {
@@ -240,7 +240,6 @@ class distributionService {
         );
       }
 
-      // --- 1. Remove from current shop (where item is being reversed from) ---
       if (isMobile) {
         await this.mobile.decrementMobileItemQuantity(
           productItemId,
