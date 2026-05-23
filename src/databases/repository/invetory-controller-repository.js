@@ -658,6 +658,7 @@ class InventorymanagementRepository {
     productId,
     shopId,
     quantityToAdd,
+    transferId,
     tx
   ) {
     try {
@@ -693,11 +694,11 @@ class InventorymanagementRepository {
             accessoryID: productId,
             shopID: shopId,
             quantity: quantityToAdd,
-            status: "confirmed", // Assuming it becomes confirmed upon return
+            status: "pending",
             productStatus: "return of product",
             createdAt: new Date(),
             updatedAt: new Date(),
-            // transferId could be null or linked to the reversal transfer history
+            transferId: transferId,
           },
         });
       }

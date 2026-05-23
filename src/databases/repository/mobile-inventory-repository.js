@@ -411,6 +411,7 @@ class phoneinventoryrepository {
       });
       return mobileItems;
     } catch (err) {
+      console.log("error on find", err);
       throw new APIError(
         "internal server error",
         STATUS_CODE.INTERNAL_ERROR,
@@ -847,7 +848,13 @@ class phoneinventoryrepository {
     }
   }
 
-  async addOrIncrementMobileItemInShop(productId, shopId, quantityToAdd, tx) {
+  async addOrIncrementMobileItemInShop(
+    productId,
+    shopId,
+    quantityToAdd,
+    transferId,
+    tx
+  ) {
     try {
       const prismaClient = tx || this.prisma;
 
@@ -866,7 +873,7 @@ class phoneinventoryrepository {
             quantity: {
               increment: quantityToAdd,
             },
-            status: "confirmed",
+            status: "pending",
             updatedAt: new Date(),
           },
         });
@@ -889,11 +896,11 @@ class phoneinventoryrepository {
             mobileID: productId,
             shopID: shopId,
             quantity: quantityToAdd,
-            status: "confirmed",
+            status: "pending",
             productStatus: "return of product",
             createdAt: new Date(),
             updatedAt: new Date(),
-            // transferId could be null or linked to the reversal transfer history
+            transferId: transferId,
           },
         });
       }

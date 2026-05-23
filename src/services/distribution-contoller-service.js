@@ -172,7 +172,7 @@ class distributionService {
     } = distributionDetails;
     return prisma.$transaction(async (tx) => {
       const isMobile = productType === "mobile";
-
+      //console.log("reverse distribution details", distributionDetails);
       const currentShopObject = await this.shop.findShop(
         { name: currentFromShopName },
         tx
@@ -195,7 +195,7 @@ class distributionService {
           "The selected Item is already sold and cannot be reversed."
         );
       }
-
+      console.log("stock item for reversal", stockItem);
       const productId = isMobile ? stockItem.mobileID : stockItem.accessoryID;
       const originalTransferHistory = isMobile
         ? await this.mobile.findMobileTransferHistory(stockItem.transferId, tx)
@@ -210,8 +210,11 @@ class distributionService {
 
       let reverseToShopId;
       let warehouseShop;
+      console.log(
+        "original transfer history for reversal",
+        originalTransferHistory
+      );
 
-      // Determine the destination for the reversal
       if (originalTransferHistory.type === "distribution") {
         // Reversing a distribution: item goes back to warehouse
         warehouseShop = await this.shop.findShop({ name: "WareHouse" }, tx);
@@ -251,46 +254,13 @@ class distributionService {
           tx
         );
       }
-
-      // --- 2. Add to destination shop (or main stock) ---
-      if (originalTransferHistory.type === "distribution") {
-        // Add to main mobiles/accessories stock (Warehouse)
-        if (isMobile) {
-          await this.mobile.updateMobileReversalStock(productId, quantity, tx); // Increments main 'mobiles' availableStock
-        } else {
-          await this.repository.updateAccessoriesOnReversal(
-            productId,
-            quantity,
-            tx
-          ); // Increments main 'accessories' availableStock
-        }
-      } else if (originalTransferHistory.type === "transfer") {
-        // Add to original sending shop's mobileItems/accessoryItems
-        if (isMobile) {
-          await this.mobile.addOrIncrementMobileItemInShop(
-            productId,
-            reverseToShopId,
-            quantity,
-            tx
-          );
-        } else {
-          await this.repository.addOrIncrementAccessoryItemInShop(
-            productId,
-            reverseToShopId,
-            quantity,
-            tx
-          );
-        }
-      }
-
-      // --- 3. Create transfer history for reversal ---
       const createdReverse = isMobile
         ? await this.mobile.createTransferHistory(
             productId,
             {
               quantity: quantity,
-              fromShop: currentShopObject.id, // Item is coming from here
-              toShop: reverseToShopId, // Item is going back to here
+              fromShop: currentShopObject.id,
+              toShop: reverseToShopId,
               status: "completed",
               transferdBy: userId,
               type: "reverse",
@@ -301,14 +271,44 @@ class distributionService {
             productId,
             {
               quantity: quantity,
-              fromShop: currentShopObject.id, // Item is coming from here
-              toShop: reverseToShopId, // Item is going back to here
+              fromShop: currentShopObject.id,
+              toShop: reverseToShopId,
               status: "completed",
               transferdBy: userId,
               type: "reverse",
             },
             tx
           );
+      if (originalTransferHistory.type === "distribution") {
+        if (isMobile) {
+          await this.mobile.updateMobileReversalStock(productId, quantity, tx);
+        } else {
+          await this.repository.updateAccessoriesOnReversal(
+            productId,
+            quantity,
+            tx
+          );
+        }
+      } else if (originalTransferHistory.type === "transfer") {
+        // Add to original sending shop's mobileItems/accessoryItems
+        if (isMobile) {
+          await this.mobile.addOrIncrementMobileItemInShop(
+            productId,
+            reverseToShopId,
+            quantity,
+            createdReverse.id,
+            tx
+          );
+        } else {
+          await this.repository.addOrIncrementAccessoryItemInShop(
+            productId,
+            reverseToShopId,
+            quantity,
+            createdReverse.id,
+            tx
+          );
+        }
+      }
 
       return "Reversal completed successfully";
     });
