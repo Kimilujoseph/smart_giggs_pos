@@ -13,9 +13,9 @@ const getSpecificShop = async (req, res, next) => {
       page: parseInt(page) || 1,
       limit: parseInt(limit) || 10,
       status,
-      itemType
+      itemType,
     });
-    console.log("peding stockk", getSpecificShop)
+    console.log("peding stockk", getSpecificShop);
     return res.status(200).json({ message: "success", shop: getSpecificShop });
   } catch (err) {
     if (err instanceof APIError) {
@@ -78,7 +78,7 @@ const findSpecificShopItem = async (req, res, next) => {
       requestedItem,
       page: parseInt(page),
       limit: parseInt(limit),
-      status
+      status,
     });
     console.log(result);
     return res.status(200).json({ message: result });
@@ -179,7 +179,7 @@ const addassignment = async (req, res) => {
 const removeAssignment = async (req, res) => {
   try {
     const user = req.user;
-    if (user.role !== "manager") {
+    if (!["manager", "superuser"].includes(user.role)) {
       return res.status(403).json({ message: "unauthorised", error: true });
     }
     const { assignmentId, shopname } = req.body;
@@ -210,13 +210,11 @@ const searchproduct = async (req, res) => {
       limit
     );
 
-    return res
-      .status(200)
-      .json({
-        message: "Search successful",
-        products: search,
-        error: false
-      });
+    return res.status(200).json({
+      message: "Search successful",
+      products: search,
+      error: false,
+    });
   } catch (err) {
     if (err instanceof APIError) {
       return res
@@ -232,7 +230,11 @@ const searchproduct = async (req, res) => {
 const getShopStockOverview = async (req, res, next) => {
   try {
     const user = req.user;
-    if (user.role !== "manager" && user.role !== "superuser" && user.role !== "seller") {
+    if (
+      user.role !== "manager" &&
+      user.role !== "superuser" &&
+      user.role !== "seller"
+    ) {
       return res.status(403).json({ message: "unauthorised", error: true });
     }
     const name = req.params.name;
