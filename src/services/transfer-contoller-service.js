@@ -14,7 +14,11 @@ class transferManagementService {
   _validateQuantity(quantity) {
     const parsedQuantity = parseInt(quantity, 10);
     if (isNaN(parsedQuantity) || parsedQuantity <= 0) {
-      throw new APIError("transfer error", STATUS_CODE.BAD_REQUEST, "please insert a number for quantity");
+      throw new APIError(
+        "transfer error",
+        STATUS_CODE.BAD_REQUEST,
+        "please insert a number for quantity"
+      );
     }
     return parsedQuantity;
   }
@@ -26,22 +30,35 @@ class transferManagementService {
     ]);
 
     if (!ShopOwningtheItem || !ShoptoOwntheItem) {
-      throw new APIError("Shop not found", 404, "One of the specified shops does not exist");
+      throw new APIError(
+        "Shop not found",
+        404,
+        "One of the specified shops does not exist"
+      );
     }
 
     const shopId = parseInt(ShopOwningtheItem.id, 10);
     const shopToId = parseInt(ShoptoOwntheItem.id, 10);
 
     if (shopId === shopToId) {
-      throw new APIError("transfer error", STATUS_CODE.BAD_REQUEST, "you cannot tranfer to the same shop");
+      throw new APIError(
+        "transfer error",
+        STATUS_CODE.BAD_REQUEST,
+        "you cannot tranfer to the same shop"
+      );
     }
 
     return { ShopOwningtheItem, ShoptoOwntheItem, shopId, shopToId };
   }
 
   async _handleMobileDestinationInventory(details, tx) {
-    const { mobileId, shopToId, parsedQuantity, stockItem, distributionId } = details;
-    const existingStock = await this.mobile.findProductExistInShop(mobileId, shopToId, tx);
+    const { mobileId, shopToId, parsedQuantity, stockItem, distributionId } =
+      details;
+    const existingStock = await this.mobile.findProductExistInShop(
+      mobileId,
+      shopToId,
+      tx
+    );
 
     if (!existingStock) {
       const phoneDetails = {
@@ -66,13 +83,27 @@ class transferManagementService {
       };
       await this.shop.newAddedphoneItem(phoneDetails, tx);
     } else {
-      throw new APIError("phone inserting error", STATUS_CODE.BAD_REQUEST, "phone already exist");
+      throw new APIError(
+        "phone inserting error",
+        STATUS_CODE.BAD_REQUEST,
+        "phone already exist"
+      );
     }
   }
 
   async _handleAccessoryDestinationInventory(details, tx) {
-    const { accessoryId, shopToId, parsedQuantity, stockItem, distributionId, distributedShop } = details;
-    const existingStock = await this.repository.findProductExistInShop(accessoryId, shopToId);
+    const {
+      accessoryId,
+      shopToId,
+      parsedQuantity,
+      stockItem,
+      distributionId,
+      distributedShop,
+    } = details;
+    const existingStock = await this.repository.findProductExistInShop(
+      accessoryId,
+      shopToId
+    );
 
     if (!existingStock) {
       const stockDetails = {
@@ -94,38 +125,70 @@ class transferManagementService {
       };
       await this.shop.addNewAccessory(shopToId, stockDetails, tx);
     } else {
-      throw new APIError("enough stock already available", STATUS_CODE.BAD_REQUEST, `enough stock already exist in ${distributedShop}`);
+      throw new APIError(
+        "enough stock already available",
+        STATUS_CODE.BAD_REQUEST,
+        `enough stock already exist in ${distributedShop}`
+      );
     }
   }
 
   async createNewMobileTransfer(transferDetails) {
     return prisma.$transaction(async (tx) => {
-      const { mainShop, distributedShop, productId, productItemId, userId } = transferDetails;
+      const { mainShop, distributedShop, productId, productItemId, userId } =
+        transferDetails;
       const parsedQuantity = 1;
       const mobileId = parseInt(productId, 10);
 
-      const { shopId, shopToId } = await this._validateAndFetchShops(mainShop, distributedShop, tx);
+      const { shopId, shopToId } = await this._validateAndFetchShops(
+        mainShop,
+        distributedShop,
+        tx
+      );
 
       const [stockItem, mobileShopItem] = await Promise.all([
         this.mobile.findItem(mobileId, tx),
-        this.mobile.findMobileItem(productItemId, tx)
+        this.mobile.findMobileItem(productItemId, tx),
       ]);
 
       if (!stockItem) {
-        throw new APIError("transfer error", STATUS_CODE.BAD_REQUEST, "stock not found");
+        throw new APIError(
+          "transfer error",
+          STATUS_CODE.BAD_REQUEST,
+          "stock not found"
+        );
       } else if (stockItem.stockStatus === "faulty") {
-        throw new APIError("transfer error", STATUS_CODE.BAD_REQUEST, "stock is faulty");
+        throw new APIError(
+          "transfer error",
+          STATUS_CODE.BAD_REQUEST,
+          "stock is faulty"
+        );
       }
 
-      if (mobileShopItem.mobileID !== mobileId || mobileShopItem.status !== "confirmed") {
-        throw new APIError("transfer error", STATUS_CODE.BAD_REQUEST, `Stock not found in ${mainShop} or is not in a transferable state.`);
+      if (
+        mobileShopItem.mobileID !== mobileId ||
+        mobileShopItem.status !== "confirmed"
+      ) {
+        throw new APIError(
+          "transfer error",
+          STATUS_CODE.BAD_REQUEST,
+          `Stock not found in ${mainShop} or is not in a transferable state.`
+        );
       }
 
       if (mobileShopItem.quantity < parsedQuantity) {
-        throw new APIError("transfer error", STATUS_CODE.BAD_REQUEST, `not enough stock to transfer ${parsedQuantity} units`);
+        throw new APIError(
+          "transfer error",
+          STATUS_CODE.BAD_REQUEST,
+          `not enough stock to transfer ${parsedQuantity} units`
+        );
       }
 
-      await this.mobile.updateMobileItemsTransfer(productItemId, parsedQuantity, tx);
+      await this.mobile.updateMobileItemsTransfer(
+        productItemId,
+        parsedQuantity,
+        tx
+      );
 
       const newTransfer = {
         quantity: parsedQuantity,
@@ -136,24 +199,41 @@ class transferManagementService {
         type: "transfer",
       };
 
-      const newTransferHistory = await this.mobile.createTransferHistory(mobileId, newTransfer, tx);
-
-      await this._handleMobileDestinationInventory({
+      const newTransferHistory = await this.mobile.createTransferHistory(
         mobileId,
-        shopToId,
-        parsedQuantity,
-        stockItem,
-        distributionId: newTransferHistory.id,
-      }, tx);
+        newTransfer,
+        tx
+      );
+      //lets delete the item  from the shop inventiory and add it to the new shop inventory
+      await this.mobile.deleteMobileItem(productItemId, tx);
+      await this._handleMobileDestinationInventory(
+        {
+          mobileId,
+          shopToId,
+          parsedQuantity,
+          stockItem,
+          distributionId: newTransferHistory.id,
+        },
+        tx
+      );
     });
   }
 
   async createnewAccessoryTransfer(transferDetails) {
     return prisma.$transaction(async (tx) => {
-      const { mainShop, distributedShop, productId, productItemId, quantity, userId, transferId } = transferDetails;
+      const {
+        mainShop,
+        distributedShop,
+        productId,
+        productItemId,
+        quantity,
+        userId,
+        transferId,
+      } = transferDetails;
 
       const parsedQuantity = this._validateQuantity(quantity);
-      const { ShopOwningtheItem, shopId, shopToId } = await this._validateAndFetchShops(mainShop, distributedShop, tx);
+      const { ShopOwningtheItem, shopId, shopToId } =
+        await this._validateAndFetchShops(mainShop, distributedShop, tx);
 
       const accessoryId = parseInt(productId, 10);
       const accessoryItemId = parseInt(productItemId, 10);
@@ -162,31 +242,59 @@ class transferManagementService {
 
       const [stockItem, shopStockItem] = await Promise.all([
         this.repository.findProductById(accessoryId, tx),
-        this.repository.findAccessoryItemProduct(accessoryItemId, tx)
+        this.repository.findAccessoryItemProduct(accessoryItemId, tx),
       ]);
 
       if (!stockItem) {
         throw new APIError("product not found", STATUS_CODE.NOT_FOUND);
       }
 
-      if (stockItem.stockStatus === "deleted" || stockItem.stockStatus === "suspended") {
-        throw new APIError("bad request", STATUS_CODE.BAD_REQUEST, `the product is ${stockItem.stockStatus}`);
+      if (
+        stockItem.stockStatus === "deleted" ||
+        stockItem.stockStatus === "suspended"
+      ) {
+        throw new APIError(
+          "bad request",
+          STATUS_CODE.BAD_REQUEST,
+          `the product is ${stockItem.stockStatus}`
+        );
       }
 
-      const sellerAssinged = ShopOwningtheItem.assignment.find((seller) => seller.actors.id === sellerId);
+      const sellerAssinged = ShopOwningtheItem.assignment.find(
+        (seller) => seller.actors.id === sellerId
+      );
       if (!sellerAssinged) {
-        throw new APIError("Unauthorized", STATUS_CODE.UNAUTHORIZED, "You are not authorized to perform this action");
+        throw new APIError(
+          "Unauthorized",
+          STATUS_CODE.UNAUTHORIZED,
+          "You are not authorized to perform this action"
+        );
       }
 
-      if (shopStockItem.accessoryID !== accessoryId || shopStockItem.transferId !== itemTransferId) {
-        throw new APIError("transfer error", STATUS_CODE.BAD_REQUEST, `Stock not found in ${mainShop}`);
+      if (
+        shopStockItem.accessoryID !== accessoryId ||
+        shopStockItem.transferId !== itemTransferId
+      ) {
+        throw new APIError(
+          "transfer error",
+          STATUS_CODE.BAD_REQUEST,
+          `Stock not found in ${mainShop}`
+        );
       }
 
       if (shopStockItem.quantity < parsedQuantity) {
-        throw new APIError("transfer error", STATUS_CODE.BAD_REQUEST, `not enough stock to transfer ${parsedQuantity} units`);
+        throw new APIError(
+          "transfer error",
+          STATUS_CODE.BAD_REQUEST,
+          `not enough stock to transfer ${parsedQuantity} units`
+        );
       }
 
-      await this.repository.updateStockQuantityInAshop(accessoryItemId, parsedQuantity, tx);
+      await this.repository.updateStockQuantityInAshop(
+        accessoryItemId,
+        parsedQuantity,
+        tx
+      );
 
       const newTransfer = {
         quantity: parsedQuantity,
@@ -199,16 +307,23 @@ class transferManagementService {
         type: "transfer",
       };
 
-      const newTransferHistory = await this.repository.createTransferHistory(accessoryId, newTransfer, tx);
-
-      await this._handleAccessoryDestinationInventory({
+      const newTransferHistory = await this.repository.createTransferHistory(
         accessoryId,
-        shopToId,
-        parsedQuantity,
-        stockItem,
-        distributionId: newTransferHistory.id,
-        distributedShop,
-      }, tx);
+        newTransfer,
+        tx
+      );
+
+      await this._handleAccessoryDestinationInventory(
+        {
+          accessoryId,
+          shopToId,
+          parsedQuantity,
+          stockItem,
+          distributionId: newTransferHistory.id,
+          distributedShop,
+        },
+        tx
+      );
     });
   }
 }

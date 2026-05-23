@@ -68,7 +68,23 @@ class phoneinventoryrepository {
       );
     }
   }
-
+  async deleteMobileItem(mobilleItemId, tx) {
+    try {
+      const prismaClient = tx || this.prisma;
+      const deletedItem = await prismaClient.mobileItems.delete({
+        where: {
+          id: mobilleItemId,
+        },
+      });
+      return deletedItem;
+    } catch (err) {
+      throw new APIError(
+        "database error",
+        STATUS_CODE.INTERNAL_ERROR,
+        "internal server error "
+      );
+    }
+  }
   async findProductExistInShop(mobileId, shopId, tx) {
     const prismaClient = tx || this.prisma;
     try {
