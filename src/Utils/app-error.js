@@ -31,52 +31,44 @@ class APIError extends AppError {
 }
 
 class ValidationError extends APIError {
-  constructor(
-    description, fieldErrors = {}
-  ) {
+  constructor(description, fieldErrors = {}) {
     super("ValidationError", 400, description, true);
     this.fieldErrors = fieldErrors;
   }
 }
 
-
 class NotFoundError extends APIError {
-  constructor(
-    description
-  ) {
+  constructor(description) {
     super("NotFoundError", 404, description, true);
   }
 }
 
 class AuthorizationError extends APIError {
-  constructor(
-    description
-  ) {
+  constructor(description) {
     super("AuthorizationError", 403, description, true);
   }
 }
 
 class AuthenticationError extends APIError {
-  constructor(
-    description
-  ) {
+  constructor(description) {
     super("AuthenticationError", 401, description, true);
   }
 }
 
 class DuplicationError extends APIError {
-  constructor(
-    description
-  ) {
+  constructor(description) {
     super("Duplicate Key Error", 400, description, true);
   }
 }
 
 class InternalServerError extends APIError {
-  constructor(
-    description = "Internal Server Error"
-  ) {
+  constructor(description = "Internal Server Error") {
     super("InternalServerError", 500, description, true);
+  }
+}
+class BadRequestError extends APIError {
+  constructor(description) {
+    super("BadRequestError", 400, description, true);
   }
 }
 
@@ -89,4 +81,15 @@ const STATUS_CODE = {
   INTERNAL_ERROR: 500,
 };
 
-export { AppError, APIError, STATUS_CODE, ValidationError, NotFoundError, AuthorizationError, AuthenticationError, DuplicationError, InternalServerError };
+export {
+  AppError,
+  APIError,
+  STATUS_CODE,
+  ValidationError,
+  NotFoundError,
+  AuthorizationError,
+  AuthenticationError,
+  DuplicationError,
+  BadRequestError,
+  InternalServerError,
+};

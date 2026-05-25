@@ -7,6 +7,7 @@ import {
   NotFoundError,
   ValidationError,
   STATUS_CODE,
+  BadRequestError,
 } from "../Utils/app-error.js";
 
 class distributionService {
@@ -20,7 +21,7 @@ class distributionService {
     const { bulkDistribution, mainShop, distributedShop, userId } = bulkDetails;
 
     //async _validateAndFetchShops(manr)
-    console.log("mainshop", mainShop, distributedShop);
+    // console.log("mainshop", mainShop, distributedShop);
 
     return prisma.$transaction(async (tx) => {
       const { firstShop, secondShop } = await this.findShopsByName(
@@ -36,24 +37,17 @@ class distributionService {
         const stockItem = await this.mobile.findItem(productId, tx);
 
         if (!stockItem) {
-          throw new APIError(
-            "Product not found",
-            STATUS_CODE.NOT_FOUND,
-            `Mobile with ID ${productId} not found.`
-          );
+          throw new NotFoundError(`Mobile with ID ${productId} not found.`);
         }
         if (
           stockItem.availableStock === 0 ||
           stockItem.stockStatus !== "available"
         ) {
-          throw new APIError(
-            "Product not available",
-            STATUS_CODE.BAD_REQUEST,
+          throw new NotFoundError(
             `Mobile with IMEI ${stockItem.IMEI} is not available for distribution.`
           );
         }
 
-        // Step 1: Create the transfer history (now without side effects)
         const stockTransferHistory = await this.mobile.createTransferHistory(
           productId,
           {
@@ -207,7 +201,7 @@ class distributionService {
       if (!originalTransferHistory) {
         throw new NotFoundError("Original transfer history not found.");
       }
-
+      //console.log("original transfer", originalTransferHistory);
       let reverseToShopId;
       let warehouseShop;
       // console.log(
@@ -215,7 +209,7 @@ class distributionService {
       //   originalTransferHistory
       // );
 
-      if (originalTransferHistory.type === "distribution" || "reverse") {
+      if (["reverse", "distribution"].includes(originalTransferHistory.type)) {
         // Reversing a distribution: item goes back to warehouse
         warehouseShop = await this.shop.findShop({ name: "WareHouse" }, tx);
         if (!warehouseShop) {
@@ -228,12 +222,14 @@ class distributionService {
           originalTransferHistory.fromshop,
           tx
         );
+        //console.log("orignal", originalSendingShop);
         if (!originalSendingShop) {
           throw new NotFoundError(
             "Original sending shop not found for transfer reversal."
           );
         }
         reverseToShopId = originalSendingShop.id;
+        //console.log("am now the reverseToShopID", reverseToShopId);
       } else {
         throw new ValidationError(
           `Reversal not supported for transfer type: ${originalTransferHistory.type}`
@@ -253,6 +249,11 @@ class distributionService {
           tx
         );
       }
+
+      const status =
+        originalTransferHistory.type === "distribution"
+          ? "completed"
+          : "pending";
       const createdReverse = isMobile
         ? await this.mobile.createTransferHistory(
             productId,
@@ -260,7 +261,7 @@ class distributionService {
               quantity: quantity,
               fromShop: currentShopObject.id,
               toShop: reverseToShopId,
-              status: "completed",
+              status: status,
               transferdBy: userId,
               type: "reverse",
             },
@@ -272,7 +273,7 @@ class distributionService {
               quantity: quantity,
               fromShop: currentShopObject.id,
               toShop: reverseToShopId,
-              status: "completed",
+              status: status,
               transferdBy: userId,
               type: "reverse",
             },
@@ -299,6 +300,7 @@ class distributionService {
             tx
           );
         } else {
+          //console.log("reverseToShopId", reverseToShopId);
           await this.repository.addOrIncrementAccessoryItemInShop(
             productId,
             reverseToShopId,

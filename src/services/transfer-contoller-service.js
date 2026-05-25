@@ -290,7 +290,7 @@ class transferManagementService {
         );
       }
 
-      await this.repository.updateStockQuantityInAshop(
+      await this.repository.decrementAccessoryItemQuantity(
         accessoryItemId,
         parsedQuantity,
         tx

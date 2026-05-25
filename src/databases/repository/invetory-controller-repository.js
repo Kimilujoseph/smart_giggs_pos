@@ -672,6 +672,8 @@ class InventorymanagementRepository {
         },
       });
 
+      console.log("accessoryItem", accessoryItemInShop);
+
       if (accessoryItemInShop) {
         // If it exists, increment the quantity
         return await prismaClient.accessoryItems.update({
@@ -680,7 +682,7 @@ class InventorymanagementRepository {
             quantity: {
               increment: quantityToAdd,
             },
-            status: "confirmed", // Assuming it becomes confirmed upon return
+            status: "confirmed",
             updatedAt: new Date(),
           },
         });
