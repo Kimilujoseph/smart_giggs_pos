@@ -29,5 +29,12 @@ module.exports = {
       error: './logs/error.log',
       merge_logs: true,
     },
+    {
+      name: "cron_jobs_app",
+      script: "./src/cron_jobs_app.js",
+      instances: 1,
+      exec_mode: "fork",
+      watch: false,
+    },
   ],
 };
