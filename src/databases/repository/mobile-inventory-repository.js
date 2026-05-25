@@ -837,7 +837,7 @@ class phoneinventoryrepository {
           availableStock: {
             increment: quantity,
           },
-          Status: "available",
+          stockStatus: "available",
           updatedAt: new Date(),
         },
       });

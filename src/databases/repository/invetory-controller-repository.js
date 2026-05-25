@@ -5,6 +5,9 @@ import prisma from "../client.js";
 import {
   APIError,
   STATUS_CODE,
+  NotFoundError,
+  BadRequestError,
+  DuplicationError,
   InternalServerError,
 } from "../../Utils/app-error.js";
 
@@ -23,11 +26,10 @@ class InventorymanagementRepository {
         type: "new stock",
       });
     } catch (err) {
-      throw new APIError(
-        "creating product error",
-        STATUS_CODE.INTERNAL_ERROR,
-        err || "internal server error"
-      );
+      if (err instanceof DuplicationError) {
+        throw err;
+      }
+      throw new InternalServerError(`Internal server error`);
     }
   }
 
@@ -55,12 +57,8 @@ class InventorymanagementRepository {
       });
       return product;
     } catch (err) {
-      console.log(err);
-      throw new APIError(
-        "database error",
-        STATUS_CODE.INTERNAL_ERROR,
-        "Internal server error"
-      );
+      //console.log(err);
+      throw new InternalServerError(`Internal server error`);
     }
   }
   async createnewAccessoryStock(accessoryDetails) {
@@ -94,17 +92,11 @@ class InventorymanagementRepository {
       return newAccessory;
     } catch (err) {
       if (err.code === "P2002") {
-        throw new APIError(
-          "Duplicate Key Error",
-          STATUS_CODE.BAD_REQUEST,
+        throw new DuplicationError(
           `A product with the same batch ${accessoryDetails.batchNumber} exists`
         );
       }
-      throw new APIError(
-        "creating product error",
-        STATUS_CODE.INTERNAL_ERROR,
-        err || "internal server error"
-      );
+      throw new InternalServerError(`Internal server error`);
     }
   }
   async createHistory({ productId, user, type, shopId, quantity }) {
@@ -120,12 +112,8 @@ class InventorymanagementRepository {
       });
       return createHistory;
     } catch (err) {
-      console.log("err", err);
-      throw new APIError(
-        "Database Error",
-        STATUS_CODE.INTERNAL_ERROR,
-        "internal server error"
-      );
+      // console.log("err", err);
+      throw new InternalServerError(`Internal server error`);
     }
   }
   //update the sales of the accessory produtct
@@ -142,12 +130,8 @@ class InventorymanagementRepository {
         });
       return updatedSalesoftheAccessory;
     } catch (err) {
-      console.log("updateError", err);
-      throw new APIError(
-        "internal server error",
-        STATUS_CODE.INTERNAL_ERROR,
-        err || "internal server error"
-      );
+      //console.log("updateError", err);
+      throw new InternalServerError(`Internal server error`);
     }
   }
 
@@ -167,11 +151,7 @@ class InventorymanagementRepository {
       });
     } catch (err) {
       console.log("updateError", err);
-      throw new APIError(
-        "internal server error",
-        STATUS_CODE.INTERNAL_ERROR,
-        err || "internal server error"
-      );
+      throw new InternalServerError(`Internal server error`);
     }
   }
   async findProductById(id, tx) {
@@ -197,11 +177,7 @@ class InventorymanagementRepository {
       });
       return findItem;
     } catch (err) {
-      throw new APIError(
-        "API Error",
-        STATUS_CODE.INTERNAL_ERROR,
-        err.message || "Unable to find the item"
-      );
+      throw new InternalServerError(`Internal server error`);
     }
   }
   async findAvailableStockInShop(productId) {
@@ -220,7 +196,7 @@ class InventorymanagementRepository {
       });
       return availableStock;
     } catch (err) {
-      console.log("serviceerrr", err);
+      // console.log("serviceerrr", err);
       if (err instanceof APIError) {
         throw err;
       }
@@ -276,11 +252,7 @@ class InventorymanagementRepository {
 
       return { stockAvailable, totalItems };
     } catch (err) {
-      console.log("err", err);
-      if (err instanceof APIError) {
-        throw err;
-      }
-      throw new APIError("databaseERROR", STATUS_CODE.INTERNAL_ERROR);
+      throw new InternalServerError(`Internal server error`);
     }
   }
 
@@ -297,11 +269,7 @@ class InventorymanagementRepository {
         });
       return transferHistrory;
     } catch (err) {
-      throw new APIError(
-        "database error",
-        STATUS_CODE.INTERNAL_ERROR,
-        "internal server error"
-      );
+      throw new InternalServerError(`Internal server error`);
     }
   }
 
@@ -333,6 +301,8 @@ class InventorymanagementRepository {
               name: true,
             },
           },
+          type: true,
+          status: true,
         },
       });
 
