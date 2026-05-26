@@ -16,12 +16,11 @@ module.exports = {
 
       // Clustering
       exec_mode: "cluster",
-      instances: "max", // Use all available CPU cores
+      instances: 2,
 
-      // Process Management
-      autorestart: true, // Restart on crash
-      watch: false, // Do not watch for file changes in production
-      max_memory_restart: "1G", // Restart if memory exceeds 1GB
+      autorestart: true,
+      watch: false,
+      max_memory_restart: "1G",
 
       // Log Management
       log_date_format: "YYYY-MM-DD HH:mm:ss Z",
