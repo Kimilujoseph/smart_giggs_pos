@@ -62,7 +62,7 @@ const handleReversal = async (req, res, next) => {
       );
     }
     const updatedDistributionDetails = { ...value, userId };
-    //console.log("updatedDistributionDetails", updatedDistributionDetails)
+    console.log("updatedDistributionDetails", updatedDistributionDetails)
     const reverseDistributionDetails =
       await distributionManager.createReverseDistribution(
         updatedDistributionDetails

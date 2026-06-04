@@ -201,7 +201,7 @@ class distributionService {
       if (!originalTransferHistory) {
         throw new NotFoundError("Original transfer history not found.");
       }
-      //console.log("original transfer", originalTransferHistory);
+      console.log("original transfer", originalTransferHistory);
       let reverseToShopId;
       let warehouseShop;
       // console.log(
@@ -209,7 +209,10 @@ class distributionService {
       //   originalTransferHistory
       // );
 
-      if (["reverse", "distribution"].includes(originalTransferHistory.type)) {
+      if (
+        ["reverse", "distribution"].includes(originalTransferHistory.type) ||
+        originalTransferHistory.status === "confirmed"
+      ) {
         // Reversing a distribution: item goes back to warehouse
         warehouseShop = await this.shop.findShop({ name: "WareHouse" }, tx);
         if (!warehouseShop) {
@@ -279,7 +282,10 @@ class distributionService {
             },
             tx
           );
-      if (originalTransferHistory.type === "distribution") {
+      if (
+        originalTransferHistory.type === "distribution" ||
+        originalTransferHistory.status === "confirmed"
+      ) {
         if (isMobile) {
           await this.mobile.updateMobileReversalStock(productId, quantity, tx);
         } else {
