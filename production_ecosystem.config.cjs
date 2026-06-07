@@ -23,8 +23,8 @@ module.exports = {
 
       // Log Management
       log_date_format: "YYYY-MM-DD HH:mm:ss Z",
-      output: "./logs/out-production.log",
-      error: "./logs/error-production.log",
+      output: "./logs/captech-out-production.log",
+      error: "./logs/captech-error-production.log",
       merge_logs: true,
     },
     {
@@ -33,8 +33,8 @@ module.exports = {
       instances: 1,
       exec_mode: "fork",
       watch: false,
-      output: "./logs/cron-out-production.log",
-      error: "./logs/cron-error-production.log",
+      output: "./logs/captech-cron-out-production.log",
+      error: "./logs/captech-cron-error-production.log",
     },
   ],
 };
