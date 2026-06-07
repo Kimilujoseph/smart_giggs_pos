@@ -4,7 +4,7 @@ module.exports = {
   apps: [
     {
       // General
-      name: "T10stores_production",
+      name: "CAPTECH_production",
       script: "src/index.js",
 
       // Production Environment
@@ -28,7 +28,7 @@ module.exports = {
       merge_logs: true,
     },
     {
-      name: "cron_jobs_app_production",
+      name: "CAPTECH_cron_jobs_app_production",
       script: "./src/cron_jobs_app.js",
       instances: 1,
       exec_mode: "fork",

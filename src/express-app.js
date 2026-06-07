@@ -37,7 +37,7 @@ import verifyUser from "./middleware/verification.js";
 dotenv.config();
 
 // A more compatible way to get the directory name
-const __dirname = path.resolve(path.dirname(''));
+const __dirname = path.resolve(path.dirname(""));
 
 //session
 const MySQLStoreSession = MySQLStore(session);
@@ -65,11 +65,10 @@ sessionStore.on("error", function (error) {
 });
 
 const app = express();
-app.set('trust proxy', true);
+app.set("trust proxy", true);
 app.use(express.json());
 app.use(cors());
-app.use(express.static(__dirname + '/public'));
-
+app.use(express.static(__dirname + "/public"));
 
 const App = async (app) => {
   app.use(express.json());
@@ -87,7 +86,12 @@ const App = async (app) => {
   // Enable CORS
   app.use(
     cors({
-      origin: ["http://localhost:4422", "https://augustusstores.co.ke", "https://smartgiggs.co.ke", "https://gamitch-front-end.vercel.app", "https://smart-giggs-front-bkwbms9e0-kimilujosephs-projects.vercel.app"],
+      origin: [
+        "http://localhost:4422",
+        "https://augustusstores.co.ke",
+        "https://smartgiggs.co.ke",
+        "https://captech-limited.co.ke",
+      ],
       credentials: true,
     })
   );
