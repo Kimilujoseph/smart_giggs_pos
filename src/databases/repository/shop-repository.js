@@ -1,5 +1,9 @@
 import prisma from "../client.js";
-import { APIError, STATUS_CODE, InternalServerError } from "../../Utils/app-error.js";
+import {
+  APIError,
+  STATUS_CODE,
+  InternalServerError,
+} from "../../Utils/app-error.js";
 
 class ShopmanagementRepository {
   constructor() {
@@ -8,7 +12,6 @@ class ShopmanagementRepository {
 
   async createShop({ name, address }) {
     try {
-
       const shop = await this.prisma.shops.create({
         data: {
           shopName: name,
@@ -77,7 +80,7 @@ class ShopmanagementRepository {
                   id: true,
                   name: true,
                   email: true,
-                  phone: true
+                  phone: true,
                 },
               },
               fromDate: true,
@@ -90,7 +93,6 @@ class ShopmanagementRepository {
       //console.log("findShop result:", findShop);
       return findShop;
     } catch (err) {
-
       throw new InternalServerError();
     }
   }
@@ -118,7 +120,13 @@ class ShopmanagementRepository {
     }
   }
 
-  async findSpecificShopItem({ name, requestedItem, page = 1, limit = 10, status }) {
+  async findSpecificShopItem({
+    name,
+    requestedItem,
+    page = 1,
+    limit = 10,
+    status,
+  }) {
     try {
       const shop = await this.prisma.shops.findFirst({
         where: { shopName: name },
@@ -135,7 +143,7 @@ class ShopmanagementRepository {
 
       const whereClause = {
         shopID: shop.id,
-        quantity: { gt: 0 }
+        quantity: { gt: 0 },
       };
 
       if (status) {
@@ -167,7 +175,9 @@ class ShopmanagementRepository {
             },
           },
         });
-        totalItems = await this.prisma.mobileItems.count({ where: whereClause });
+        totalItems = await this.prisma.mobileItems.count({
+          where: whereClause,
+        });
       } else if (requestedItem === "accessoryItems") {
         items = await this.prisma.accessoryItems.findMany({
           where: whereClause,
@@ -185,7 +195,9 @@ class ShopmanagementRepository {
             },
           },
         });
-        totalItems = await this.prisma.accessoryItems.count({ where: whereClause });
+        totalItems = await this.prisma.accessoryItems.count({
+          where: whereClause,
+        });
       } else {
         throw new APIError(
           "Invalid requested item type",
@@ -260,16 +272,21 @@ class ShopmanagementRepository {
       });
 
       const lowStockMobiles = await this.prisma.mobileItems.findMany({
-        where: { shopID: shop.id, status: 'confirmed', quantity: { lt: 0 } },
+        where: { shopID: shop.id, status: "confirmed", quantity: { lt: 0 } },
         include: { mobiles: { include: { categories: true } } },
       });
 
       const lowStockAccessories = await this.prisma.accessoryItems.findMany({
-        where: { shopID: shop.id, status: 'confirmed', quantity: { lt: 5 } },
+        where: { shopID: shop.id, status: "confirmed", quantity: { lt: 5 } },
         include: { accessories: { include: { categories: true } } },
       });
 
-      return { mobileItems, accessoryItems, lowStockMobiles, lowStockAccessories };
+      return {
+        mobileItems,
+        accessoryItems,
+        lowStockMobiles,
+        lowStockAccessories,
+      };
     } catch (err) {
       if (err instanceof APIError) {
         throw err;
@@ -398,9 +415,10 @@ class ShopmanagementRepository {
 
       const mobileWhere = {
         shopID: shop.id,
+        status: "confirmed",
         mobiles: {
           OR: [
-            { categories: { itemName: { contains: searchTerm, } } },
+            { categories: { itemName: { contains: searchTerm } } },
             { categories: { itemModel: { contains: searchTerm } } },
             { categories: { brand: { contains: searchTerm } } },
             { IMEI: { contains: searchTerm } },
@@ -410,6 +428,7 @@ class ShopmanagementRepository {
 
       const accessoryWhere = {
         shopID: shop.id,
+        status: "confirmed",
         accessories: {
           categories: {
             OR: [
@@ -420,11 +439,13 @@ class ShopmanagementRepository {
           },
         },
       };
+      //status should be confirmed
 
       const phoneItems = await this.prisma.mobileItems.findMany({
         where: mobileWhere,
         skip: skip,
         take: parseInt(limit),
+
         include: {
           mobiles: {
             include: {
@@ -434,7 +455,9 @@ class ShopmanagementRepository {
         },
       });
 
-      const totalPhones = await this.prisma.mobileItems.count({ where: mobileWhere });
+      const totalPhones = await this.prisma.mobileItems.count({
+        where: mobileWhere,
+      });
 
       const stockItems = await this.prisma.accessoryItems.findMany({
         where: accessoryWhere,
@@ -449,7 +472,9 @@ class ShopmanagementRepository {
         },
       });
 
-      const totalAccessories = await this.prisma.accessoryItems.count({ where: accessoryWhere });
+      const totalAccessories = await this.prisma.accessoryItems.count({
+        where: accessoryWhere,
+      });
 
       return {
         phoneItems: {
@@ -481,7 +506,7 @@ class ShopmanagementRepository {
   async newAddedphoneItem(newItem, tx) {
     const prismaClient = tx || this.prisma;
     try {
-      console.log("new Item details", newItem)
+      console.log("new Item details", newItem);
       const updatedShop = await prismaClient.mobileItems.create({
         data: {
           status: newItem.status,
@@ -566,10 +591,10 @@ class ShopmanagementRepository {
   ) {
     const prismaClient = tx || this.prisma;
     try {
-      console.log("accessoryIDpASDED", accessoryId)
+      console.log("accessoryIDpASDED", accessoryId);
       const updatedNewAccessoryItem = await prismaClient.accessoryItems.update({
         where: {
-          id: accessoryId
+          id: accessoryId,
         },
         data: {
           status: "confirmed",
@@ -589,17 +614,18 @@ class ShopmanagementRepository {
 
   async updateAccessoryQuantity(shopId, accessoryId, quantity) {
     try {
-      const updatedNewAccessoryItem = await this.prisma.accessoryItems.updateMany({
-        where: {
-          shopID: shopId,
-          accessoryID: accessoryId,
-        },
-        data: {
-          quantity: {
-            increment: quantity,
+      const updatedNewAccessoryItem =
+        await this.prisma.accessoryItems.updateMany({
+          where: {
+            shopID: shopId,
+            accessoryID: accessoryId,
           },
-        },
-      });
+          data: {
+            quantity: {
+              increment: quantity,
+            },
+          },
+        });
       return updatedNewAccessoryItem;
     } catch (err) {
       throw new APIError(

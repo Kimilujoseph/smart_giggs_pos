@@ -52,8 +52,8 @@ model CommissionPaymentsOnMobileSales {
 model Customer {
   id             Int              @id @default(autoincrement())
   name           String
-  email          String?          @unique
-  phoneNumber    String           @unique
+  email          String?         
+  phoneNumber    String           
   createdAt      DateTime         @default(now())
   Return         Return[]
   accessorysales accessorysales[]

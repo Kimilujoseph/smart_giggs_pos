@@ -27,21 +27,35 @@ class salesmanagment {
   async createBulkSale(salePayload, user) {
     const { shopName, customerdetails, bulksales } = salePayload;
     const { id: sellerId } = user;
+    // console.log("customer details", customerdetails);
 
     const shop = await this.shop.findShop({ name: shopName });
     if (!shop) {
-      throw new APIError("Shop not found", STATUS_CODE.NOT_FOUND, "The specified shop does not exist.");
+      throw new APIError(
+        "Shop not found",
+        STATUS_CODE.NOT_FOUND,
+        "The specified shop does not exist."
+      );
     }
 
-    let customer = await this.customer.findCustomerByPhone(customerdetails.phonenumber) || await this.customer.findCusomerByEmail(customerdetails.email);
+    let customer = await this.customer.findCustomerByPhone(
+      customerdetails.phonenumber
+    );
+    if (!customer && customerdetails.email) {
+      customer = await this.customer.findCustomerByEmail(customerdetails.email);
+    }
     if (!customer) {
       const customerData = {
         name: customerdetails.name,
         phoneNumber: customerdetails.phonenumber,
-        email: customerdetails.email,
+        email: customerdetails.email
+          ? customerdetails.email
+          : "walkin@gmail.com",
         address: customerdetails.address,
       };
+      console.log("creating new customer with data", customerData);
       customer = await this.customer.createCustomer(customerData);
+      console.log("created new customer", customer);
     }
 
     return prisma.$transaction(async (tx) => {
@@ -52,37 +66,80 @@ class salesmanagment {
         const { itemType, items, payments, CategoryId } = sale;
 
         if (items.length !== 1) {
-          throw new APIError("Bad Request", STATUS_CODE.BAD_REQUEST, "Each sale object in bulksales must contain exactly one item.");
+          throw new APIError(
+            "Bad Request",
+            STATUS_CODE.BAD_REQUEST,
+            "Each sale object in bulksales must contain exactly one item."
+          );
         }
         const item = items[0];
-        const { productId, soldprice, soldUnits, itemId, financeAmount, financeStatus, financeId } = item;
+        const {
+          productId,
+          soldprice,
+          soldUnits,
+          itemId,
+          financeAmount,
+          financeStatus,
+          financeId,
+        } = item;
 
         const totalPaid = payments.reduce((acc, p) => acc + p.amount, 0);
         if (totalPaid < soldprice) {
-          throw new APIError("Bad Request", STATUS_CODE.BAD_REQUEST, `Total payment (${totalPaid}) is less than the sold price (${soldprice}).`);
+          throw new APIError(
+            "Bad Request",
+            STATUS_CODE.BAD_REQUEST,
+            `Total payment (${totalPaid}) is less than the sold price (${soldprice}).`
+          );
         }
 
-        const itemToSell = itemType === 'mobiles'
-          ? await tx.mobileItems.findUnique({ where: { id: parseInt(itemId) } })
-          : await tx.accessoryItems.findUnique({ where: { id: parseInt(itemId) } });
+        const itemToSell =
+          itemType === "mobiles"
+            ? await tx.mobileItems.findUnique({
+                where: { id: parseInt(itemId) },
+              })
+            : await tx.accessoryItems.findUnique({
+                where: { id: parseInt(itemId) },
+              });
 
         if (!itemToSell) {
-          throw new APIError("Not Found", STATUS_CODE.NOT_FOUND, "Item not found.");
+          throw new APIError(
+            "Not Found",
+            STATUS_CODE.NOT_FOUND,
+            "Item not found."
+          );
         }
-        if (itemToSell.status === 'sold' && itemToSell.quantity === 0) {
-          throw new APIError("Bad Request", STATUS_CODE.BAD_REQUEST, "Item has already been sold.");
+        if (itemToSell.status === "sold" && itemToSell.quantity === 0) {
+          throw new APIError(
+            "Bad Request",
+            STATUS_CODE.BAD_REQUEST,
+            "Item has already been sold."
+          );
         }
 
-        const categoryDetails = await tx.categories.findUnique({ where: { id: parseInt(CategoryId) } });
-        const productDetails = itemType === 'mobiles'
-          ? await tx.mobiles.findUnique({ where: { id: parseInt(productId) } })
-          : await tx.accessories.findUnique({ where: { id: parseInt(productId) } });
+        const categoryDetails = await tx.categories.findUnique({
+          where: { id: parseInt(CategoryId) },
+        });
+        const productDetails =
+          itemType === "mobiles"
+            ? await tx.mobiles.findUnique({
+                where: { id: parseInt(productId) },
+              })
+            : await tx.accessories.findUnique({
+                where: { id: parseInt(productId) },
+              });
 
-        if (!productDetails || !["available", "distributed"].includes(productDetails.stockStatus)) {
-          throw new APIError("Not Found", STATUS_CODE.NOT_FOUND, `Product with ID ${productId} not found or not available.`);
+        if (
+          !productDetails ||
+          !["available", "distributed"].includes(productDetails.stockStatus)
+        ) {
+          throw new APIError(
+            "Not Found",
+            STATUS_CODE.NOT_FOUND,
+            `Product with ID ${productId} not found or not available.`
+          );
         }
 
-        const profit = soldprice - (productDetails.productCost * soldUnits);
+        const profit = soldprice - productDetails.productCost * soldUnits;
         const commission = productDetails.commission * soldUnits;
 
         const saleData = {
@@ -101,7 +158,7 @@ class salesmanagment {
         };
 
         let createdSale;
-        if (itemType === 'mobiles') {
+        if (itemType === "mobiles") {
           createdSale = await tx.mobilesales.create({ data: saleData });
           await tx.mobileItems.updateMany({
             where: { id: parseInt(itemId) },
@@ -109,24 +166,28 @@ class salesmanagment {
           });
           await tx.mobiles.update({
             where: { id: parseInt(itemToSell.mobileID) },
-            data: { stockStatus: "sold" }
+            data: { stockStatus: "sold" },
           });
         } else {
           createdSale = await tx.accessorysales.create({ data: saleData });
           await tx.accessoryItems.update({
             where: { id: parseInt(itemId) },
-            data: { status: itemToSell.quantity - soldUnits > 0 ? "confirmed" : "sold", quantity: { decrement: soldUnits } },
+            data: {
+              status:
+                itemToSell.quantity - soldUnits > 0 ? "confirmed" : "sold",
+              quantity: { decrement: soldUnits },
+            },
           });
         }
 
-        const paymentPromises = payments.map(p => {
+        const paymentPromises = payments.map((p) => {
           const paymentData = {
             amount: p.amount,
             paymentMethod: p.paymentMethod,
-            status: 'completed',
+            status: "completed",
             transactionId: p.transactionId,
           };
-          if (itemType === 'mobiles') {
+          if (itemType === "mobiles") {
             paymentData.mobileSaleId = createdSale.id;
           } else {
             paymentData.accessorySaleId = createdSale.id;
@@ -137,12 +198,18 @@ class salesmanagment {
         const createdPayments = await Promise.all(paymentPromises);
 
         const now = new Date();
-        const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+        const today = new Date(
+          Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
+        );
         const parsedFinanceId = financeId ? parseInt(financeId) : null;
-        const financeIdKey = parsedFinanceId === null ? 'null' : parsedFinanceId;
-        const financeStatusKey = financeStatus === null ? 'null' : financeStatus;
+        const financeIdKey =
+          parsedFinanceId === null ? "null" : parsedFinanceId;
+        const financeStatusKey =
+          financeStatus === null ? "null" : financeStatus;
 
-        const analyticsKey = `${today.toISOString()}-${CategoryId}-${shop.id}-${sellerId}-${financeStatusKey}-${financeIdKey}`;
+        const analyticsKey = `${today.toISOString()}-${CategoryId}-${
+          shop.id
+        }-${sellerId}-${financeStatusKey}-${financeIdKey}`;
 
         const currentAnalytics = analyticsAggregator.get(analyticsKey) || {
           date: today,
@@ -161,27 +228,34 @@ class salesmanagment {
 
         currentAnalytics.totalUnitsSold += soldUnits;
         currentAnalytics.totalRevenue += soldprice;
-        currentAnalytics.totalCostOfGoods += productDetails.productCost * soldUnits;
+        currentAnalytics.totalCostOfGoods +=
+          productDetails.productCost * soldUnits;
         currentAnalytics.grossProfit += profit;
         currentAnalytics.totalCommission += commission;
-        currentAnalytics.totalfinanceAmount += financeAmount ? parseInt(financeAmount) : 0;
+        currentAnalytics.totalfinanceAmount += financeAmount
+          ? parseInt(financeAmount)
+          : 0;
 
         analyticsAggregator.set(analyticsKey, currentAnalytics);
 
         allSalesResults.push({
-          status: 'fulfilled',
+          status: "fulfilled",
           value: {
             ...createdSale,
             sellerName: user.name,
             customerName: customer.name ? customer.name : "walk-in-customer",
-            customerphoneNumber: customer.phoneNumber ? customer.phoneNumber : "walk-in-customer",
+            customerphoneNumber: customer.phoneNumber
+              ? customer.phoneNumber
+              : "walk-in-customer",
             shopName: shopName,
-            batchIMEI: productDetails.batchNumber ? productDetails.batchNumber : productDetails,
+            batchIMEI: productDetails.batchNumber
+              ? productDetails.batchNumber
+              : productDetails,
             productName: categoryDetails.itemName,
             productModel: categoryDetails.itemModel,
             brand: categoryDetails.brand,
-            paymentData: createdPayments
-          }
+            paymentData: createdPayments,
+          },
         });
       }
 
@@ -211,7 +285,9 @@ class salesmanagment {
               totalCostOfGoods: { increment: analyticsData.totalCostOfGoods },
               grossProfit: { increment: analyticsData.grossProfit },
               totalCommission: { increment: analyticsData.totalCommission },
-              totalfinanceAmount: { increment: analyticsData.totalfinanceAmount },
+              totalfinanceAmount: {
+                increment: analyticsData.totalfinanceAmount,
+              },
             },
           });
         } else {
@@ -226,7 +302,17 @@ class salesmanagment {
   }
 
   async _getHybridSalesData(filters) {
-    const { startDate, endDate, page, limit, shopId, userId, categoryId, financerId, financeStatus } = filters;
+    const {
+      startDate,
+      endDate,
+      page,
+      limit,
+      shopId,
+      userId,
+      categoryId,
+      financerId,
+      financeStatus,
+    } = filters;
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -248,7 +334,14 @@ class salesmanagment {
     });
 
     // console.log("historical  sales data", parsedEndDate >= today)
-    let todaysTotals = { totalRevenue: 0, grossProfit: 0, totalCommission: 0, totalCommissionPaid: 0, totalItems: 0, totalFinanceAmount: 0 };
+    let todaysTotals = {
+      totalRevenue: 0,
+      grossProfit: 0,
+      totalCommission: 0,
+      totalCommissionPaid: 0,
+      totalItems: 0,
+      totalFinanceAmount: 0,
+    };
     if (parsedEndDate >= today) {
       const todaySalesDetails = {
         startDate: today,
@@ -263,19 +356,33 @@ class salesmanagment {
       };
 
       const [mobileSales, accessorySales] = await Promise.all([
-        this.sales.findSales({ ...todaySalesDetails, salesTable: 'mobilesales' }),
-        this.sales.findSales({ ...todaySalesDetails, salesTable: 'accessorysales' }),
+        this.sales.findSales({
+          ...todaySalesDetails,
+          salesTable: "mobilesales",
+        }),
+        this.sales.findSales({
+          ...todaySalesDetails,
+          salesTable: "accessorysales",
+        }),
       ]);
 
       // console.log("3433434544545", accessorySales)
       // console.log("3433434544mobile545", mobileSales)
 
       todaysTotals = {
-        totalRevenue: (mobileSales.totals.totalSales || 0) + (accessorySales.totals.totalSales || 0),
-        grossProfit: (mobileSales.totals.totalProfit || 0) + (accessorySales.totals.totalProfit || 0),
-        totalCommission: (mobileSales.totals.totalCommission || 0) + (accessorySales.totals.totalCommission || 0),
+        totalRevenue:
+          (mobileSales.totals.totalSales || 0) +
+          (accessorySales.totals.totalSales || 0),
+        grossProfit:
+          (mobileSales.totals.totalProfit || 0) +
+          (accessorySales.totals.totalProfit || 0),
+        totalCommission:
+          (mobileSales.totals.totalCommission || 0) +
+          (accessorySales.totals.totalCommission || 0),
         //totalCommissionPaid: (mobileSales.totals.totalCommissionPaid || 0) + (accessorySales.totals.totalCommissionPaid || 0),
-        totalItems: (mobileSales.totals.totalItems || 0) + (accessorySales.totals.totalItems || 0),
+        totalItems:
+          (mobileSales.totals.totalItems || 0) +
+          (accessorySales.totals.totalItems || 0),
         //totalFinanceAmount: (mobileSales.totals.financeAmount || 0) + (accessorySales.totals.financeAmount || 0),
       };
     }
@@ -294,24 +401,45 @@ class salesmanagment {
 
     const [paginatedMobileSales, paginatedAccessorySales] = await Promise.all([
       userId
-        ? this.sales.findUserSales({ ...paginatedSalesDetails, salesTable: 'mobilesales' })
-        : this.sales.findSales({ ...paginatedSalesDetails, salesTable: 'mobilesales' }),
+        ? this.sales.findUserSales({
+            ...paginatedSalesDetails,
+            salesTable: "mobilesales",
+          })
+        : this.sales.findSales({
+            ...paginatedSalesDetails,
+            salesTable: "mobilesales",
+          }),
       userId
-        ? this.sales.findUserSales({ ...paginatedSalesDetails, salesTable: 'accessorysales' })
-        : this.sales.findSales({ ...paginatedSalesDetails, salesTable: 'accessorysales' }),
+        ? this.sales.findUserSales({
+            ...paginatedSalesDetails,
+            salesTable: "accessorysales",
+          })
+        : this.sales.findSales({
+            ...paginatedSalesDetails,
+            salesTable: "accessorysales",
+          }),
     ]);
 
-    const combinedSales = [...paginatedMobileSales.data, ...paginatedAccessorySales.data];
+    const combinedSales = [
+      ...paginatedMobileSales.data,
+      ...paginatedAccessorySales.data,
+    ];
 
     combinedSales.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     const paginatedSales = combinedSales.slice(0, limit);
-    const totalItemsForPagination = (paginatedMobileSales.totals.totalItems || 0) + (paginatedAccessorySales.totals.totalItems || 0);
+    const totalItemsForPagination =
+      (paginatedMobileSales.totals.totalItems || 0) +
+      (paginatedAccessorySales.totals.totalItems || 0);
 
     // 4. Combine totals for the final analytics object
     const finalTotals = {
-      totalSales: (historicalTotals.totalRevenue || 0) + (todaysTotals.totalRevenue || 0),
-      totalProfit: (historicalTotals.grossProfit || 0) + (todaysTotals.grossProfit || 0),
-      totalCommission: (historicalTotals.totalCommission || 0) + (todaysTotals.totalCommission || 0),
+      totalSales:
+        (historicalTotals.totalRevenue || 0) + (todaysTotals.totalRevenue || 0),
+      totalProfit:
+        (historicalTotals.grossProfit || 0) + (todaysTotals.grossProfit || 0),
+      totalCommission:
+        (historicalTotals.totalCommission || 0) +
+        (todaysTotals.totalCommission || 0),
       //totalCommissionPaid: (historicalTotals.totalCommissionPaid || 0) + (todaysTotals.totalCommissionPaid || 0),
       // totalFinanceAmount: (historicalTotals.totalfinanceAmount || 0) + (todaysTotals.totalFinanceAmount || 0),
     };
@@ -338,9 +466,8 @@ class salesmanagment {
 
   async getUserSales(filters) {
     try {
-      console.log("get user sales called", filters)
+      console.log("get user sales called", filters);
       return await this._getHybridSalesData(filters);
-
     } catch (err) {
       //console.log(err)
       this.handleServiceError(err);
@@ -384,10 +511,15 @@ class salesmanagment {
 
   async updateFinanceStatus({ saleType, saleId, status }) {
     try {
-      const salesTable = saleType === 'mobile' ? 'mobilesales' : 'accessorysales';
+      const salesTable =
+        saleType === "mobile" ? "mobilesales" : "accessorysales";
 
-      if (!['paid', 'pending', 'overdue'].includes(status)) {
-        throw new APIError("Bad Request", STATUS_CODE.BAD_REQUEST, "Invalid status provided.");
+      if (!["paid", "pending", "overdue"].includes(status)) {
+        throw new APIError(
+          "Bad Request",
+          STATUS_CODE.BAD_REQUEST,
+          "Invalid status provided."
+        );
       }
 
       const updatedSale = await this.sales.updateFinanceStatus({
@@ -396,8 +528,10 @@ class salesmanagment {
         status,
       });
 
-      return { message: "Finance status updated successfully.", sale: updatedSale };
-
+      return {
+        message: "Finance status updated successfully.",
+        sale: updatedSale,
+      };
     } catch (err) {
       this.handleServiceError(err);
     }

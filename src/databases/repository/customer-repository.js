@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 class CustomerRepository {
@@ -19,7 +19,7 @@ class CustomerRepository {
       where: { phoneNumber: phone },
     });
   }
-  async findCusomerByEmail(email) {
+  async findCustomerByEmail(email) {
     return await prisma.customer.findFirst({
       where: { email: email },
     });

@@ -15,40 +15,67 @@ const handleGetSales = async (req, res, next) => {
 
     if (shopId) {
       if (!checkRole(user.role, ["manager", "superuser"])) {
-        throw new APIError("Not authorized", STATUS_CODE.UNAUTHORIZED, "You are not authorized to view shop sales.");
+        throw new APIError(
+          "Not authorized",
+          STATUS_CODE.UNAUTHORIZED,
+          "You are not authorized to view shop sales."
+        );
       }
-      serviceMethod = 'generateShopSales';
+      serviceMethod = "generateShopSales";
       servicePayload.shopId = parseInt(shopId, 10);
     } else if (categoryId) {
       if (!checkRole(user.role, ["manager", "superuser"])) {
-        throw new APIError("Not authorized", STATUS_CODE.UNAUTHORIZED, "You are not authorized to view category sales.");
+        throw new APIError(
+          "Not authorized",
+          STATUS_CODE.UNAUTHORIZED,
+          "You are not authorized to view category sales."
+        );
       }
-      serviceMethod = 'generateCategorySales';
+      serviceMethod = "generateCategorySales";
       servicePayload.categoryId = parseInt(categoryId, 10);
     } else if (userId) {
       const parsedUserId = parseInt(userId, 10);
-      if (!checkRole(user.role, ["manager", "superuser"]) && user.id !== parsedUserId) {
-        throw new APIError("Not authorized", STATUS_CODE.UNAUTHORIZED, "You are not authorized to view this user's sales.");
+      if (
+        !checkRole(user.role, ["manager", "superuser"]) &&
+        user.id !== parsedUserId
+      ) {
+        throw new APIError(
+          "Not authorized",
+          STATUS_CODE.UNAUTHORIZED,
+          "You are not authorized to view this user's sales."
+        );
       }
-      serviceMethod = 'getUserSales';
+      serviceMethod = "getUserSales";
       servicePayload.userId = parsedUserId;
     } else if (financerId) {
       if (!checkRole(user.role, ["manager", "superuser"])) {
-        throw new APIError("Not authorized", STATUS_CODE.UNAUTHORIZED, "You are not authorized to view financer sales.");
+        throw new APIError(
+          "Not authorized",
+          STATUS_CODE.UNAUTHORIZED,
+          "You are not authorized to view financer sales."
+        );
       }
-      serviceMethod = 'generateFinancerSales';
+      serviceMethod = "generateFinancerSales";
       servicePayload.financerId = parseInt(financerId, 10);
     } else {
       if (!checkRole(user.role, ["manager", "superuser"])) {
-        throw new APIError("Not authorized", STATUS_CODE.UNAUTHORIZED, "You are not authorized to view general sales.");
+        throw new APIError(
+          "Not authorized",
+          STATUS_CODE.UNAUTHORIZED,
+          "You are not authorized to view general sales."
+        );
       }
-      serviceMethod = 'generategeneralsales';
+      serviceMethod = "generategeneralsales";
     }
 
     const report = await salesService[serviceMethod](servicePayload);
 
     if (!report || (Array.isArray(report) && report.length === 0)) {
-      throw new APIError("No sales found", STATUS_CODE.NOT_FOUND, "No sales found for the given criteria.");
+      throw new APIError(
+        "No sales found",
+        STATUS_CODE.NOT_FOUND,
+        "No sales found for the given criteria."
+      );
     }
     //console.log("returned report",report )
     const finalReport = Array.isArray(report) ? report[0] : report;
@@ -80,13 +107,14 @@ const handleBulkSale = async (req, res, next) => {
   try {
     const { user } = req;
     const { ...salePayload } = req.body;
-    //console.log("Received bulk sale payload:", salePayload);
+    console.log("Received bulk sale payload:", salePayload);
     const results = await salesService.createBulkSale(salePayload, user);
+    console.log("Bulk sale results:", results);
 
     handleResponse({
       res,
       message: "Bulk sale processed successfully",
-      data: results.map(r => r.value),
+      data: results.map((r) => r.value),
     });
   } catch (err) {
     next(err);
@@ -99,13 +127,25 @@ const handleUpdateFinanceStatus = async (req, res, next) => {
     const { status } = req.body;
 
     if (!status) {
-      throw new APIError("Bad Request", STATUS_CODE.BAD_REQUEST, "Status is a required field.");
+      throw new APIError(
+        "Bad Request",
+        STATUS_CODE.BAD_REQUEST,
+        "Status is a required field."
+      );
     }
-    if (!['mobile', 'accessory'].includes(saleType)) {
-      throw new APIError("Bad Request", STATUS_CODE.BAD_REQUEST, "Invalid sale type in URL.");
+    if (!["mobile", "accessory"].includes(saleType)) {
+      throw new APIError(
+        "Bad Request",
+        STATUS_CODE.BAD_REQUEST,
+        "Invalid sale type in URL."
+      );
     }
 
-    const result = await salesService.updateFinanceStatus({ saleType, saleId, status });
+    const result = await salesService.updateFinanceStatus({
+      saleType,
+      saleId,
+      status,
+    });
 
     handleResponse({
       res,
