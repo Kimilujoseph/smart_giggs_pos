@@ -1,5 +1,9 @@
 import { PrismaClient } from "@prisma/client";
-import { APIError, STATUS_CODE } from "../../Utils/app-error.js";
+import {
+  APIError,
+  STATUS_CODE,
+  InternalServerError,
+} from "../../Utils/app-error.js";
 
 const prisma = new PrismaClient();
 
@@ -30,11 +34,7 @@ class FinancialReportingRepository {
         },
       });
     } catch (err) {
-      throw new APIError(
-        "Database Error",
-        STATUS_CODE.INTERNAL_ERROR,
-        "Could not fetch aggregated sales analytics."
-      );
+      throw new InternalServerError("Internal server error");
     }
   }
 
@@ -46,11 +46,13 @@ class FinancialReportingRepository {
             gte: startDate,
             lte: endDate,
           },
+          status: "COMPLETED",
         },
         _sum: {
           soldPrice: true,
           profit: true,
           commission: true,
+          commissionPaid: true,
         },
       });
 
@@ -65,6 +67,7 @@ class FinancialReportingRepository {
           soldPrice: true,
           profit: true,
           commission: true,
+          commissionPaid: true,
         },
       });
 
@@ -83,16 +86,12 @@ class FinancialReportingRepository {
         totalRevenue,
         grossProfit,
         totalCommission:
-          (mobileResult._sum.commission || 0) +
-          (accessoryResult._sum.commission || 0),
+          (mobileResult._sum.commission - mobileResult._sum.commissionPaid ||
+            0) + (accessoryResult._sum.commission || 0),
         costOfGoodsSold: totalRevenue - grossProfit,
       };
     } catch (err) {
-      throw new APIError(
-        "Database Error",
-        STATUS_CODE.INTERNAL_ERROR,
-        "Could not fetch live sales."
-      );
+      throw new InternalServerError("Internal server error");
     }
   }
 
@@ -113,11 +112,7 @@ class FinancialReportingRepository {
         },
       });
     } catch (err) {
-      throw new APIError(
-        "Database Error",
-        STATUS_CODE.INTERNAL_ERROR,
-        "Could not fetch expenses."
-      );
+      throw new InternalServerError("Internal server error");
     }
   }
 
@@ -138,11 +133,7 @@ class FinancialReportingRepository {
         },
       });
     } catch (err) {
-      throw new APIError(
-        "Database Error",
-        STATUS_CODE.INTERNAL_ERROR,
-        "Could not fetch salaries."
-      );
+      throw new InternalServerError("Internal server error");
     }
   }
 
@@ -163,11 +154,7 @@ class FinancialReportingRepository {
         },
       });
     } catch (err) {
-      throw new APIError(
-        "Database Error",
-        STATUS_CODE.INTERNAL_ERROR,
-        "Could not fetch commission payments."
-      );
+      throw new InternalServerError("Internal server error");
     }
   }
 
@@ -201,11 +188,7 @@ class FinancialReportingRepository {
         (accessoryResult._sum.financeAmount || 0)
       );
     } catch (err) {
-      throw new APIError(
-        "Database Error",
-        STATUS_CODE.INTERNAL_ERROR,
-        "Could not fetch accounts receivable."
-      );
+      throw new InternalServerError("Internal server error");
     }
   }
 }

@@ -107,9 +107,9 @@ const handleBulkSale = async (req, res, next) => {
   try {
     const { user } = req;
     const { ...salePayload } = req.body;
-    console.log("Received bulk sale payload:", salePayload);
+    //console.log("Received bulk sale payload:", salePayload);
     const results = await salesService.createBulkSale(salePayload, user);
-    console.log("Bulk sale results:", results);
+    // console.log("Bulk sale results:", results);
 
     handleResponse({
       res,

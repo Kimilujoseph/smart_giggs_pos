@@ -12,6 +12,7 @@ const handleGetFinancialSummary = async (req, res, next) => {
       startDate,
       endDate,
     });
+    // console.log("summary", summary);
     //console.log("Financial Summary:", summary);
     handleResponse({
       res,

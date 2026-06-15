@@ -1,8 +1,8 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-const BATCH_SIZE = 1000; // Process 1000 sales at a time
+const BATCH_SIZE = 50; // Process 1000 sales at a time
 
 async function backfillSales(salesTable) {
   let cursor = null;
@@ -17,11 +17,12 @@ async function backfillSales(salesTable) {
       take: BATCH_SIZE,
       ...(cursor && { skip: 1, cursor: { id: cursor } }),
       orderBy: {
-        id: 'asc',
+        id: "asc",
       },
-      include: salesTable === 'mobilesales'
-        ? { mobiles: true }
-        : { accessories: true },
+      include:
+        salesTable === "mobilesales"
+          ? { mobiles: true }
+          : { accessories: true },
     });
 
     if (sales.length === 0) {
@@ -38,18 +39,20 @@ async function backfillSales(salesTable) {
       const saleDate = new Date(sale.createdAt);
       saleDate.setUTCHours(0, 0, 0, 0); // Normalize to the start of the UTC day
 
-      const key = `${saleDate.toISOString()}-${sale.shopID}-${sale.sellerId}-${sale.categoryId}-${sale.financeStatus}-${sale.financerId || null}`;
+      const key = `${saleDate.toISOString()}-${sale.shopID}-${sale.sellerId}-${
+        sale.categoryId
+      }-${sale.financeStatus}-${sale.financerId || null}`;
 
       const quantity = sale.quantity || 0;
       const soldPrice = Number(sale.soldPrice) || 0;
       const productCost = Number(productDetails.productCost) || 0;
-      const commission = Number(productDetails.commission) || 0;
+      const commission = Number(sale.commission) || 0;
       const financeAmount = Number(sale.financeAmount) || 0;
 
       const totalRevenue = soldPrice * 1;
       const totalCostOfGoods = productCost * quantity;
       const grossProfit = totalRevenue - totalCostOfGoods;
-      const totalCommission = commission * quantity;
+      const totalCommission = commission;
 
       if (!analyticsMap.has(key)) {
         analyticsMap.set(key, {
@@ -109,19 +112,19 @@ async function backfillSales(salesTable) {
 }
 
 async function main() {
-  console.log('Starting historical analytics backfill...');
+  console.log("Starting historical analytics backfill...");
 
-  console.log('Clearing existing analytics data...');
+  console.log("Clearing existing analytics data...");
   await prisma.dailySalesAnalytics.deleteMany({});
 
-  await backfillSales('mobilesales');
-  await backfillSales('accessorysales');
-  console.log('Historical analytics backfill finished successfully!');
+  await backfillSales("mobilesales");
+  await backfillSales("accessorysales");
+  console.log("Historical analytics backfill finished successfully!");
 }
 
 main()
   .catch((e) => {
-    console.error('An error occurred during the backfill process:', e);
+    console.error("An error occurred during the backfill process:", e);
     process.exit(1);
   })
   .finally(async () => {

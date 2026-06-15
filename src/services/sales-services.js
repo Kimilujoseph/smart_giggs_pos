@@ -53,9 +53,9 @@ class salesmanagment {
           : "walkin@gmail.com",
         address: customerdetails.address,
       };
-      console.log("creating new customer with data", customerData);
+      //console.log("creating new customer with data", customerData);
       customer = await this.customer.createCustomer(customerData);
-      console.log("created new customer", customer);
+      //console.log("created new customer", customer);
     }
 
     return prisma.$transaction(async (tx) => {
@@ -196,6 +196,7 @@ class salesmanagment {
         });
 
         const createdPayments = await Promise.all(paymentPromises);
+        //console.log("created payments", createdPayments);
 
         const now = new Date();
         const today = new Date(
@@ -248,9 +249,10 @@ class salesmanagment {
               ? customer.phoneNumber
               : "walk-in-customer",
             shopName: shopName,
-            batchIMEI: productDetails.batchNumber
-              ? productDetails.batchNumber
-              : productDetails,
+            batchIMEI:
+              itemType === "mobiles"
+                ? productDetails.IMEI
+                : productDetails.batchNumber,
             productName: categoryDetails.itemName,
             productModel: categoryDetails.itemModel,
             brand: categoryDetails.brand,
