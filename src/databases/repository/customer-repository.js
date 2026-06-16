@@ -1,28 +1,45 @@
 import { PrismaClient } from "@prisma/client";
+import { InternalServerError } from "../../Utils/app-error.js";
 const prisma = new PrismaClient();
 
 class CustomerRepository {
   async createCustomer(customerData) {
-    return await prisma.customer.create({
-      data: customerData,
-    });
+    try {
+      return await prisma.customer.create({
+        data: customerData,
+      });
+    } catch (err) {
+      throw new InternalServerError();
+    }
   }
 
   async findCustomerById(customerId) {
-    return await prisma.customer.findUnique({
-      where: { id: parseInt(customerId) },
-    });
+    try {
+      return await prisma.customer.findUnique({
+        where: { id: parseInt(customerId) },
+      });
+    } catch (err) {
+      throw new InternalServerError();
+    }
   }
 
   async findCustomerByPhone(phone) {
-    return await prisma.customer.findFirst({
-      where: { phoneNumber: phone },
-    });
+    try {
+      return await prisma.customer.findFirst({
+        where: { phoneNumber: phone },
+      });
+    } catch (err) {
+      throw new InternalServerError();
+    }
   }
   async findCustomerByEmail(email) {
-    return await prisma.customer.findFirst({
-      where: { email: email },
-    });
+    try {
+      return await prisma.customer.findFirst({
+        where: { email: email },
+      });
+    } catch (err) {
+      throw new InternalServerError();
+    }
   }
 }
 

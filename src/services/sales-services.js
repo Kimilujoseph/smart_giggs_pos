@@ -7,7 +7,12 @@ import { phoneinventoryrepository } from "../databases/repository/mobile-invento
 import { CategoryManagementRepository } from "../databases/repository/category-contoller-repository.js";
 import { AnalyticsRepository } from "../databases/repository/analytics-repository.js";
 import { transformSales } from "../helpers/transformsales.js";
-import { APIError, STATUS_CODE } from "../Utils/app-error.js";
+import {
+  APIError,
+  STATUS_CODE,
+  NotFoundError,
+  BadRequestError,
+} from "../Utils/app-error.js";
 import CustomerRepository from "../databases/repository/customer-repository.js";
 
 const prisma = new PrismaClient();
@@ -31,11 +36,7 @@ class salesmanagment {
 
     const shop = await this.shop.findShop({ name: shopName });
     if (!shop) {
-      throw new APIError(
-        "Shop not found",
-        STATUS_CODE.NOT_FOUND,
-        "The specified shop does not exist."
-      );
+      throw new NotFoundError(`${shopName} shop Not found`);
     }
 
     let customer = await this.customer.findCustomerByPhone(
@@ -66,10 +67,8 @@ class salesmanagment {
         const { itemType, items, payments, CategoryId } = sale;
 
         if (items.length !== 1) {
-          throw new APIError(
-            "Bad Request",
-            STATUS_CODE.BAD_REQUEST,
-            "Each sale object in bulksales must contain exactly one item."
+          throw new BadRequestError(
+            "Each sale submitted  must contain atleast one item."
           );
         }
         const item = items[0];
@@ -85,9 +84,7 @@ class salesmanagment {
 
         const totalPaid = payments.reduce((acc, p) => acc + p.amount, 0);
         if (totalPaid < soldprice) {
-          throw new APIError(
-            "Bad Request",
-            STATUS_CODE.BAD_REQUEST,
+          throw new BadRequestError(
             `Total payment (${totalPaid}) is less than the sold price (${soldprice}).`
           );
         }
@@ -102,18 +99,10 @@ class salesmanagment {
               });
 
         if (!itemToSell) {
-          throw new APIError(
-            "Not Found",
-            STATUS_CODE.NOT_FOUND,
-            "Item not found."
-          );
+          throw new NotFoundError("product sold not found");
         }
         if (itemToSell.status === "sold" && itemToSell.quantity === 0) {
-          throw new APIError(
-            "Bad Request",
-            STATUS_CODE.BAD_REQUEST,
-            "Item has already been sold."
-          );
+          throw new BadRequestError("Product already sold");
         }
 
         const categoryDetails = await tx.categories.findUnique({
@@ -132,10 +121,8 @@ class salesmanagment {
           !productDetails ||
           !["available", "distributed"].includes(productDetails.stockStatus)
         ) {
-          throw new APIError(
-            "Not Found",
-            STATUS_CODE.NOT_FOUND,
-            `Product with ID ${productId} not found or not available.`
+          throw new BadRequestError(
+            "the selected product is not availble for sale"
           );
         }
 
@@ -159,7 +146,11 @@ class salesmanagment {
 
         let createdSale;
         if (itemType === "mobiles") {
-          createdSale = await tx.mobilesales.create({ data: saleData });
+          // createdSale = await tx.mobilesales.create({ data: saleData });
+          createdSale = await this.sales.createnewMobilesales(
+            { data: saleData },
+            tx
+          );
           await tx.mobileItems.updateMany({
             where: { id: parseInt(itemId) },
             data: { status: "sold", quantity: { decrement: soldUnits } },
@@ -169,7 +160,10 @@ class salesmanagment {
             data: { stockStatus: "sold" },
           });
         } else {
-          createdSale = await tx.accessorysales.create({ data: saleData });
+          createdSale = await this.sales.createnewAccessoriesales(
+            { data: saleData },
+            tx
+          );
           await tx.accessoryItems.update({
             where: { id: parseInt(itemId) },
             data: {
@@ -192,7 +186,8 @@ class salesmanagment {
           } else {
             paymentData.accessorySaleId = createdSale.id;
           }
-          return tx.payment.create({ data: paymentData });
+          // return tx.payment.create({ data: paymentData });
+          return this.sales.createPayment({ data: paymentData }, tx);
         });
 
         const createdPayments = await Promise.all(paymentPromises);

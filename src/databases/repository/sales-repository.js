@@ -1,87 +1,56 @@
 import { PrismaClient } from "@prisma/client";
 import { Prisma } from "@prisma/client";
-import { APIError, STATUS_CODE } from "../../Utils/app-error.js";
-const prisma = new PrismaClient();
+import prisma from "../client.js";
+import {
+  APIError,
+  STATUS_CODE,
+  InternalServerError,
+} from "../../Utils/app-error.js";
+//const prisma = new PrismaClient();
 class Sales {
-  async createPayment(paymentData) {
+  constructor() {
+    this.prisma = prisma;
+  }
+  async createPayment(paymentData, tx) {
     try {
-      const payment = await prisma.payment.create({
-        data: {
-          ...paymentData,
-          financerId: paymentData.financerId,
-        },
-      });
+      const prismaCLient = tx || this.prisma;
+      const payment = await prismaCLient.payment.create(paymentData);
       return payment;
     } catch (err) {
-      throw new APIError(
-        "database error",
-        STATUS_CODE.INTERNAL_ERROR,
-        "internal server error"
-      );
+      throw new InternalServerError("Internal server error");
     }
   }
 
-  async createnewMobilesales(salesDetails) {
+  async createnewMobilesales(salesDetails, tx) {
     try {
-      const successfullsale = await prisma.mobilesales.create({
-        data: {
-          ...salesDetails,
-        },
-      });
-      return successfullsale;
+      const prismaCLient = tx || this.prisma;
+      return await prismaCLient.mobilesales.create(salesDetails);
     } catch (err) {
       console.log("creating sales error ", err);
-      throw new APIError(
-        "database error",
-        STATUS_CODE.INTERNAL_ERROR,
-        "internal server error"
-      );
+      throw new InternalServerError("Internal server error");
     }
   }
-  async createnewAccessoriesales(salesDetails) {
+  async createnewAccessoriesales(salesDetails, tx) {
     try {
-      const successfullsale = await prisma.accessorysales.create({
-        data: {
-          ...salesDetails,
-        },
-      });
-      return successfullsale;
+      const prismaClient = tx || this.prisma;
+      return await prismaClient.accessorysales.create(salesDetails);
     } catch (err) {
-      console.log("creating sales error ", err);
-      throw new APIError(
-        "database error",
-        STATUS_CODE.INTERNAL_ERROR,
-        "internal server error"
-      );
+      throw new InternalServerError("Internal server error");
     }
   }
-  async findSalesById(salesId) {
-    try {
-      const sales = await salesDatabase.findById(salesId).populate({
-        path: "CategoryId",
-        select: "itemModel itemName,brand",
-      });
 
-      if (!sales) {
-        throw new APIError(
-          "database error".STATUS_CODE.NOT_FOUND,
-          "sales not found"
-        );
-      }
-      //console.log("@@", sales);
-      return sales;
-    } catch (err) {
-      if (err instanceof APIError) {
-        throw err;
-      }
-      throw new APIError(
-        "database error",
-        STATUS_CODE.INTERNAL_ERROR,
-        "internal server error"
-      );
-    }
-  }
-  async findSales({ salesTable, startDate, endDate, page, limit, shopId, categoryId, userId, financerId, financeStatus }) {
+  async findSales({
+    salesTable,
+    startDate,
+    endDate,
+    page,
+    limit,
+    shopId,
+    categoryId,
+    userId,
+    financerId,
+    financeStatus,
+  }) {
     try {
       const salesModel = prisma[salesTable];
       const skip = (page - 1) * limit;
@@ -89,7 +58,7 @@ class Sales {
         createdAt: { gte: startDate, lte: endDate },
       };
       if (userId) {
-        whereClause.sellerId = userId
+        whereClause.sellerId = userId;
       }
       if (shopId) {
         whereClause.shopID = shopId;
@@ -110,75 +79,75 @@ class Sales {
       const includeClause =
         salesTable === "mobilesales"
           ? {
-            mobiles: {
-              select: {
-                IMEI: true,
-                productCost: true,
-                batchNumber: true,
-                phoneType: true,
-                supplierId: true,
-                storage: true,
-                color: true,
-                paymentStatus: true,
+              mobiles: {
+                select: {
+                  IMEI: true,
+                  productCost: true,
+                  batchNumber: true,
+                  phoneType: true,
+                  supplierId: true,
+                  storage: true,
+                  color: true,
+                  paymentStatus: true,
+                },
               },
-            },
-            shops: {
-              select: {
-                id: true,
-                shopName: true
-              }
-            },
-            categories: {
-              select: {
-                itemName: true,
-                itemModel: true,
-                itemType: true,
-                brand: true,
-                category: true
-              }
-            },
-            actors: {
-              select: {
-                id: true,
-                name: true
-              }
-            },
-            Financer: {
-              select: {
-                name: true
-              }
-            },
-            //Payment: true
-          }
+              shops: {
+                select: {
+                  id: true,
+                  shopName: true,
+                },
+              },
+              categories: {
+                select: {
+                  itemName: true,
+                  itemModel: true,
+                  itemType: true,
+                  brand: true,
+                  category: true,
+                },
+              },
+              actors: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+              Financer: {
+                select: {
+                  name: true,
+                },
+              },
+              //Payment: true
+            }
           : {
-            accessories: true,
-            shops: {
-              select: {
-                shopName: true
-              }
-            },
-            categories: {
-              select: {
-                itemName: true,
-                itemModel: true,
-                itemType: true,
-                brand: true,
-                category: true
-              }
-            },
-            actors: {
-              select: {
-                id: true,
-                name: true
-              }
-            },
-            Financer: {
-              select: {
-                name: true
+              accessories: true,
+              shops: {
+                select: {
+                  shopName: true,
+                },
               },
-            },
-            //Payment: true
-          };
+              categories: {
+                select: {
+                  itemName: true,
+                  itemModel: true,
+                  itemType: true,
+                  brand: true,
+                  category: true,
+                },
+              },
+              actors: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+              Financer: {
+                select: {
+                  name: true,
+                },
+              },
+              //Payment: true
+            };
       const [results, totals] = await Promise.all([
         salesModel.findMany({
           where: whereClause,
@@ -226,7 +195,7 @@ class Sales {
         },
       };
     } catch (err) {
-      console.error("Database error:", err);
+      //console.error("Database error:", err);
       throw new APIError(
         "Database error",
         STATUS_CODE.INTERNAL_ERROR,
@@ -244,12 +213,12 @@ class Sales {
     }
     return salesTable === "mobilesales"
       ? prisma.mobiles.findMany({
-        where: { id: { in: productID } },
-        include: { categories: true },
-      })
+          where: { id: { in: productID } },
+          include: { categories: true },
+        })
       : prisma.accessories.findMany({
-        where: { id: { in: productID } },
-      });
+          where: { id: { in: productID } },
+        });
   }
   mapFinanceDetails(sale) {
     return {
@@ -259,10 +228,19 @@ class Sales {
     };
   }
 
-  async findUserSales({ salesTable, userId, startDate, endDate, page, limit, financerId, financeStatus }) {
+  async findUserSales({
+    salesTable,
+    userId,
+    startDate,
+    endDate,
+    page,
+    limit,
+    financerId,
+    financeStatus,
+  }) {
     try {
-      const salesModel = prisma[salesTable];
-      const skip = (page - 1) * limit
+      const salesModel = this.prisma[salesTable];
+      const skip = (page - 1) * limit;
       const whereClause = {
         sellerId: userId,
         createdAt: { gte: startDate, lte: endDate },
@@ -279,75 +257,75 @@ class Sales {
       const includeClause =
         salesTable === "mobilesales"
           ? {
-            mobiles: {
-              select: {
-                IMEI: true,
-                productCost: true,
-                batchNumber: true,
-                phoneType: true,
-                supplierId: true,
-                storage: true,
-                color: true,
-                paymentStatus: true,
+              mobiles: {
+                select: {
+                  IMEI: true,
+                  productCost: true,
+                  batchNumber: true,
+                  phoneType: true,
+                  supplierId: true,
+                  storage: true,
+                  color: true,
+                  paymentStatus: true,
+                },
               },
-            },
-            shops: {
-              select: {
-                id: true,
-                shopName: true
-              }
-            },
-            categories: {
-              select: {
-                itemName: true,
-                itemModel: true,
-                itemType: true,
-                brand: true,
-                category: true
-              }
-            },
-            actors: {
-              select: {
-                id: true,
-                name: true
-              }
-            },
-            Financer: {
-              select: {
-                name: true
-              }
-            },
-            //Payment: true
-          }
+              shops: {
+                select: {
+                  id: true,
+                  shopName: true,
+                },
+              },
+              categories: {
+                select: {
+                  itemName: true,
+                  itemModel: true,
+                  itemType: true,
+                  brand: true,
+                  category: true,
+                },
+              },
+              actors: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+              Financer: {
+                select: {
+                  name: true,
+                },
+              },
+              //Payment: true
+            }
           : {
-            accessories: true,
-            shops: {
-              select: {
-                shopName: true
-              }
-            },
-            categories: {
-              select: {
-                itemName: true,
-                itemModel: true,
-                itemType: true,
-                brand: true,
-                category: true
-              }
-            },
-            actors: {
-              select: {
-                id: true,
-                name: true
-              }
-            },
-            Financer: {
-              select: {
-                name: true
+              accessories: true,
+              shops: {
+                select: {
+                  shopName: true,
+                },
               },
-            },
-            //Payment: true
-          };
+              categories: {
+                select: {
+                  itemName: true,
+                  itemModel: true,
+                  itemType: true,
+                  brand: true,
+                  category: true,
+                },
+              },
+              actors: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+              Financer: {
+                select: {
+                  name: true,
+                },
+              },
+              //Payment: true
+            };
 
       const results = await salesModel.findMany({
         where: whereClause,
@@ -381,7 +359,7 @@ class Sales {
           financer: sale.Financer?.name || "N/A",
         },
       });
-      console.log("total profit", totals._sum.profit)
+      // console.log("total profit", totals._sum.profit);
       return {
         data: results.map(transformSale),
         totals: {
@@ -404,7 +382,7 @@ class Sales {
   }
 
   async findCategorySales({ categoryId, startDate, endDate }) {
-    return prisma.sales.findMany({
+    return this.prisma.sales.findMany({
       where: {
         categoryId,
         createdAt: { gte: startDate, lte: endDate },
@@ -426,7 +404,6 @@ class Sales {
   }
 
   transformUserSale(sale, tableName) {
-
     // Common properties
     const base = {
       soldprice: Number(sale.soldPrice),
@@ -475,141 +452,33 @@ class Sales {
     // Add table-specific properties
     return tableName === "mobilesales"
       ? {
-        ...base,
-        saleType: sale.salesType,
-        productDetails: {
-          ...base.productDetails,
-          storage: sale.mobiles?.storage,
-          color: sale.mobiles?.color,
-        },
-      }
+          ...base,
+          saleType: sale.salesType,
+          productDetails: {
+            ...base.productDetails,
+            storage: sale.mobiles?.storage,
+            color: sale.mobiles?.color,
+          },
+        }
       : {
-        ...base,
-        saleType: sale.financeStatus === "N/A" ? "direct" : "finance",
-        productDetails: {
-          ...base.productDetails,
-          color: sale.accessories?.color,
-          stockStatus: sale.accessories?.stockStatus,
-        },
-      };
+          ...base,
+          saleType: sale.financeStatus === "N/A" ? "direct" : "finance",
+          productDetails: {
+            ...base.productDetails,
+            color: sale.accessories?.color,
+            stockStatus: sale.accessories?.stockStatus,
+          },
+        };
   }
-  // sales.repository.js
-
-  async getSalesAnalytics(salesTable, startDate, endDate) {
-    try {
-      return await prisma.$queryRaw(
-        Prisma.sql`
-        SELECT 
-          p.itemName AS "productName",
-          CAST(SUM(s.soldprice) AS SIGNED) AS "totalSales",
-          CAST(SUM(s.profit) AS SIGNED) AS "netprofit",
-          CAST(COUNT(s._id) AS SIGNED) AS "totaltransacted"
-        FROM ${Prisma.raw(salesTable)} s
-        JOIN categories p ON s.categoryId = p._id
-        WHERE s.createdat BETWEEN ${startDate} AND ${endDate}
-          AND s.financestatus != 'pending'
-        GROUP BY p.itemName
-        ORDER BY "totalSales" DESC
-        LIMIT 10
-      `
-      );
-    } catch (err) {
-      console.log("#$#$sales", err);
-      throw new APIError(
-        "Database error",
-        STATUS_CODE.INTERNAL_ERROR,
-        "Failed to retrieve product analytics"
-      );
-    }
-  }
-
-  async getSellerAnalytics(salesTable, startDate, endDate) {
-    try {
-      return await prisma.$queryRaw(
-        Prisma.sql`
-        SELECT 
-          a.name AS "sellerName",
-          CAST(SUM(s.soldprice) AS SIGNED) AS "totalSales",
-          CAST(SUM(s.profit) AS SIGNED) AS "netprofit",
-          CAST(COUNT(s._id) AS SIGNED) AS "totaltransacted"
-        FROM ${Prisma.raw(salesTable)} s
-        JOIN actors a ON s.sellerid = a._id
-        WHERE s.createdat BETWEEN ${startDate} AND ${endDate}
-          AND s.financestatus != 'pending'
-        GROUP BY a.name
-        ORDER BY "totalSales" DESC
-        LIMIT 10
-      `
-      );
-    } catch (err) {
-      console.log("#$#$", err);
-      throw new APIError(
-        "Database error",
-        STATUS_CODE.INTERNAL_ERROR,
-        "Failed to retrieve seller analytics"
-      );
-    }
-  }
-  async getUserSellerAnalytics(salesTable, userId, startDate, endDate) {
-    try {
-      return await prisma.$queryRaw(
-        Prisma.sql`
-        SELECT 
-          a.name AS "sellerName",
-          CAST(SUM(s.soldprice) AS SIGNED) AS "totalSales",
-          CAST(SUM(s.profit) AS SIGNED) AS "netprofit",
-          CAST(COUNT(s._id) AS SIGNED) AS "totaltransacted"
-        FROM ${Prisma.raw(salesTable)} s
-        JOIN actors a ON s.sellerid = a._id
-        WHERE s.sellerid = ${userId}
-          AND s.createdat BETWEEN ${startDate} AND ${endDate}
-          AND s.financestatus != 'pending'
-        GROUP BY a.name
-        ORDER BY "totalSales" DESC
-        LIMIT 10
-      `
-      );
-    } catch (err) {
-      throw new APIError(
-        "Database error",
-        STATUS_CODE.INTERNAL_ERROR,
-        "Analytics failed"
-      );
-    }
-  }
-  async getUserProductAnalytics(salesTable, userId, startDate, endDate) {
-    try {
-      return await prisma.$queryRaw(
-        Prisma.sql`
-        SELECT 
-          p.itemName AS "productName",
-          CAST(SUM(s.soldprice) AS SIGNED) AS "totalSales",
-          CAST(SUM(s.profit) AS SIGNED) AS "netprofit",
-          CAST(COUNT(s._id) AS SIGNED) AS "totaltransacted"
-        FROM ${Prisma.raw(salesTable)} s
-        JOIN categories p ON s.categoryId = p._id
-        WHERE s.sellerid = ${userId}
-          AND s.createdat BETWEEN ${startDate} AND ${endDate}
-          AND s.financestatus != 'pending'
-        GROUP BY p.itemName
-        ORDER BY "totalSales" DESC
-        LIMIT 10
-      `
-      );
-    } catch (err) {
-      throw new APIError(
-        "Database error",
-        STATUS_CODE.INTERNAL_ERROR,
-        "Analytics failed"
-      );
-    }
-  }
-
   async updateFinanceStatus({ salesTable, saleId, status }) {
     try {
       const salesModel = prisma[salesTable];
       if (!salesModel) {
-        throw new APIError("Not Found", STATUS_CODE.NOT_FOUND, "Invalid sale type specified.");
+        throw new APIError(
+          "Not Found",
+          STATUS_CODE.NOT_FOUND,
+          "Invalid sale type specified."
+        );
       }
 
       return await salesModel.update({
@@ -617,8 +486,12 @@ class Sales {
         data: { financeStatus: status },
       });
     } catch (err) {
-      if (err.code === 'P2025') {
-        throw new APIError("Not Found", STATUS_CODE.NOT_FOUND, `Sale with ID ${saleId} not found.`);
+      if (err.code === "P2025") {
+        throw new APIError(
+          "Not Found",
+          STATUS_CODE.NOT_FOUND,
+          `Sale with ID ${saleId} not found.`
+        );
       }
       console.error("Database error updating finance status:", err);
       throw new APIError(
