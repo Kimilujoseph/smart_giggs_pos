@@ -95,11 +95,11 @@ class salesmanagment {
         const itemToSell =
           itemType === "mobiles"
             ? await tx.mobileItems.findUnique({
-                where: { id: parseInt(itemId) },
-              })
+              where: { id: parseInt(itemId) },
+            })
             : await tx.accessoryItems.findUnique({
-                where: { id: parseInt(itemId) },
-              });
+              where: { id: parseInt(itemId) },
+            });
 
         if (!itemToSell) {
           throw new APIError(
@@ -122,11 +122,11 @@ class salesmanagment {
         const productDetails =
           itemType === "mobiles"
             ? await tx.mobiles.findUnique({
-                where: { id: parseInt(productId) },
-              })
+              where: { id: parseInt(productId) },
+            })
             : await tx.accessories.findUnique({
-                where: { id: parseInt(productId) },
-              });
+              where: { id: parseInt(productId) },
+            });
 
         if (
           !productDetails ||
@@ -207,9 +207,8 @@ class salesmanagment {
         const financeStatusKey =
           financeStatus === null ? "null" : financeStatus;
 
-        const analyticsKey = `${today.toISOString()}-${CategoryId}-${
-          shop.id
-        }-${sellerId}-${financeStatusKey}-${financeIdKey}`;
+        const analyticsKey = `${today.toISOString()}-${CategoryId}-${shop.id
+          }-${sellerId}-${financeStatusKey}-${financeIdKey}`;
 
         const currentAnalytics = analyticsAggregator.get(analyticsKey) || {
           date: today,
@@ -248,9 +247,9 @@ class salesmanagment {
               ? customer.phoneNumber
               : "walk-in-customer",
             shopName: shopName,
-            batchIMEI: productDetails.batchNumber
-              ? productDetails.batchNumber
-              : productDetails,
+            batchIMEI: productDetails.IMEI
+              ? productDetails.IMEI
+              : productDetails.batchNumber,
             productName: categoryDetails.itemName,
             productModel: categoryDetails.itemModel,
             brand: categoryDetails.brand,
@@ -402,22 +401,22 @@ class salesmanagment {
     const [paginatedMobileSales, paginatedAccessorySales] = await Promise.all([
       userId
         ? this.sales.findUserSales({
-            ...paginatedSalesDetails,
-            salesTable: "mobilesales",
-          })
+          ...paginatedSalesDetails,
+          salesTable: "mobilesales",
+        })
         : this.sales.findSales({
-            ...paginatedSalesDetails,
-            salesTable: "mobilesales",
-          }),
+          ...paginatedSalesDetails,
+          salesTable: "mobilesales",
+        }),
       userId
         ? this.sales.findUserSales({
-            ...paginatedSalesDetails,
-            salesTable: "accessorysales",
-          })
+          ...paginatedSalesDetails,
+          salesTable: "accessorysales",
+        })
         : this.sales.findSales({
-            ...paginatedSalesDetails,
-            salesTable: "accessorysales",
-          }),
+          ...paginatedSalesDetails,
+          salesTable: "accessorysales",
+        }),
     ]);
 
     const combinedSales = [
