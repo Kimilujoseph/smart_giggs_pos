@@ -156,7 +156,7 @@ class InventorymanagementRepository {
   }
   async findProductById(id, tx) {
     const prismaClient = tx || prisma;
-    console.log("passed id", id);
+    //  console.log("passed id", id);
     try {
       const findItem = await prismaClient.accessories.findUnique({
         where: {

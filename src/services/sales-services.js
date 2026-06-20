@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { Sales } from "../databases/repository/sales-repository.js";
+import { AccessoryInventoryRepository } from "../databases/repository/accessory-inventory-repository.js";
 import { InventorymanagementRepository } from "../databases/repository/invetory-controller-repository.js";
 import { usermanagemenRepository } from "../databases/repository/usermanagement-controller-repository.js";
 import { ShopmanagementRepository } from "../databases/repository/shop-repository.js";
@@ -27,6 +28,7 @@ class salesmanagment {
     this.mobile = new phoneinventoryrepository();
     this.category = new CategoryManagementRepository();
     this.customer = CustomerRepository;
+    this.accessory = new AccessoryInventoryRepository();
   }
 
   async createBulkSale(salePayload, user) {
@@ -91,12 +93,11 @@ class salesmanagment {
 
         const itemToSell =
           itemType === "mobiles"
-            ? await tx.mobileItems.findUnique({
-                where: { id: parseInt(itemId) },
-              })
-            : await tx.accessoryItems.findUnique({
-                where: { id: parseInt(itemId) },
-              });
+            ? await this.mobile.findMobileItem(parseInt(itemId), tx)
+            : await this.accessory.findAccessoryItemProduct(
+                parseInt(itemId),
+                tx
+              );
 
         if (!itemToSell) {
           throw new NotFoundError("product sold not found");
@@ -110,13 +111,8 @@ class salesmanagment {
         });
         const productDetails =
           itemType === "mobiles"
-            ? await tx.mobiles.findUnique({
-                where: { id: parseInt(productId) },
-              })
-            : await tx.accessories.findUnique({
-                where: { id: parseInt(productId) },
-              });
-
+            ? await this.mobile.findItem(parseInt(productId), tx)
+            : await this.accessory.findItem(parseInt(productId), tx);
         if (
           !productDetails ||
           !["available", "distributed"].includes(productDetails.stockStatus)
@@ -151,27 +147,29 @@ class salesmanagment {
             { data: saleData },
             tx
           );
-          await tx.mobileItems.updateMany({
-            where: { id: parseInt(itemId) },
-            data: { status: "sold", quantity: { decrement: soldUnits } },
-          });
-          await tx.mobiles.update({
-            where: { id: parseInt(itemToSell.mobileID) },
-            data: { stockStatus: "sold" },
-          });
+          await this.mobile.updateSoldPhoneShopItem(parseInt(itemId), tx);
+          await this.mobile.updateSoldPhone(parseInt(itemToSell.mobileID), tx);
+          await this.mobile.updatesalesofaphone(
+            {
+              id: itemToSell.mobileID,
+              sellerId: sellerId,
+              status: "sold",
+            },
+            tx
+          );
         } else {
+          let status =
+            itemToSell.quantity - soldUnits > 0 ? "confirmed" : "sold";
           createdSale = await this.sales.createnewAccessoriesales(
             { data: saleData },
             tx
           );
-          await tx.accessoryItems.update({
-            where: { id: parseInt(itemId) },
-            data: {
-              status:
-                itemToSell.quantity - soldUnits > 0 ? "confirmed" : "sold",
-              quantity: { decrement: soldUnits },
-            },
-          });
+          const updateData = {
+            itemId: parseInt(itemId),
+            status,
+            soldUnits,
+          };
+          await this.accessory.updateSoldAccessoryItems(updateData, tx);
         }
 
         const paymentPromises = payments.map((p) => {
@@ -186,13 +184,10 @@ class salesmanagment {
           } else {
             paymentData.accessorySaleId = createdSale.id;
           }
-          // return tx.payment.create({ data: paymentData });
           return this.sales.createPayment({ data: paymentData }, tx);
         });
 
         const createdPayments = await Promise.all(paymentPromises);
-        //console.log("created payments", createdPayments);
-
         const now = new Date();
         const today = new Date(
           Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())

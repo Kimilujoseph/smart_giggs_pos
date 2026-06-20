@@ -4,3 +4,4 @@ node_modules/
 src/public/barcodes
 *.md
 node_cron_test.js
+*.sh

@@ -1,49 +1,69 @@
 import { PrismaClient } from "@prisma/client";
-import { APIError, DuplicationError, InternalServerError, NotFoundError, STATUS_CODE } from "../../Utils/app-error.js";
-
-const prisma = new PrismaClient();
+import {
+  APIError,
+  DuplicationError,
+  InternalServerError,
+  NotFoundError,
+  STATUS_CODE,
+} from "../../Utils/app-error.js";
+import prisma from "../client.js";
+//const prisma = new PrismaClient();
 
 class AccessoryInventoryRepository {
+  constructor() {
+    this.prisma = prisma;
+  }
   async createAccessoryHistoryDetails(payload, tx) {
     // const prismaClient = tx || prisma;
     try {
       const { user, shopId, ...accessoryDetails } = payload;
       //console.log("accessoryDetails.availableStock:", accessoryDetails);
-      const newAccessoryProduct = await this.createAccessoryStock(accessoryDetails, tx);
+      const newAccessoryProduct = await this.createAccessoryStock(
+        accessoryDetails,
+        tx
+      );
       const createAccessoryMetaData = await Promise.all([
-        this.createHistory({
-          user,
-          shopId,
-          productId: newAccessoryProduct.id,
-          type: "new stock",
-          quantity: accessoryDetails.availableStock,
-        }, tx),
+        this.createHistory(
+          {
+            user,
+            shopId,
+            productId: newAccessoryProduct.id,
+            type: "new stock",
+            quantity: accessoryDetails.availableStock,
+          },
+          tx
+        ),
       ]);
       return newAccessoryProduct;
     } catch (err) {
       //console.log("Error creating accessory with finance details:", err);
-      if (err instanceof InternalServerError || err instanceof DuplicationError) {
+      if (
+        err instanceof InternalServerError ||
+        err instanceof DuplicationError
+      ) {
         throw err;
       }
-      throw new InternalServerError("Internal server error")
+      throw new InternalServerError("Internal server error");
     }
   }
 
-  async createAccessoryStock({
-    CategoryId,
-    batchNumber,
-    productType,
-    faultyItems,
-    supplierName,
-    availableStock,
-    productcost,
-    commission,
-    color,
-    discount,
-    barcodePath,
-    supplierId,
-  }, tx) {
-
+  async createAccessoryStock(
+    {
+      CategoryId,
+      batchNumber,
+      productType,
+      faultyItems,
+      supplierName,
+      availableStock,
+      productcost,
+      commission,
+      color,
+      discount,
+      barcodePath,
+      supplierId,
+    },
+    tx
+  ) {
     const prismaClient = tx || prisma;
     try {
       const category = parseInt(CategoryId, 10);
@@ -68,34 +88,34 @@ class AccessoryInventoryRepository {
       return stock;
     } catch (err) {
       if (err.code === "P2002") {
-        throw new DuplicationError("same product batch may exist")
+        throw new DuplicationError("same product batch may exist");
       }
-      throw new InternalServerError("internal server error")
+      throw new InternalServerError("internal server error");
     }
   }
 
-  async createFinanceDetails(productId, financeDetails) {
-    try {
-      const updatedFinanceDetails = await prisma.accessoryfinance.create({
-        data: {
-          financer: financeDetails.financer,
-          financeAmount: financeDetails.financeAmount,
-          financeStatus: financeDetails.financeStatus,
-          productID: productId,
-        },
-      });
-      return updatedFinanceDetails;
-    } catch (err) {
-      if (err instanceof APIError) {
-        throw err;
-      }
-      throw new APIError(
-        "API Error",
-        STATUS_CODE.INTERNAL_ERROR,
-        err.message || "Unable to create new finance details"
-      );
-    }
-  }
+  // async createFinanceDetails(productId, financeDetails) {
+  //   try {
+  //     const updatedFinanceDetails = await prisma.accessoryfinance.create({
+  //       data: {
+  //         financer: financeDetails.financer,
+  //         financeAmount: financeDetails.financeAmount,
+  //         financeStatus: financeDetails.financeStatus,
+  //         productID: productId,
+  //       },
+  //     });
+  //     return updatedFinanceDetails;
+  //   } catch (err) {
+  //     if (err instanceof APIError) {
+  //       throw err;
+  //     }
+  //     throw new APIError(
+  //       "API Error",
+  //       STATUS_CODE.INTERNAL_ERROR,
+  //       err.message || "Unable to create new finance details"
+  //     );
+  //   }
+  // }
 
   async createHistory({ productId, user, type, shopId, quantity }, tx) {
     const prismaClient = tx || prisma;
@@ -106,13 +126,13 @@ class AccessoryInventoryRepository {
           type: type,
           shopId: shopId,
           addedBy: user,
-          quantity: quantity
+          quantity: quantity,
         },
       });
       return createHistory;
     } catch (err) {
       //console.error("Error in createHistory:", err);
-      throw new InternalServerError("Internal server error")
+      throw new InternalServerError("Internal server error");
     }
   }
 
@@ -130,32 +150,26 @@ class AccessoryInventoryRepository {
       });
       return updatedSalesOfAccessory;
     } catch (err) {
-      throw new APIError(
-        "Database Error",
-        STATUS_CODE.INTERNAL_ERROR,
-        "Internal server error"
-      );
+      throw new InternalServerError("Internal server error");
     }
   }
 
-  async updateSoldAccessory(id) {
+  async updateSoldAccessoryItems(data, tx) {
     try {
-      const updateSoldAccessory = await prisma.accessories.update({
+      const prismaClient = tx || this.prisma;
+      const updateSoldAccessory = await prismaClient.accessoryItems.update({
         where: {
-          id: id,
+          id: data.itemId,
         },
         data: {
-          stockStatus: "sold",
+          status: data.status,
+          quantity: { decrement: data.soldUnits },
           updatedAt: new Date(),
         },
       });
       return updateSoldAccessory;
     } catch (err) {
-      throw new APIError(
-        "Database Error",
-        STATUS_CODE.INTERNAL_ERROR,
-        "Internal server error"
-      );
+      throw new InternalServerError("Internal server error");
     }
   }
 
@@ -186,23 +200,22 @@ class AccessoryInventoryRepository {
   async updateTransferHistory(distributionData) {
     try {
       const { status, userId, id } = distributionData;
-      const updatedTransferHistory = await prisma.accessorytransferhistory.update({
-        where: {
-          id: id,
-        },
-        data: {
-          actors_accessorytransferhistory_confirmedByToactors: {
-            connect: { id: userId },
+      const updatedTransferHistory =
+        await prisma.accessorytransferhistory.update({
+          where: {
+            id: id,
           },
-          status: status,
-          updatedAt: new Date(),
-        },
-      });
+          data: {
+            actors_accessorytransferhistory_confirmedByToactors: {
+              connect: { id: userId },
+            },
+            status: status,
+            updatedAt: new Date(),
+          },
+        });
       return updatedTransferHistory;
     } catch (err) {
-      throw new InternalServerError(
-        "Internal server error "
-      );
+      throw new InternalServerError("Internal server error ");
     }
   }
 
@@ -223,9 +236,7 @@ class AccessoryInventoryRepository {
       });
       return updatedAccessory;
     } catch (err) {
-      throw new InternalServerError(
-        "Internal server error"
-      );
+      throw new InternalServerError("Internal server error");
     }
   }
 
@@ -236,7 +247,6 @@ class AccessoryInventoryRepository {
           id: accessoryId,
         },
         data: {
-
           ...updates,
           updatedAt: new Date(),
         },
@@ -281,16 +291,17 @@ class AccessoryInventoryRepository {
           updatedAt: new Date(),
         },
       });
-      await this.createHistory({
-        user,
-        shopId,
-        quantity: faultyItems,
-        productId: accessoryId,
-        type: "faulty",
-
-      }, tx);
+      await this.createHistory(
+        {
+          user,
+          shopId,
+          quantity: faultyItems,
+          productId: accessoryId,
+          type: "faulty",
+        },
+        tx
+      );
       return updatedAccessory;
-
     } catch (err) {
       throw new APIError(
         "Database Error",
@@ -317,9 +328,10 @@ class AccessoryInventoryRepository {
     }
   }
 
-  async findItem(stockId) {
+  async findItem(stockId, tx) {
     try {
-      const stockItem = await prisma.accessories.findUnique({
+      const prismaClient = tx || this.prisma;
+      const stockItem = await prismaClient.accessories.findUnique({
         where: {
           id: stockId,
         },
@@ -335,14 +347,20 @@ class AccessoryInventoryRepository {
       });
       return stockItem;
     } catch (err) {
-      if (err instanceof APIError) {
-        throw err;
-      }
-      throw new APIError(
-        "Database Error",
-        STATUS_CODE.INTERNAL_ERROR,
-        "Internal server error"
-      );
+      throw new InternalServerError();
+    }
+  }
+
+  async findAccessoryItemProduct(accessoryId, tx) {
+    try {
+      const prismaClient = tx || this.prisma;
+      const accessoryItem = await prismaClient.accessoryItems.findUnique({
+        where: { id: accessoryId },
+      });
+      return accessoryItem;
+    } catch (err) {
+      //console.log(err)
+      throw new InternalServerError();
     }
   }
 
@@ -411,7 +429,6 @@ class AccessoryInventoryRepository {
 
       return { stockAvailable, totalItems };
     } catch (err) {
-
       throw new InternalServerError("Internal server error");
     }
   }
@@ -435,20 +452,20 @@ class AccessoryInventoryRepository {
           },
           Supplier: {
             select: {
-              name: true
-            }
-          }
+              name: true,
+            },
+          },
         },
       });
       if (!productFound) {
-        throw new NotFoundError("this spefic product is not found")
+        throw new NotFoundError("this spefic product is not found");
       }
       return productFound;
     } catch (err) {
       if (err instanceof NotFoundError) {
         throw err;
       }
-      throw new InternalServerError("internal server error")
+      throw new InternalServerError("internal server error");
     }
   }
 
@@ -485,7 +502,7 @@ class AccessoryInventoryRepository {
 
       return productFound;
     } catch (err) {
-      throw new InternalServerError("internal server error")
+      throw new InternalServerError("internal server error");
     }
   }
 
@@ -513,11 +530,7 @@ class AccessoryInventoryRepository {
       });
       return productHistory;
     } catch (err) {
-
-      throw new InternalServerError(
-
-        "Internal server error"
-      );
+      throw new InternalServerError("Internal server error");
     }
   }
 
@@ -536,31 +549,30 @@ class AccessoryInventoryRepository {
       });
       return updatedTransfer;
     } catch (err) {
-      throw new InternalServerError(
-        "Internal server error"
-      );
+      throw new InternalServerError("Internal server error");
     }
   }
 
   async createAccessoryTransferHistory(id, transferData) {
     try {
-      const createdTransferHistory = await prisma.accessorytransferhistory.create({
-        data: {
-          quantity: transferData.quantity,
-          status: transferData.status,
-          type: transferData.type,
-          fromshop: transferData.fromShop,
-          toshop: transferData.toShop,
-          productID: id,
-          transferdBy: transferData.transferdBy,
-        },
-      });
+      const createdTransferHistory =
+        await prisma.accessorytransferhistory.create({
+          data: {
+            quantity: transferData.quantity,
+            status: transferData.status,
+            type: transferData.type,
+            fromshop: transferData.fromShop,
+            toshop: transferData.toShop,
+            productID: id,
+            transferdBy: transferData.transferdBy,
+          },
+        });
 
       await prisma.accessoryItems.create({
         data: {
           accessoryID: id,
           shopID: transferData.toShop,
-          status: 'pending',
+          status: "pending",
           quantity: transferData.quantity,
           transferId: createdTransferHistory.id,
         },
@@ -635,8 +647,9 @@ class AccessoryInventoryRepository {
       const combinedResults = [...batchNumberMatches, ...categoryMatches];
 
       const filteredResults = combinedResults.filter((accessory) => {
-        const batchNumberMatch =
-          accessory.batchNumber?.toLowerCase().includes(lowercaseSearchItem);
+        const batchNumberMatch = accessory.batchNumber
+          ?.toLowerCase()
+          .includes(lowercaseSearchItem);
         const categoryMatch =
           accessory.categories.itemName
             ?.toLowerCase()
@@ -644,7 +657,9 @@ class AccessoryInventoryRepository {
           accessory.categories.itemModel
             ?.toLowerCase()
             .includes(lowercaseSearchItem) ||
-          accessory.categories.brand?.toLowerCase().includes(lowercaseSearchItem);
+          accessory.categories.brand
+            ?.toLowerCase()
+            .includes(lowercaseSearchItem);
 
         return batchNumberMatch || categoryMatch;
       });
@@ -674,10 +689,9 @@ class AccessoryInventoryRepository {
         },
       });
 
-
       return deletedAccessory;
     } catch (err) {
-      throw new InternalServerError("Internal server error")
+      throw new InternalServerError("Internal server error");
     }
   }
 }

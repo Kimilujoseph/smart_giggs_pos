@@ -3,6 +3,7 @@ import {
   APIError,
   STATUS_CODE,
   InternalServerError,
+  NotFoundError,
 } from "../../Utils/app-error.js";
 
 class phoneinventoryrepository {
@@ -29,10 +30,6 @@ class phoneinventoryrepository {
       });
       return stockItem;
     } catch (err) {
-      console.log("ERERdata", err);
-      if (err instanceof APIError) {
-        throw err;
-      }
       throw new APIError(
         "database error",
         STATUS_CODE.INTERNAL_ERROR,
@@ -49,23 +46,9 @@ class phoneinventoryrepository {
           id: mobileItemId,
         },
       });
-      if (!mobileItem) {
-        throw new APIError(
-          "not found error",
-          STATUS_CODE.NOT_FOUND,
-          "product item not found"
-        );
-      }
       return mobileItem;
     } catch (err) {
-      if (err instanceof APIError) {
-        throw err;
-      }
-      throw new APIError(
-        "database error",
-        STATUS_CODE.INTERNAL_ERROR,
-        "internal server error "
-      );
+      throw new InternalServerError();
     }
   }
   async deleteMobileItem(mobilleItemId, tx) {
@@ -78,11 +61,7 @@ class phoneinventoryrepository {
       });
       return deletedItem;
     } catch (err) {
-      throw new APIError(
-        "database error",
-        STATUS_CODE.INTERNAL_ERROR,
-        "internal server error "
-      );
+      throw new InternalServerError();
     }
   }
   async findProductExistInShop(mobileId, shopId, tx) {
@@ -256,7 +235,7 @@ class phoneinventoryrepository {
   }
 
   async createHistory({ productId, user, type, shopId }, tx) {
-    const prismaClient = tx || prisma;
+    const prismaClient = tx || this.prisma;
     try {
       const createHistory = await prismaClient.mobileHistory.create({
         data: {
@@ -277,8 +256,10 @@ class phoneinventoryrepository {
   }
 
   //updating sales of a phone stock status
-  async updatesalesofaphone({ id, sellerId, status }) {
+  async updatesalesofaphone(updateDetails, tx) {
     try {
+      const prismaClient = tx || this.prisma;
+      const { id, sellerId, status } = updateDetails;
       const updatedSalesofthephone = await prisma.mobileHistory.updateMany({
         where: {
           productID: id,
@@ -291,6 +272,7 @@ class phoneinventoryrepository {
       });
       return updatedSalesofthephone;
     } catch (err) {
+      console.log(err);
       throw new APIError(
         "Database Error",
         STATUS_CODE.INTERNAL_ERROR,
@@ -298,19 +280,44 @@ class phoneinventoryrepository {
       );
     }
   }
-  async updateSoldPhone(id) {
+  async updateSoldPhone(id, tx) {
     try {
-      const updateSoldPhone = await prisma.mobiles.update({
+      const prismaCLient = tx || this.prisma;
+      const updateSoldPhone = await prismaCLient.mobiles.update({
         where: {
           id: id,
         },
         data: {
           stockStatus: "sold",
+
           updatedAt: new Date(),
         },
       });
       return updateSoldPhone;
     } catch (err) {
+      throw new APIError(
+        "Database Error",
+        STATUS_CODE.INTERNAL_ERROR,
+        "internal server error"
+      );
+    }
+  }
+  async updateSoldPhoneShopItem(id, tx) {
+    try {
+      const prismaCLient = tx || this.prisma;
+      const updateSoldPhone = await prismaCLient.mobileItems.update({
+        where: {
+          id: id,
+        },
+        data: {
+          productStatus: "sold",
+          quantity: { decrement: 1 },
+          updatedAt: new Date(),
+        },
+      });
+      return updateSoldPhone;
+    } catch (err) {
+      console.log("err", err);
       throw new APIError(
         "Database Error",
         STATUS_CODE.INTERNAL_ERROR,
