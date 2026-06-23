@@ -4,6 +4,7 @@ const paymentRepo = new paymentRepository()
 class PaymentService {
 
   async getPayments(filters) {
+    //console.log("payments in the service", filters)
     const { summary, ...rest } = await paymentRepo.findPayments(filters);
 
     const formattedSummary = summary.reduce((acc, group) => {

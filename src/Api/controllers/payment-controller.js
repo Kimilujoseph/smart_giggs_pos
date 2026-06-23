@@ -5,7 +5,8 @@ const paymentService = new PaymentService();
 
 const handleGetPayments = async (req, res, next) => {
   try {
-    const filters = { ...req.query, ...req.salesQuery };
+
+    const filters = { ...req.query, ...req.dateQuery };
     const { summary, payments, totalPayments, totalPages, currentPage } =
       await paymentService.getPayments(filters);
 

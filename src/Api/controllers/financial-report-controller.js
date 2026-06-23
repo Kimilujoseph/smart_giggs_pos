@@ -7,7 +7,7 @@ const financialReportingService = new FinancialReportingService();
 const handleGetFinancialSummary = async (req, res, next) => {
   try {
     const { startDate, endDate } = req.dateQuery;
-
+    console.log("date query", startDate, endDate)
     const summary = await financialReportingService.generateFinancialSummary({
       startDate,
       endDate,
