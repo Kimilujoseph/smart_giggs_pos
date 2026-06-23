@@ -16,6 +16,9 @@ class PaymentService {
 
     return { summary: formattedSummary, ...rest };
   }
+
+  //SUMMARISE BY PAYMENT METHOD
+
 }
 
 export default PaymentService;
