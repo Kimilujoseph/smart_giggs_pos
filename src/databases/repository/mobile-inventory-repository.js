@@ -305,9 +305,10 @@ class phoneinventoryrepository {
   async updateSoldPhoneShopItem(id, tx) {
     try {
       const prismaCLient = tx || this.prisma;
-      const updateSoldPhone = await prismaCLient.mobileItems.update({
+      const updateSoldPhone = await prismaCLient.mobileItems.updateMany({
         where: {
           id: id,
+          quantity: { gte: 1 },
         },
         data: {
           productStatus: "sold",
@@ -315,9 +316,21 @@ class phoneinventoryrepository {
           updatedAt: new Date(),
         },
       });
+
+      if (updateSoldPhone.count === 0) {
+        throw new APIError(
+          "Bad Request",
+          STATUS_CODE.BAD_REQUEST,
+          "Phone already sold or unavailable"
+        );
+      }
+
       return updateSoldPhone;
     } catch (err) {
       console.log("err", err);
+      if (err instanceof APIError) {
+        throw err;
+      }
       throw new APIError(
         "Database Error",
         STATUS_CODE.INTERNAL_ERROR,

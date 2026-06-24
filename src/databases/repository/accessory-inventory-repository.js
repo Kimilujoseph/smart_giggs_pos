@@ -157,9 +157,10 @@ class AccessoryInventoryRepository {
   async updateSoldAccessoryItems(data, tx) {
     try {
       const prismaClient = tx || this.prisma;
-      const updateSoldAccessory = await prismaClient.accessoryItems.update({
+      const updateSoldAccessory = await prismaClient.accessoryItems.updateMany({
         where: {
           id: data.itemId,
+          quantity: { gte: data.soldUnits },
         },
         data: {
           status: data.status,
@@ -167,8 +168,20 @@ class AccessoryInventoryRepository {
           updatedAt: new Date(),
         },
       });
+
+      if (updateSoldAccessory.count === 0) {
+        throw new APIError(
+          "Bad Request",
+          STATUS_CODE.BAD_REQUEST,
+          "Product already sold or insufficient quantity"
+        );
+      }
+
       return updateSoldAccessory;
     } catch (err) {
+      if (err instanceof APIError) {
+        throw err;
+      }
       throw new InternalServerError("Internal server error");
     }
   }
