@@ -2,6 +2,7 @@ import prisma from "../client.js";
 import {
   APIError,
   STATUS_CODE,
+  BadRequestError,
   InternalServerError,
 } from "../../Utils/app-error.js";
 
@@ -51,7 +52,7 @@ class ShopmanagementRepository {
       }
       return shopFound;
     } catch (err) {
-      console.log("finding shop error", err);
+      //console.log("finding shop error", err);
       throw new APIError(
         "API Error",
         STATUS_CODE.INTERNAL_ERROR,
@@ -121,28 +122,20 @@ class ShopmanagementRepository {
   }
 
   async findSpecificShopItem({
-    name,
     requestedItem,
     page = 1,
     limit = 10,
     status,
+    shopID
   }) {
     try {
-      const shop = await this.prisma.shops.findFirst({
-        where: { shopName: name },
-        select: { id: true, shopName: true },
-      });
-
-      if (!shop) {
-        throw new APIError(
-          "Shop not found",
-          STATUS_CODE.NOT_FOUND,
-          "Shop not found"
-        );
-      }
+      // const shop = await this.prisma.shops.findFirst({
+      //   where: { shopName: name },
+      //   select: { id: true, shopName: true },
+      // });
 
       const whereClause = {
-        shopID: shop.id,
+        shopID: shopID,
         quantity: { gt: 0 },
       };
 
@@ -199,9 +192,7 @@ class ShopmanagementRepository {
           where: whereClause,
         });
       } else {
-        throw new APIError(
-          "Invalid requested item type",
-          STATUS_CODE.BAD_REQUEST,
+        throw new BadRequestError(
           "Invalid item type. Should be phoneItems or stockItems"
         );
       }
@@ -213,14 +204,10 @@ class ShopmanagementRepository {
         items: items,
       };
     } catch (err) {
-      if (err instanceof APIError) {
+      if (err instanceof BadRequestError) {
         throw err;
       }
-      throw new APIError(
-        "API Error",
-        STATUS_CODE.INTERNAL_ERROR,
-        err.message || "Unable to find the shop"
-      );
+      throw new InternalServerError()
     }
   }
 

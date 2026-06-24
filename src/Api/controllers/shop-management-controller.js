@@ -15,7 +15,7 @@ const getSpecificShop = async (req, res, next) => {
       status,
       itemType,
     });
-    console.log("peding stockk", getSpecificShop);
+    //console.log("peding stockk", getSpecificShop);
     return res.status(200).json({ message: "success", shop: getSpecificShop });
   } catch (err) {
     if (err instanceof APIError) {

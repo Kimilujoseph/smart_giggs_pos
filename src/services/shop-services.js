@@ -2,7 +2,7 @@ import { ShopmanagementRepository } from "../databases/repository/shop-repositor
 import { usermanagemenRepository } from "../databases/repository/usermanagement-controller-repository.js";
 import { InvetorymanagementService } from "./invetory-controller-services.js";
 import { MobilemanagementService } from "./mobile-controller-service.js";
-import { APIError, STATUS_CODE } from "../Utils/app-error.js";
+import { APIError, STATUS_CODE, NotFoundError } from "../Utils/app-error.js";
 
 class ShopmanagementService {
   constructor() {
@@ -40,11 +40,7 @@ class ShopmanagementService {
       const shopFound = await this.repository.findShop({ name });
 
       if (!shopFound) {
-        throw new APIError(
-          "Shop not found",
-          STATUS_CODE.NOT_FOUND,
-          "No shop found with the given name"
-        );
+        throw new NotFoundError("shop does not exist")
       }
 
       const assignedSellers = shopFound.assignment
@@ -70,6 +66,7 @@ class ShopmanagementService {
           page,
           limit,
           status,
+          shopId: shopFound.id
         });
       }
 
@@ -80,6 +77,7 @@ class ShopmanagementService {
           page,
           limit,
           status,
+          shopId: shopFound.id
         });
       }
 
@@ -315,7 +313,7 @@ class ShopmanagementService {
         items.forEach(item => {
           const cost = itemType === 'mobile' ? item.mobiles.productCost : item.accessories.productCost;
           const category = itemType === 'mobile' ? item.mobiles.categories.itemName : item.accessories.categories.itemName;
-          
+
           const itemValue = cost * item.quantity;
           totalCost += itemValue;
 
