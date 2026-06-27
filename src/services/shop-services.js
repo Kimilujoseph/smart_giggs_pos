@@ -61,23 +61,21 @@ class ShopmanagementService {
 
       if (itemType === 'mobile' || itemType === 'all' || !itemType) {
         mobileItems = await this.repository.findSpecificShopItem({
-          name,
+          shopID: shopFound.id,
           requestedItem: 'mobileItems',
           page,
           limit,
-          status,
-          shopId: shopFound.id
+          status
         });
       }
 
       if (itemType === 'accessory' || itemType === 'all' || !itemType) {
         accessoryItems = await this.repository.findSpecificShopItem({
-          name,
+          shopID: shopFound.id,
           requestedItem: 'accessoryItems',
           page,
           limit,
-          status,
-          shopId: shopFound.id
+          status
         });
       }
 

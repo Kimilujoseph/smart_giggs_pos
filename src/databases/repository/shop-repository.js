@@ -129,10 +129,6 @@ class ShopmanagementRepository {
     shopID
   }) {
     try {
-      // const shop = await this.prisma.shops.findFirst({
-      //   where: { shopName: name },
-      //   select: { id: true, shopName: true },
-      // });
 
       const whereClause = {
         shopID: shopID,
