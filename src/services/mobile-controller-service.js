@@ -152,10 +152,10 @@ class MobilemanagementService {
         this.shop.findShop({ name: shopname }),
         this.mobile.findMobileTransferHistory(transferID),
       ]);
-      console.log("confirmDistribution - mobileProduct:", mobileProduct);
-      console.log("confirmDistribution - shopFound:", shopFound);
-      console.log("confirmDistribution - transferDetails:", transferDetails);
-      console.log("confirmDistribution - userId:", userId);
+      // console.log("confirmDistribution - mobileProduct:", mobileProduct);
+      // console.log("confirmDistribution - shopFound:", shopFound);
+      // console.log("confirmDistribution - transferDetails:", transferDetails);
+      // console.log("confirmDistribution - userId:", userId);
 
       //i have seen it wise if to verify if product exist and verify transfer
       if (!mobileProduct) {
@@ -233,10 +233,10 @@ class MobilemanagementService {
       };
       const updateMobileItemResult = await this.mobile.updateConfirmedmobileItem(confirmedData);
       const updateTransferHistoryResult = await this.mobile.updatetransferHistory(distributionData);
-      console.log("confirmDistribution - updateMobileItemResult:", updateMobileItemResult);
-      console.log("confirmDistribution - updateTransferHistoryResult:", updateTransferHistoryResult);
+      //console.log("confirmDistribution - updateMobileItemResult:", updateMobileItemResult);
+      //console.log("confirmDistribution - updateTransferHistoryResult:", updateTransferHistoryResult);
     } catch (err) {
-      console.log("ERERE", err);
+      //console.log("ERERE", err);
       if (err instanceof APIError) {
         throw err;
       }
@@ -306,7 +306,7 @@ class MobilemanagementService {
       );
       return updatedPhone;
     } catch (err) {
-      console.log(err);
+      //console.log(err);
       if (err instanceof APIError) {
         throw err;
       }

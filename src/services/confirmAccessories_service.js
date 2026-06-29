@@ -82,11 +82,12 @@ class ConfirmAccessorymanagementService {
     if (!shopFound) {
       throw new NotFoundError("SHOP NOT FOUND");
     }
+
     if (
-      !shopFound.assignment.some((seller) => seller.actors.id === parsedUserId)
+      !shopFound.assignment.some((seller) => seller.actors.id === parsedUserId && seller.status === 'assigned')
     ) {
       throw new AuthorizationError(
-        "You are not authorized to confirm arrival"
+        "You are not authorized to confirm this arrival"
       );
     }
   }
