@@ -3,47 +3,6 @@ import { PrismaClient } from "@prisma/client";
 import { APIError, STATUS_CODE, InternalServerError, DuplicationError } from "../../Utils/app-error.js";
 const prisma = new PrismaClient();
 class usermanagemenRepository {
-  async createMainAdmin({
-    name,
-    email,
-    hashedpassword,
-    phonenumber,
-    nextofkinname,
-    nextofkinphonenumber,
-    imgUrls,
-  }) {
-    try {
-      const newUser = await prisma.actors.create({
-        data: {
-          name,
-          email,
-          password: hashedpassword,
-          phone: phonenumber,
-          nextofkinname: nextofkinname,
-          nextofkinphonenumber: nextofkinphonenumber,
-          profileimage: imgUrls,
-          role: "superuser",
-        },
-      });
-      return newUser;
-    } catch (err) {
-      //console.log("error", err);
-      if (err.code === "P2002") {
-        // Prisma error code for unique constraint violation
-        const duplicateField = err.meta.target[0]
-        throw new DuplicationError(
-          `${email} is already in use.`
-        );
-      } else {
-        throw new APIError(
-          "API error",
-          STATUS_CODE.INTERNAL_ERROR,
-          "Unable to create the super user"
-        );
-      }
-    }
-  }
-
   async createSeller({
     name,
     email,
@@ -67,9 +26,7 @@ class usermanagemenRepository {
 
       return newseller;
     } catch (err) {
-      console.log("error", err)
       if (err.code === "P2002") {
-
         const duplicatedField = err.meta.target;
         let duplicatedValue;
         if (duplicatedField === "actors_email_key") {
