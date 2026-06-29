@@ -23,7 +23,6 @@ class usermanagemenRepository {
           role: "seller",
         },
       });
-
       return newseller;
     } catch (err) {
       if (err.code === "P2002") {
@@ -44,7 +43,6 @@ class usermanagemenRepository {
       }
     }
   }
-
   async fetchAllUsers(page, limit) {
     try {
       const skip = (page - 1) * limit;
@@ -73,11 +71,7 @@ class usermanagemenRepository {
       };
     } catch (err) {
 
-      throw new APIError(
-        "Database Error",
-        STATUS_CODE.INTERNAL_ERROR,
-        "Internal server error"
-      );
+      throw new InternalServerError()
     }
   }
 
@@ -101,16 +95,11 @@ class usermanagemenRepository {
 
       return assignedShop;
     } catch (err) {
-      throw new APIError(
-        "Database Error",
-        STATUS_CODE.INTERNAL_ERROR,
-        "Internal server error"
-      );
+      throw new InternalServerError()
     }
   }
   async findUser(email) {
     try {
-      ///console.log("email", email);
       const user = await prisma.actors.findUnique({
         where: {
           email: email,
@@ -136,11 +125,7 @@ class usermanagemenRepository {
       return user;
     } catch (err) {
 
-      throw new APIError(
-        "Database Error",
-        STATUS_CODE.INTERNAL_ERROR,
-        "internal server error"
-      );
+      throw new InternalServerError()
     }
   }
 
