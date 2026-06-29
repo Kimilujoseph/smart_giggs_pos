@@ -341,63 +341,7 @@ class usermanagemenRepository {
       throw new InternalServerError("Internal server error")
     }
   }
-  async addprofilepicture({ id, imgUrls }) {
-    try {
-      const updatedUser = await prisma.actors.update({
-        where: {
-          id: id,
-        },
-        data: { profileimage: imgUrls[0] },
-      });
-      return updatedUser;
-    } catch (err) {
-      console.log("err", err);
-      throw new APIError(
-        "DatabasError",
-        STATUS_CODE.INTERNAL_ERROR,
-        "failed to update user profile picture"
-      );
-    }
-  }
-  async addIDpicture({ id, imgUrls }) {
-    try {
-      console.log("img", imgUrls);
-      const updatedUser = await prisma.actors.update({
-        where: {
-          id: id,
-        },
-        data: { Idimagefront: imgUrls },
-      });
-      return updatedUser;
-    } catch (err) {
-      console.log("err", err);
-      throw new APIError(
-        "DatabasError",
-        STATUS_CODE.INTERNAL_ERROR,
-        "failed to update user profile picture"
-      );
-    }
-  }
 
-  async addIDpicturebackward({ id, imgUrls }) {
-    try {
-      const updatedUser = await prisma.actors.update({
-        where: {
-          id: id,
-        },
-        data: { Idimagebackward: imgUrls },
-      });
-
-      return updatedUser;
-    } catch (err) {
-      console.log("err", err);
-      throw new APIError(
-        "DatabasError",
-        STATUS_CODE.INTERNAL_ERROR,
-        "failed to update user profile picture"
-      );
-    }
-  }
 
   //update user and seller status
 

@@ -65,7 +65,6 @@ class userManagmentService {
     }
     const userId = userFound.id;
     ///const userAssignedShop = await this.repository.findAssignedShop(userId);
-
     const shopAssigned = userFound.assignment.filter(
       (assignment) => assignment.status === "assigned"
     );
@@ -74,18 +73,10 @@ class userManagmentService {
       ...userFound,
       assignedShop: shopAssigned[0]?.shops.shopName,
     };
-    // const { accessorySales, mobileSales } = await Promise.all([
-    //   this.repository.findUserAccesorySales(userId),
-    //   this.repository.findUserMobilesSales(userId),
-    // ]);
-
     const passwordMatch = await validatePassword(
       password,
       userFound.password
     );
-
-    ////console.log("password match", passwordMatch);
-
     if (!passwordMatch) {
       throw new AuthenticationError("invalid password")
     }
@@ -95,143 +86,12 @@ class userManagmentService {
       role: userFound.role,
       email: userFound.email,
       name: userFound.name,
-      // accesssorySales: accessorySales,
-      // mobilesSales: mobileSales,
       phonenumber: userFound.phonenumber,
       workingstatus: userFound.workingstatus,
     };
     const token = await GenerateSignature(payload);
     return { token, userAvailable };
 
-  }
-
-  async createSuperUser(superuserdetails) {
-    try {
-      const {
-        name,
-        email,
-        password,
-        phonenumber,
-        nextofkinname,
-        nextofkinphonenumber,
-      } = superuserdetails;
-      console.log(superuserdetails);
-      const salt = await GenerateSalt();
-      const hashedpassword = await Generatepassword(salt, password);
-      console.log("hashed", hashedpassword);
-      const newUser = await this.repository.createMainAdmin({
-        name,
-        email,
-        hashedpassword,
-        phonenumber,
-        nextofkinname,
-        nextofkinphonenumber,
-      });
-      return newUser;
-    } catch (err) {
-      throw err;
-    }
-  }
-
-  async addprofilepicture(userdetails) {
-    try {
-      const { email, imgUrls } = userdetails;
-      const findUser = await this.findSpecificUser(email);
-      let id = findUser.id;
-      if (
-        !findUser ||
-        findUser.workingstatus === "suspended" ||
-        findUser.workingstatus === "inactive"
-      ) {
-        throw new APIError(
-          "unathorised",
-          STATUS_CODE.UNAUTHORIZED,
-          "not allowed to update profile picture"
-        );
-      }
-
-      const updatedUser = await this.repository.addprofilepicture({
-        imgUrls,
-        id,
-      });
-      return updatedUser;
-    } catch (err) {
-      console.log("service", err);
-      if (err instanceof APIError) {
-        throw err;
-      }
-      throw new APIError(
-        "service error",
-        STATUS_CODE.INTERNAL_ERROR,
-        "internal server error"
-      );
-    }
-  }
-  async addIDpicture(userdetails) {
-    try {
-      const { email, imgUrls } = userdetails;
-      const findUser = await this.findSpecificUser(email);
-      let id = findUser.id;
-      if (
-        !findUser ||
-        findUser.workingstatus === "suspended" ||
-        findUser.workingstatus === "inactive"
-      ) {
-        throw new APIError(
-          "unathorised",
-          STATUS_CODE.UNAUTHORIZED,
-          "not allowed to update profile picture"
-        );
-      }
-
-      const updatedUser = await this.repository.addIDpicture({ imgUrls, id });
-      return updatedUser;
-    } catch (err) {
-      console.log("service", err);
-      if (err instanceof APIError) {
-        throw err;
-      }
-      throw new APIError(
-        "service error",
-        STATUS_CODE.INTERNAL_ERROR,
-        "internal server error"
-      );
-    }
-  }
-
-  async addIDpicturebackward(userdetails) {
-    try {
-      const { email, imgUrls } = userdetails;
-      const findUser = await this.findSpecificUser(email);
-      let id = findUser.id;
-      if (
-        !findUser ||
-        findUser.workingstatus === "suspended" ||
-        findUser.workingstatus === "inactive"
-      ) {
-        throw new APIError(
-          "unathorised",
-          STATUS_CODE.UNAUTHORIZED,
-          "not allowed to update profile picture"
-        );
-      }
-
-      const updatedUser = await this.repository.addIDpicturebackward({
-        imgUrls,
-        id,
-      });
-      return updatedUser;
-    } catch (err) {
-      console.log("service", err);
-      if (err instanceof APIError) {
-        throw err;
-      }
-      throw new APIError(
-        "service error",
-        STATUS_CODE.INTERNAL_ERROR,
-        "internal server error"
-      );
-    }
   }
 
   async updateUserStatus(userdetails) {
@@ -273,26 +133,11 @@ class userManagmentService {
   }
 
   async findUserBySearch(userItem) {
-    try {
-      const user = await this.repository.SearchUsers(userItem);
-      if (!user.length) {
-        throw new APIError(
-          "not found",
-          STATUS_CODE.NOT_FOUND,
-          "user not found"
-        );
-      }
-      return user;
-    } catch (err) {
-      if (err instanceof APIError) {
-        throw err;
-      }
-      throw new APIError(
-        "service error",
-        STATUS_CODE.INTERNAL_ERROR,
-        "internal server error"
-      );
+    const user = await this.repository.SearchUsers(userItem);
+    if (!user.length) {
+      throw new NotFoundError("user not found")
     }
+    return user;
   }
 
   async __findUserByID(id) {
@@ -306,5 +151,6 @@ class userManagmentService {
     }
     return foundUser
   }
+
 }
 export { userManagmentService };

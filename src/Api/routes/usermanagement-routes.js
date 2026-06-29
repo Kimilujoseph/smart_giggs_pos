@@ -7,9 +7,6 @@ import {
   userUpdateStatus,
   userUpdateRole,
   userProfileUpdate,
-  addprofilepicture,
-  addIdImagefront,
-  addIdImagebackward,
   getUserProfile,
 } from "../controllers/usermanagement-controller.js";
 
@@ -21,24 +18,6 @@ router.get("/profile/:email", verifyUser, getUserProfile);
 router.put("/update/profile", verifyUser, userProfileUpdate);
 router.put("/update/role", verifyUser, Authorization, userUpdateRole);
 router.put("/update/status", verifyUser, Authorization, userUpdateStatus);
-router.put(
-  "/update/identificationbackward",
-  verifyUser,
-  upload.array("images"),
-  addIdImagebackward
-);
-router.put(
-  "/update/identificationfront",
-  verifyUser,
-  upload.array("images"),
-  addIdImagefront
-);
-router.put(
-  "/update/profilepicture",
-  verifyUser,
-  upload.array("images"),
-  addprofilepicture
-);
 router.post("/user/signin", UserLogin);
 router.post("/seller/signup", verifyUser, Authorization, createSeller);
 //router.post("/superuser/signup", createmainUser);
