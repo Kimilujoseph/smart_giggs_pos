@@ -186,97 +186,7 @@ class usermanagemenRepository {
       );
     }
   }
-  //remember to move this part of the code to sales modue
-  async findUserAccesorySales(sellerId) {
-    try {
-      const accessorySales = await prisma.accessorysales.findMany({
-        where: {
-          sellerId: sellerId,
-        },
-        select: {
-          id: true,
-          commission: true,
-          soldPrice: true,
-          quantity: true,
-          createdAt: true,
-          shops: {
-            select: {
-              shopName: true,
-            },
-          },
-          accessories: {
-            select: {
-              batchNumber: true,
-              productCost: true,
-              categories: {
-                select: {
-                  itemName: true,
-                  itemModel: true,
-                  brand: true,
-                  minPrice: true,
-                },
-              },
-            },
-          },
-        },
-      });
 
-      return accessorySales;
-    } catch (err) {
-      if (err instanceof APIError) {
-        throw err;
-      }
-      throw new APIError(
-        "Database Error",
-        STATUS_CODE.INTERNAL_ERROR,
-        "internal server error"
-      );
-    }
-  }
-  async findUserMobilesSales(sellerId) {
-    try {
-      const accessorySales = await prisma.mobilesales.findMany({
-        where: {
-          sellerId: sellerId,
-        },
-        select: {
-          id: true,
-          commission: true,
-          soldPrice: true,
-          quantity: true,
-          createdAt: true,
-          shops: {
-            select: {
-              shopName: true,
-            },
-          },
-          mobiles: {
-            select: {
-              batchNumber: true,
-              productCost: true,
-              categories: {
-                select: {
-                  itemName: true,
-                  itemModel: true,
-                  brand: true,
-                  minPrice: true,
-                },
-              },
-            },
-          },
-        },
-      });
-
-      return accessorySales;
-    } catch (err) {
-      console.log("err", err);
-      throw new APIError(
-        "Database Error",
-        STATUS_CODE.INTERNAL_ERROR,
-        "internal server error"
-      );
-    }
-  }
 
   async findUserByname({ name }) {
     try {
@@ -289,24 +199,9 @@ class usermanagemenRepository {
           id: true,
         },
       });
-      if (!user) {
-        throw new APIError(
-          "User not found",
-          STATUS_CODE.NOT_FOUND,
-          "The specified user does not exist"
-        );
-      }
       return user;
     } catch (err) {
-      console.log("err", err);
-      if (err instanceof APIError) {
-        throw err;
-      }
-      throw new APIError(
-        "Database Error",
-        STATUS_CODE.INTERNAL_ERROR,
-        "internal server error"
-      );
+      throw new InternalServerError()
     }
   }
   async findUserById({ id }) {
@@ -318,7 +213,6 @@ class usermanagemenRepository {
       });
       return userFound;
     } catch (err) {
-
       throw new InternalServerError("Internal server error")
     }
   }
@@ -337,8 +231,7 @@ class usermanagemenRepository {
 
       return updatedUser;
     } catch (err) {
-      console.log("Repository Error:", err);
-      throw new InternalServerError("Internal server error")
+      throw new InternalServerError()
     }
   }
 
@@ -356,12 +249,7 @@ class usermanagemenRepository {
       });
       return updatedUser;
     } catch (err) {
-      console.log("errpr", err)
-      throw new APIError(
-        "DatabasError",
-        STATUS_CODE.BAD_REQUEST,
-        "failed to update user status"
-      );
+      throw new InternalServerError()
     }
   }
 
@@ -375,31 +263,10 @@ class usermanagemenRepository {
       });
       return updatedUser;
     } catch (err) {
-      if (err instanceof APIError) {
-        throw err;
-      }
-      throw new APIError(
-        "DatabasError",
-        STATUS_CODE.BAD_REQUEST,
-        "failed to update user status"
-      );
+      throw new InternalServerError()
     }
   }
 
-  //on review
-  // async deleteUser({ id }) {
-  //   try {
-  //     const deletedUser = await userSchema.findByIdAndDelete({ id: id });
-  //     return deletedUser;
-  //   } catch (err) {
-  //     throw new APIError(
-  //       "internal server error",
-  //       STATUS_CODE.INTERNAL_ERROR,
-  //       "internal server error"
-  //     );
-  //   }
-  // }
-  //update user assignment
   async updateUserAssignment({ sellerId, shopId, fromDate, toDate, type }) {
     try {
       if (!sellerId) {
