@@ -8,24 +8,7 @@ let usermanagement = new userManagmentService();
 //gettting to the landing page
 const createSeller = async (req, res, next) => {
   try {
-    const {
-      name,
-      password,
-      email,
-      phonenumber,
-      nextofkinphonenumber,
-      nextofkinname,
-    } = req.body;
-    const newUser = await usermanagement.createSeller({
-      name,
-      password,
-      email,
-      nextofkinphonenumber,
-      nextofkinname,
-      phonenumber,
-      phone: phonenumber,
-    });
-    //console.log(newUser);
+    const newUser = await usermanagement.createSeller(req.body);
     return res.status(201).json({
       status: 201,
       message: "successfully created",
@@ -37,15 +20,6 @@ const createSeller = async (req, res, next) => {
 };
 const findAllUsers = async (req, res, next) => {
   try {
-    const user = req.user;
-
-    if (user.role !== "superuser" && user.role !== "manager") {
-      throw new APIError(
-        "Not authorised",
-        STATUS_CODE.UNAUTHORIZED,
-        "not authorised to view the page"
-      );
-    }
     const { page = 1, limit = 20 } = req.query;
     const { allUsers, totalPages } = await usermanagement.findAllUser(
       page,
@@ -55,31 +29,24 @@ const findAllUsers = async (req, res, next) => {
       .status(200)
       .json({ status: 200, data: allUsers, totalPages: totalPages });
   } catch (err) {
-    if (err instanceof APIError) {
-      return res.status(err.statusCode).json({ message: err.message });
-    } else {
-      return res.status(500).json({ message: "Internal Server Error" });
-    }
+    next(err)
   }
 };
 
 const getUserProfile = async (req, res) => {
   try {
     const user = req.user;
-    console.log("user", user);
     const requestedEmail = req.params.email;
     if (user.email != requestedEmail && user.role !== "superuser" && user.role !== "manager") {
-      console.log(user, requestedEmail);
       return res.status(401).json({ message: "unauthorised" });
     }
     const userAvailable = await usermanagement.findSpecificUser(requestedEmail);
-    // console.log(userAvailable)
+
     return res
       .status(200)
       .json({ title: user.role, user: userAvailable, isLoggedIn: true });
   } catch (err) {
-    console.log(err);
-    return res.status(err.statusCode).json({ message: err.message });
+    next(err)
   }
 };
 
@@ -104,24 +71,14 @@ const UserLogin = async (req, res, next) => {
       token,
     });
   } catch (err) {
-    console.log(err);
-    if (err instanceof APIError) {
-      return res
-        .status(err.statusCode)
-        .json({ message: err.message, error: true });
-    } else {
-      return res.status(500).json({ message: "Internal Server Error" });
-    }
+    next(err)
   }
 };
-
-
-
 
 const addprofilepicture = async (req, res) => {
   try {
     const user = req.user;
-    console.log("user", user)
+    ///console.log("user", user)
     const email = user.email;
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({ error: "No files uploaded", error: true });
@@ -245,11 +202,6 @@ const userUpdateStatus = async (req, res, next) => {
   try {
     const { status, id } = req.body;
     const userId = id;
-    const user = req.user
-    if (!["superuser", "manager"].includes(user.role)) {
-      return res.status(403).json({ message: "unauthorised to update status" });
-    }
-
     const updatedUser = await usermanagement.updateUserStatus({
       status,
       userId,
@@ -260,53 +212,32 @@ const userUpdateStatus = async (req, res, next) => {
       data: updatedUser,
     });
   } catch (err) {
-    if (err instanceof APIError) {
-      return res.status(err.statusCode).json({ message: err.message });
-    } else {
-      return res.status(500).json({ message: "Internal Server Error" });
-    }
+    next(err)
   }
 };
 
 const userUpdateRole = async (req, res, next) => {
   try {
-    const user = req.user;
-    if (user.role !== "superuser") {
-      return res.status(403).json({ message: "unauthorised to update role" });
-    }
     const { role, id } = req.body;
-    //const userId = id;
     const updatedUser = await usermanagement.updateUserRole({
       role,
       id: parseInt(id, 10),
     });
-
     return res.status(200).json({
       message: "Successfully updated role",
       data: updatedUser,
     });
   } catch (err) {
-    if (err instanceof APIError) {
-      return res.status(err.statusCode).json({ message: err.message });
-    } else {
-      return res.status(500).json({ message: "Internal Server Error" });
-    }
+    next(err)
   }
 };
 const userProfileUpdate = async (req, res, next) => {
   try {
+    const userData = { ...req.body }
     const { password, name, phone, nextofkinname, nextofkinphonenumber } = req.body;
-    const user = req.user;
-    const email = user.email
-    const updatedUserProfile = await usermanagement.updateUserProfile({
-      password,
-      name,
-      phone,
-      email,
-      nextofkinname,
-      nextofkinphonenumber,
-    });
-
+    const userID = req.user.id;
+    userData.userID = userID
+    const updatedUserProfile = await usermanagement.updateUserProfile(userData);
     return res.status(200).json({
       message: "successfully updated your profile",
       data: updatedUserProfile,

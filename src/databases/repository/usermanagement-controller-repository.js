@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client";
-import { DuplicationError } from "../../Utils/app-error.js";
-import { APIError, STATUS_CODE } from "../../Utils/app-error.js";
+////import { DuplicationError } from "../../Utils/app-error.js";
+import { APIError, STATUS_CODE, InternalServerError, DuplicationError } from "../../Utils/app-error.js";
 const prisma = new PrismaClient();
 class usermanagemenRepository {
   async createMainAdmin({
@@ -67,7 +67,7 @@ class usermanagemenRepository {
 
       return newseller;
     } catch (err) {
-
+      console.log("error", err)
       if (err.code === "P2002") {
 
         const duplicatedField = err.meta.target;
@@ -81,11 +81,9 @@ class usermanagemenRepository {
           `${duplicatedValue} is already in use.`
         );
       } else {
-        throw new APIError(
-          "API error",
-          STATUS_CODE.INTERNAL_ERROR,
-          "Unable to create the super user"
-        );
+        throw new InternalServerError();
+
+
       }
     }
   }
@@ -108,15 +106,7 @@ class usermanagemenRepository {
 
       const totalUsers = await prisma.actors.count();
 
-      const totalPages = Math.ceil(totalUsers / limit);
-
-      if (!users || users.length === 0) {
-        throw new APIError(
-          "Users not found",
-          STATUS_CODE.NOT_FOUND,
-          "Users are currently not available"
-        );
-      }
+      const totalPages = Math.ceil(totalUsers / limit)
 
       return {
         users,
@@ -125,7 +115,7 @@ class usermanagemenRepository {
         currentPage: page,
       };
     } catch (err) {
-      console.log("Repository Error:", err);
+
       throw new APIError(
         "Database Error",
         STATUS_CODE.INTERNAL_ERROR,
@@ -154,7 +144,6 @@ class usermanagemenRepository {
 
       return assignedShop;
     } catch (err) {
-      console.log("error", err);
       throw new APIError(
         "Database Error",
         STATUS_CODE.INTERNAL_ERROR,
@@ -164,7 +153,7 @@ class usermanagemenRepository {
   }
   async findUser(email) {
     try {
-      console.log("email", email);
+      ///console.log("email", email);
       const user = await prisma.actors.findUnique({
         where: {
           email: email,
@@ -187,19 +176,9 @@ class usermanagemenRepository {
           }
         }
       });
-      if (!user) {
-        throw new APIError(
-          "User not found",
-          STATUS_CODE.NOT_FOUND,
-          "The specified user does not exist"
-        );
-      }
       return user;
     } catch (err) {
-      console.log("err", err);
-      if (err instanceof APIError) {
-        throw err;
-      }
+
       throw new APIError(
         "Database Error",
         STATUS_CODE.INTERNAL_ERROR,
@@ -339,69 +318,27 @@ class usermanagemenRepository {
       });
       return userFound;
     } catch (err) {
-      console.log("findusererror", err);
-      if (err instanceof APIError) {
-        throw err;
-      }
-      throw new APIError(
-        "Database Error",
-        STATUS_CODE.INTERNAL_ERROR,
-        "internal server error"
-      );
+
+      throw new InternalServerError("Internal server error")
     }
   }
   async updateUserProfile(updatedFields) {
     try {
       const {
-        name,
-        email,
-        password,
-        phone,
-        nextofkinname,
-        nextofkinphonenumber,
+        email
       } = updatedFields;
-      console.log("useremail", email);
-      const userFound = await prisma.actors.findUnique({
-        where: {
-          email: email,
-        },
-      });
 
-      if (!userFound) {
-        throw new APIError(
-          "User not found",
-          STATUS_CODE.NOT_FOUND,
-          "The specified user does not exist"
-        );
-      }
-
-      const updateFields = {
-        name,
-        phone,
-        email,
-        nextofkinname,
-        nextofkinphonenumber,
-      };
-      if (password) {
-        updateFields.password = password;
-      }
-      // Update the user
       const updatedUser = await prisma.actors.update({
         where: {
           email: email,
         },
-        data: updateFields,
+        data: updatedFields,
       });
 
-      console.log("updatedUser", updatedUser);
       return updatedUser;
     } catch (err) {
       console.log("Repository Error:", err);
-      throw new APIError(
-        "Internal server error",
-        STATUS_CODE.INTERNAL_ERROR,
-        "Internal server error"
-      );
+      throw new InternalServerError("Internal server error")
     }
   }
   async addprofilepicture({ id, imgUrls }) {
@@ -466,34 +403,16 @@ class usermanagemenRepository {
 
   async updateUser({ status, userId }) {
     try {
-      const id = parseInt(userId, 10);
-      if (isNaN(id)) {
-        throw new APIError(
-          "bad request",
-          STATUS_CODE.BAD_REQUEST,
-          "Invalid ID format"
-        );
-      }
-      const UserFound = await this.findUserById({ id });
-      if (!UserFound) {
-        throw new APIError(
-          "User not found",
-          STATUS_CODE.NOT_FOUND,
-          "The specified user does not exist"
-        );
-      }
+
       const updatedUser = await prisma.actors.update({
         where: {
-          id: id,
+          id: userId,
         },
         data: { workingstatus: status },
       });
       return updatedUser;
     } catch (err) {
-      console.log("err", err);
-      if (err instanceof APIError) {
-        throw err;
-      }
+      console.log("errpr", err)
       throw new APIError(
         "DatabasError",
         STATUS_CODE.BAD_REQUEST,
@@ -504,14 +423,6 @@ class usermanagemenRepository {
 
   async updateUserRole({ role, id }) {
     try {
-      const UserFound = await this.findUserById({ id });
-      if (!UserFound) {
-        throw new APIError(
-          "User not found",
-          STATUS_CODE.NOT_FOUND,
-          "The specified user does not exist"
-        );
-      }
       const updatedUser = await prisma.actors.update({
         where: {
           id: id,

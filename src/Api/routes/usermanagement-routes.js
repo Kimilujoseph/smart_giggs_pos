@@ -12,14 +12,15 @@ import {
   addIdImagebackward,
   getUserProfile,
 } from "../controllers/usermanagement-controller.js";
+
 import { Authorization } from "../../middleware/Authorization.js";
 import upload from "../../Utils/multer.js";
 const router = express.Router();
-router.get("/all", verifyUser, findAllUsers);
+router.get("/all", verifyUser, Authorization, findAllUsers);
 router.get("/profile/:email", verifyUser, getUserProfile);
 router.put("/update/profile", verifyUser, userProfileUpdate);
-router.put("/update/role", verifyUser, userUpdateRole);
-router.put("/update/status", verifyUser, userUpdateStatus);
+router.put("/update/role", verifyUser, Authorization, userUpdateRole);
+router.put("/update/status", verifyUser, Authorization, userUpdateStatus);
 router.put(
   "/update/identificationbackward",
   verifyUser,
