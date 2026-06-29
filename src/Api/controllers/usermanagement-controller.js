@@ -1,8 +1,5 @@
-import { userinputvalidation } from "../../Utils/joivalidation.js";
 import { userManagmentService } from "../../services/usermanagement-controller-services.js";
-import { APIError, STATUS_CODE } from "../../Utils/app-error.js";
-import uploads from "../../Utils/cloudinary.js";
-import fs from "fs";
+
 let usermanagement = new userManagmentService();
 
 //gettting to the landing page
@@ -110,8 +107,6 @@ const userUpdateRole = async (req, res, next) => {
 const userProfileUpdate = async (req, res, next) => {
   try {
     const userData = { ...req.body }
-    const { password, name, phone, nextofkinname, nextofkinphonenumber } = req.body;
-    const userID = req.user.id;
     userData.userID = userID
     const updatedUserProfile = await usermanagement.updateUserProfile(userData);
     return res.status(200).json({
@@ -119,11 +114,7 @@ const userProfileUpdate = async (req, res, next) => {
       data: updatedUserProfile,
     });
   } catch (err) {
-    if (err instanceof APIError) {
-      return res.status(err.statusCode).json({ message: err.message });
-    } else {
-      return res.status(500).json({ message: "Internal Server Error" });
-    }
+    next(err)
   }
 };
 
@@ -135,7 +126,4 @@ export {
   userUpdateStatus,
   userUpdateRole,
   userProfileUpdate,
-  addprofilepicture,
-  addIdImagefront,
-  addIdImagebackward,
 };
