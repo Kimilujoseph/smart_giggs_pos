@@ -19,7 +19,6 @@ const createCategory = async (req, res, next) => {
 const getAllCategories = async (req, res) => {
     try {
         const user = req.user;
-        //console.log(user);
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
         const { categories, totalItems } = await category.getAllCategories(user.role, page, limit)

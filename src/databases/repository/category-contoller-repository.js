@@ -4,16 +4,6 @@ const prisma = new PrismaClient();
 class CategoryManagementRepository {
   async AddNewProduct(itemDetails) {
     try {
-      // const {
-      //   itemName,
-      //   itemModel,
-      //   itemType,
-      //   brand,
-      //   minPrice,
-      //   maxPrice,
-      //   category,
-      // } = itemDetails;
-
       const productItem = await prisma.categories.create({
         data: itemDetails
       });
@@ -49,45 +39,7 @@ class CategoryManagementRepository {
       );
     }
   }
-  // async AddItemInProduct({ id, itemId }) {
-  //     try {
-  //         const UpdatedProduct = await Product.findByIdAndUpdate(
-  //             id,
-  //             {
-  //                 $push: { Items: itemId },
-  //             },
-  //             { new: true }
-  //         );
-  //         console.log("i have been approached")
-  //     }
-  //     catch (err) {
-  //         throw new APIError(
-  //             "API Error",
-  //             STATUS_CODE.INTERNAL_ERROR,
-  //             err.message || "Unable to create new goods"
-  //         );
-  //     }
-  // }
-  // async updateSalesOfProduct({ id, salesId }) {
-  //     try {
-  //         const updatedProduct
-  //             = await Product.findByIdAndUpdate(
-  //                 id,
-  //                 {
-  //                     $push: { sales: salesId },
-  //                 },
-  //                 { new: true }
-  //             );
-  //         return updatedProduct;
-  //     } catch (err) {
-  //         throw new APIError(
-  //             "service error",
-  //             STATUS_CODE.INTERNAL_ERROR,
-  //             err.message || "Unable to update sales"
-  //         );
-  //     }
-  // }
-  //fetch all categories id
+
   async getAllCategories(userRole, page = 1, limit = 10) {
     try {
 
@@ -143,7 +95,7 @@ class CategoryManagementRepository {
           CategoryId: { in: categoryIds }
         }
       });
-      console.log("mobile stock", mobileStock)
+
       const accessoryStockMap = new Map(accessoryStock.map(item => [item.CategoryId, item._sum.availableStock || 0]));
       //console.log("accessoryStockMap", accessoryStockMap);
       const mobileStockMap = new Map(mobileStock.map(item => [item.CategoryId, item._sum.availableStock || 0]));
