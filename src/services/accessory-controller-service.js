@@ -20,13 +20,10 @@ class AccessoryManagementService {
       const { CategoryId, supplierId } = accessoryDetails;
 
       const category = parseInt(CategoryId, 10);
-      await this.category.getCategoryById(category, tx);
-      // if (!categoryExist) {
-      //   throw new ValidationError(
-      //     "Invalid category",
-
-      //   );
-      // }
+      const categoryExist = await this.category.getCategoryById(category, tx);
+      if (!categoryExist) {
+        throw NotFoundError("category not found")
+      }
       const shopFound = await this.shop.findShop({ name: "WareHouse" }, tx);
       if (!shopFound) {
         throw new NotFoundError("shop seems is not available")

@@ -315,18 +315,8 @@ class CategoryManagementRepository {
           },
         },
       });
-
-      //console.log("category", category);
-
-      if (!category) {
-        throw new NotFoundError(
-          "Category not found"
-        );
-      }
-
       return category;
     } catch (err) {
-      // console.log("erer", err);
       if (err instanceof NotFoundError) {
         throw err
       }

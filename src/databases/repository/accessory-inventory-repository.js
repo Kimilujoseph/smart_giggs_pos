@@ -1,4 +1,3 @@
-import { PrismaClient } from "@prisma/client";
 import {
   APIError,
   DuplicationError,
@@ -7,7 +6,7 @@ import {
   STATUS_CODE,
 } from "../../Utils/app-error.js";
 import prisma from "../client.js";
-//const prisma = new PrismaClient();
+
 
 class AccessoryInventoryRepository {
   constructor() {
@@ -36,7 +35,6 @@ class AccessoryInventoryRepository {
       ]);
       return newAccessoryProduct;
     } catch (err) {
-      //console.log("Error creating accessory with finance details:", err);
       if (
         err instanceof InternalServerError ||
         err instanceof DuplicationError
@@ -93,30 +91,6 @@ class AccessoryInventoryRepository {
       throw new InternalServerError("internal server error");
     }
   }
-
-  // async createFinanceDetails(productId, financeDetails) {
-  //   try {
-  //     const updatedFinanceDetails = await prisma.accessoryfinance.create({
-  //       data: {
-  //         financer: financeDetails.financer,
-  //         financeAmount: financeDetails.financeAmount,
-  //         financeStatus: financeDetails.financeStatus,
-  //         productID: productId,
-  //       },
-  //     });
-  //     return updatedFinanceDetails;
-  //   } catch (err) {
-  //     if (err instanceof APIError) {
-  //       throw err;
-  //     }
-  //     throw new APIError(
-  //       "API Error",
-  //       STATUS_CODE.INTERNAL_ERROR,
-  //       err.message || "Unable to create new finance details"
-  //     );
-  //   }
-  // }
-
   async createHistory({ productId, user, type, shopId, quantity }, tx) {
     const prismaClient = tx || prisma;
     try {
