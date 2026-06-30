@@ -2,9 +2,9 @@ import express from "express";
 import session from "express-session";
 import MySQLStore from "express-mysql-session";
 import morgan from "morgan";
+import logger from "./Utils/logger.js";
 import cookies from "cookie-parser";
 import { ErrorHandler } from "./Utils/error-handler.js";
-//import inventoryRoutes from "./Api/routes/inventory-management-routes.js";
 import searchroutes from "./Api/routes/search-management-route.js";
 import shoproutes from "./Api/routes/shop-inventory-routes.js";
 import userRoutes from "./Api/routes/usermanagement-routes.js";
@@ -33,6 +33,7 @@ import { fileURLToPath } from "url";
 import dotenv from "dotenv";
 import cors from "cors";
 import verifyUser from "./middleware/verification.js";
+import { timeStamp } from "console";
 
 dotenv.config();
 
@@ -74,16 +75,26 @@ const App = async (app) => {
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
   app.use(express.static(path.join(__dirname, "public")));
-  app.use(morgan("dev"));
+  app.use(morgan((tokens, req, res) => {
+    return JSON.stringify({
+      method: tokens.method(req, res),
+      url: tokens.url(req, res),
+      status: tokens.status(req, res),
+      res_body: tokens.res(req, res, 'content-length'),
+      request_id: req.headers['x-request-id'],
+      resposne_time: `${tokens["response-time"](req, res)}ms`,
+      ip: tokens["remote-addr"](req, res),
+      userAgent: tokens["user-agent"](req, res),
+      timeStamp: new Date().toISOString()
+    })
+  }, {
+    stream: {
+      write: (message) => logger.info(message)
+    }
+  })
+  )
   //SET COOKIES
   app.use(cookies("captecstoresession"));
-  // Set EJS as the view engine
-  // app.use(expressEjsLayouts);
-  // app.set("view engine", "ejs");
-  // app.set("views", path.join(__dirname, "views"));
-  // app.set("layout", "layouts/main");
-
-  // Enable CORS
   app.use(
     cors({
       origin: [
