@@ -129,25 +129,6 @@ const getCategoryById = async (req, res) => {
     }
 }
 
-const getCategoryByShop = async (req, res) => {
-    try {
-        const shopName = req.params.shopName;
-        const categoryId = req.params.categoryId;
-
-        const getCategory = await category.getCategoryByShop(shopName, categoryId);
-        res.status(200).json({
-            message: "category fetch sucessfully",
-            data: getCategory
-        })
-    }
-    catch (err) {
-        if (err instanceof APIError) {
-            return res
-                .status(err.statusCode)
-                .json({ message: err.message, error: true });
-        }
-    }
-}
 
 const deleteCategory = async (req, res) => {
     try {
@@ -182,6 +163,5 @@ export {
     updateCategory,
     getCategoryById,
     getAllCategories,
-    getCategoryByShop,
     deleteCategory
 }

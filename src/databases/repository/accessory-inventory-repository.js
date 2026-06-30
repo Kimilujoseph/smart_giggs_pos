@@ -577,6 +577,7 @@ class AccessoryInventoryRepository {
 
   async searchAccessoryProducts(searchItem) {
     try {
+      console.log("@@@@@@@@@@@@@@@@@ I have been hit during the search")
       const lowercaseSearchItem = searchItem.toLowerCase();
 
       const batchNumberMatches = await prisma.accessories.findMany({

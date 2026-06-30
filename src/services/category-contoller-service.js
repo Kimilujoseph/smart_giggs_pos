@@ -1,5 +1,5 @@
 import { CategoryManagementRepository } from '../databases/repository/category-contoller-repository.js';
-import { APIError, STATUS_CODE } from "../Utils/app-error.js";
+import { APIError, NotFoundError, STATUS_CODE } from "../Utils/app-error.js";
 class CategoryManagementService {
     constructor() {
         this.repository = new CategoryManagementRepository();
@@ -116,74 +116,29 @@ class CategoryManagementService {
     }
 
     async getCategoryById(categoryId) {
-        try {
-            const id = parseInt(categoryId, 10);
-            const category = await this.repository.getCategoryById(id);
-            const item = category.mobiles.length > 0 ? category.mobiles : category.accessories;
-            // console.log("item", item);  /
-            const newCategory = {
-                id: category.id,
-                itemName: category.itemName,
-                itemType: category.itemType,
-                itemModel: category.itemModel,
-                brand: category.brand,
-                minPrice: category.minPrice,
-                maxPrice: category.maxPrice,
-                Items: item
-            }
 
-            console.log("Items", newCategory);
-
-            // console.log(category);
-            return newCategory;
+        const id = parseInt(categoryId, 10);
+        const category = await this.repository.getCategoryById(id);
+        if (!category) {
+            throw new NotFoundError("category currently not available")
         }
-        catch (err) {
-            if (err instanceof APIError) {
-                throw err
-            }
-            throw new APIError(
-                "service error",
-                STATUS_CODE.INTERNAL_ERROR,
-                "internal server error"
-            )
+        const item = category.mobiles.length > 0 ? category.mobiles : category.accessories;
+        // console.log("item", item);  /
+        const newCategory = {
+            id: category.id,
+            itemName: category.itemName,
+            itemType: category.itemType,
+            itemModel: category.itemModel,
+            brand: category.brand,
+            minPrice: category.minPrice,
+            maxPrice: category.maxPrice,
+            Items: item
         }
+        return newCategory;
     }
-    async getCategoryByShop(shopName, categoryId) {
-        try {
-            const id = parseInt(categoryId, 10);
-            const category = await this.repository.getCategoryByShop(id, shopName);
-            const item = category.mobiles.length > 0 ? category.mobiles : category.accessories;
-            // console.log("item", item);  /
-            const newCategory = {
-                id: category.id,
-                itemName: category.itemName,
-                itemType: category.itemType,
-                itemModel: category.itemModel,
-                brand: category.brand,
-                minPrice: category.minPrice,
-                maxPrice: category.maxPrice,
-                Items: item
-            }
-
-            //console.log("Items", newCategory);
-
-            // console.log(category);
-            return newCategory;
-        }
-        catch (err) {
-            if (err instanceof APIError) {
-                throw err
-            }
-            throw new APIError(
-                "service error",
-                STATUS_CODE.INTERNAL_ERROR,
-                "internal server error"
-            )
-        }
-    }
-
     async searchForCategory(searchItem) {
         try {
+            console.log("I have been hit for finding stock per category")
             const results = await this.repository.searchForCategory(searchItem);
             return results;
         } catch (err) {

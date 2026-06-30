@@ -317,104 +317,11 @@ class CategoryManagementRepository {
       });
       return category;
     } catch (err) {
-      if (err instanceof NotFoundError) {
-        throw err
-      }
       throw new InternalServerError("Internal server error")
 
     }
   }
-  async getCategoryByShop(categoryId, shopName) {
-    try {
-      const category = await prisma.categories.findFirst({
-        where: {
-          id: categoryId,
-          mobiles: {
-            some: {
-              mobileItems: {
-                some: {
-                  shops: {
-                    shopName: shopName,
-                  },
-                  status: {
-                    in: ["pending", "confirmed"],
-                  },
-                },
-              },
-            },
-          },
-        },
-        include: {
-          mobiles: {
-            where: {
-              mobileItems: {
-                some: {
-                  shops: {
-                    shopName: shopName,
-                  },
-                  status: {
-                    in: ["pending", "confirmed"],
-                  },
-                },
-              },
-            },
-            select: {
-              id: true,
-              discount: true,
-              commission: true,
-              availableStock: true,
-              updatedAt: true,
-              createdAt: true,
-              batchNumber: true,
-              stockStatus: true,
-              color: true,
-              IMEI: true,
-              mobileItems: {
-                where: {
-                  shops: {
-                    shopName: shopName,
-                  },
-                  status: {
-                    in: ["pending", "confirmed"],
-                  },
-                },
-                select: {
-                  shops: {
-                    select: {
-                      shopName: true,
-                      address: true,
-                    },
-                  },
-                  status: true,
-                  createdAt: true,
-                  updatedAt: true,
-                },
-              },
-            },
-          },
-        },
-      });
-      if (!category) {
-        throw new APIError(
-          "Not Found",
-          STATUS_CODE.NOT_FOUND,
-          "Category not found in this shop"
-        );
-      }
-      //console.log("Filtered Category:", category);
-      return category;
-    } catch (err) {
-      console.log("erer", err);
-      if (err instanceof APIError) {
-        throw err;
-      }
-      throw new APIError(
-        "Service Error",
-        STATUS_CODE.INTERNAL_ERROR,
-        "Internal server error"
-      );
-    }
-  }
+
 
   async searchForCategory(searchItem) {
 
