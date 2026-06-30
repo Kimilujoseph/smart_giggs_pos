@@ -4,44 +4,28 @@ const prisma = new PrismaClient();
 class CategoryManagementRepository {
   async AddNewProduct(itemDetails) {
     try {
-      const {
-        itemName,
-        itemModel,
-        itemType,
-        brand,
-        minPrice,
-        maxPrice,
-        category,
-      } = itemDetails;
+      // const {
+      //   itemName,
+      //   itemModel,
+      //   itemType,
+      //   brand,
+      //   minPrice,
+      //   maxPrice,
+      //   category,
+      // } = itemDetails;
 
       const productItem = await prisma.categories.create({
-        data: {
-          itemName,
-          itemModel,
-          itemType,
-          brand,
-          minPrice,
-          maxPrice,
-          category,
-        },
+        data: itemDetails
       });
 
       return productItem;
     } catch (err) {
-      console.error(err);
-
       if (err.code === "P2002") {
-        throw new APIError(
-          "Duplicate Key Error",
-          STATUS_CODE.BAD_REQUEST,
-          `A product with the same ${err.meta.target} already exists.`
-        );
+        if (err.meta.target === 'itemModel_UNIQUE') {
+          throw new DuplicationError(`product with the same ${itemDetails.itemModel} model already exist`)
+        }
       } else {
-        throw new APIError(
-          "API Error",
-          STATUS_CODE.INTERNAL_ERROR,
-          err.message || "Unable to create new goods"
-        );
+        throw new InternalServerError()
       }
     }
   }

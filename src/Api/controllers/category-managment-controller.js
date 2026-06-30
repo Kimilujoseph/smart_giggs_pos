@@ -3,18 +3,8 @@ import { CategoryManagementService } from '../../services/category-contoller-ser
 const category = new CategoryManagementService();
 
 import { APIError, STATUS_CODE } from "../../Utils/app-error.js";
-const createCategory = async (req, res) => {
+const createCategory = async (req, res, next) => {
     try {
-
-        const user = req.user;
-        console.log(user);
-        if (user.role !== "superuser" && user.role !== "manager") {
-            throw new APIError(
-                "not authorised",
-                STATUS_CODE.UNAUTHORIZED,
-                "not allowed to create a pre"
-            )
-        }
         const createdProduct = await category.createProduct(req.body)
         res.status(200).json({
             message: "product succuessfully created",
@@ -22,15 +12,7 @@ const createCategory = async (req, res) => {
         })
     }
     catch (err) {
-        if (err instanceof APIError) {
-            return res
-                .status(err.statusCode)
-                .json({ message: err.message, error: true });
-        } else {
-            return res
-                .status(500)
-                .json({ message: "Internal Server Error", error: true });
-        }
+        next(err)
     }
 }
 
@@ -38,13 +20,6 @@ const getAllCategories = async (req, res) => {
     try {
         const user = req.user;
         //console.log(user);
-        if (user.role !== "superuser" && user.role !== "manager") {
-            throw new APIError(
-                "not authorised",
-                STATUS_CODE.UNAUTHORIZED,
-                "not allowed to get all categories"
-            )
-        }
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
         const { categories, totalItems } = await category.getAllCategories(user.role, page, limit)

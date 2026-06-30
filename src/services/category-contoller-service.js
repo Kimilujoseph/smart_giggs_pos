@@ -1,49 +1,35 @@
 import { CategoryManagementRepository } from '../databases/repository/category-contoller-repository.js';
-import { APIError, NotFoundError, STATUS_CODE } from "../Utils/app-error.js";
+import { APIError, NotFoundError, BadRequestError, STATUS_CODE } from "../Utils/app-error.js";
 class CategoryManagementService {
     constructor() {
         this.repository = new CategoryManagementRepository();
     }
     async createProduct(itemDetails) {
-        try {
-            //verify item needed
-            const verifiedItem = [
-                "itemName",
-                "itemModel",
-                "itemType",
-                "brand",
-                "minPrice",
-                "maxPrice",
-                "category",
-            ]
-            const verifiedProperties = Object.keys(itemDetails).filter((key) =>
-                verifiedItem.includes(key)
-            )
-            if (!verifiedProperties) {
-                throw new APIError("not found", STATUS_CODE.BAD_REQUEST, "not item found");
-            }
+        //verify item needed
+        const verifiedItem = [
+            "itemName",
+            "itemModel",
+            "itemType",
+            "brand",
+            "minPrice",
+            "maxPrice",
+            "category",
+        ]
+        const verifiedProperties = Object.keys(itemDetails).filter((key) =>
+            verifiedItem.includes(key)
+        )
+        if (!verifiedProperties) {
+            throw new BadRequestError("Invalid item sunbmitted");
+        }
 
-            const allowedItemTypes = ['accessories', 'mobiles', 'smartphones', 'smallphones', 'simcards'];
-            if (!itemDetails.itemType || !allowedItemTypes.includes(itemDetails.itemType)) {
-                throw new APIError(
-                    "Invalid itemType",
-                    STATUS_CODE.BAD_REQUEST,
-                    `itemType is required and must be one of: ${allowedItemTypes.join(', ')}`
-                );
-            }
-            const addedProduct = await this.repository.AddNewProduct(itemDetails);
-            return addedProduct
+        const allowedItemTypes = ['accessories', 'mobiles', 'smartphones', 'smallphones', 'simcards'];
+        if (!allowedItemTypes.includes(itemDetails.itemType)) {
+            throw new BadRequestError(
+                `itemType is required and must be one of: ${allowedItemTypes.join(', ')}`
+            );
         }
-        catch (err) {
-            if (err instanceof APIError) {
-                throw err
-            }
-            throw new APIError(
-                "service error",
-                STATUS_CODE.INTERNAL_ERROR,
-                "internal server error"
-            )
-        }
+        const addedProduct = await this.repository.AddNewProduct(itemDetails);
+        return addedProduct
     }
 
     //fetch all categories available
