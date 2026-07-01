@@ -262,49 +262,24 @@ class CategoryManagementRepository {
   async searchForCategory(searchItem) {
 
     try {
+      const words = searchItem.trim().split(" ").filter(w => w.length > 0);
+      if (words.length === 0) {
+        return [];
+      }
 
-      const categories = await prisma.categories.findMany({
-
-        where: {
-
-          OR: [
-
-            {
-
-              itemName: {
-
-                contains: searchItem,
-
-              },
-
-            },
-
-            {
-
-              itemModel: {
-
-                contains: searchItem,
-
-              },
-
-            },
-
-            {
-
-              brand: {
-
-                contains: searchItem,
-
-              },
-
-            },
-
-          ],
-
-        },
-
-      });
-
+      const searchQuery = words.map(w => `+${w}%`).join(" ");
+      // console.log("search query created|", searchQuery)
+      const categories = await prisma.$queryRaw`
+      SELECT c.*,
+      MATCH(c.itemName, c.itemModel, c.brand,c.category)
+      AGAINST(${searchQuery} IN BOOLEAN MODE) AS relevance
+      FROM categories c
+      WHERE
+      MATCH(c.itemName, c.itemModel, c.brand,c.category)
+      AGAINST(${searchQuery} IN BOOLEAN MODE)
+      ORDER BY relevance DESC;
+      `
+      //console.log("categories", categories);
 
 
       if (!categories || categories.length === 0) {
@@ -315,7 +290,7 @@ class CategoryManagementRepository {
 
 
 
-      const categoryIds = categories.map(c => c.id);
+      const categoryIds = categories.map(c => c._id);
 
 
 

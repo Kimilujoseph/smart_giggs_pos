@@ -27,7 +27,7 @@ const getUrl = (category, id) => {
 
 const searchProduct = async (req, res) => {
   const { category, searchItem } = req.body;
-  console.log(req.body)
+  //console.log(req.body)
   let searchResult = [];
 
   try {
