@@ -1,5 +1,6 @@
 generator client {
   provider = "prisma-client-js"
+ 
 }
 
 datasource db {
@@ -401,6 +402,8 @@ model categories {
   mobiles        mobiles[]
   mobilesales    mobilesales[]
   SellerPerformanceKPI SellerPerformanceKPI[]
+
+  @@fulltext([itemName,itemModel,category,brand])
 }
 
 model mobileHistory {
