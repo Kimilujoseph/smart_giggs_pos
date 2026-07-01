@@ -4,7 +4,7 @@ module.exports = {
   apps: [
     {
       // General
-      name: "T10stores_test_production",
+      name: process.env.APP_NAME,
       script: "src/index.js",
 
       // Production Environment
@@ -23,18 +23,18 @@ module.exports = {
 
       // Log Management
       log_date_format: "YYYY-MM-DD HH:mm:ss Z",
-      output: "./logs/out-test.log",
-      error: "./logs/error-test.log",
+      output: `./logs/${process.env.APP_NAME}-out-test.log`,
+      error: `./logs/${process.env.APP_NAME}-error-test.log`,
       merge_logs: true,
     },
     {
-      name: "cron_jobs_app_test_production",
+      name: process.env.CRON_JOB_APP_NAME,
       script: "./src/cron_jobs_app.js",
       instances: 1,
       exec_mode: "fork",
       watch: false,
-      output: "./logs/cron-out-test.log",
-      error: "./logs/cron-error-test.log",
+      output: `./logs/${process.env.CRON_JOB_APP_NAME}-out-test.log`,
+      error: `./logs/${process.env.CRON_JOB_APP_NAME}-error-test.log`,
     },
   ],
 };

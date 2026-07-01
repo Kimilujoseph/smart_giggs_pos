@@ -4,7 +4,7 @@ module.exports = {
   apps: [
     {
       // General
-      name: "CAPTECH_production",
+      name: process.env.APP_NAME,
       script: "src/index.js",
 
       // Production Environment
@@ -23,18 +23,18 @@ module.exports = {
 
       // Log Management
       log_date_format: "YYYY-MM-DD HH:mm:ss Z",
-      output: "./logs/captech-out-production.log",
-      error: "./logs/captech-error-production.log",
+      output: `./logs/${process.env.APP_NAME}-out-production.log`,
+      error: `./logs/${process.env.APP_NAME}-error-production.log`,
       merge_logs: true,
     },
     {
-      name: "CAPTECH_cron_jobs_app_production",
+      name: process.env.CRON_JOB_APP_NAME,
       script: "./src/cron_jobs_app.js",
       instances: 1,
       exec_mode: "fork",
       watch: false,
-      output: "./logs/captech-cron-out-production.log",
-      error: "./logs/captech-cron-error-production.log",
+      output: `./logs/${process.env.CRON_JOB_APP_NAME}-out-production.log`,
+      error: `./logs/${process.env.CRON_JOB_APP_NAME}-error-production.log`,
     },
   ],
 };
