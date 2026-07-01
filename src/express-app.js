@@ -73,6 +73,7 @@ app.use(express.static(__dirname + "/public"));
 
 const App = async (app) => {
   app.use(express.json());
+  app.set('trust proxy', true)
   app.use(express.urlencoded({ extended: true }));
   app.use(express.static(path.join(__dirname, "public")));
   app.use(morgan((tokens, req, res) => {
