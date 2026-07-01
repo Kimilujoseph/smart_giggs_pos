@@ -5,7 +5,6 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "postinstall": "prisma generate",
     "dev": "cross-env nodemon src/index.js",
     "start": "pm2 start ecosystem.config.cjs",
     "production": "pm2 start production_ecosystem.config.cjs",
