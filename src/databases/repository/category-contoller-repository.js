@@ -271,6 +271,7 @@ class CategoryManagementRepository {
       // console.log("search query created|", searchQuery)
       const categories = await prisma.$queryRaw`
       SELECT c._id as id,
+      c.itemName,
   c.itemModel,
   c.minPrice,
   c.itemType,
