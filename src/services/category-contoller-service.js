@@ -125,7 +125,8 @@ class CategoryManagementService {
     async searchForCategory(searchItem) {
         try {
             console.log("I have been hit for finding stock per category")
-            const results = await this.repository.searchForCategory(searchItem);
+            const results = await this.repository.searchForCategory(searchItem); ``
+
             return results;
         } catch (err) {
             if (err instanceof APIError) {

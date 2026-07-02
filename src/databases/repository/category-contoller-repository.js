@@ -270,7 +270,14 @@ class CategoryManagementRepository {
       const searchQuery = words.map(w => `+${w}%`).join(" ");
       // console.log("search query created|", searchQuery)
       const categories = await prisma.$queryRaw`
-      SELECT c.*,
+      SELECT c._id as id,
+  c.itemModel,
+  c.minPrice,
+  c.itemType,
+  c.brand,
+  c.maxPrice,
+  c.category,
+  c.status,
       MATCH(c.itemName, c.itemModel, c.brand,c.category)
       AGAINST(${searchQuery} IN BOOLEAN MODE) AS relevance
       FROM categories c
@@ -290,7 +297,7 @@ class CategoryManagementRepository {
 
 
 
-      const categoryIds = categories.map(c => c._id);
+      const categoryIds = categories.map(c => c.id);
 
 
 
