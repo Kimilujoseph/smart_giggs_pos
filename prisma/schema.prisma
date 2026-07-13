@@ -123,6 +123,7 @@ model Financer {
   updatedAt      DateTime         @default(now()) @db.DateTime(0)
   accessorysales accessorysales[]
   mobilesales    mobilesales[]
+  mobiles        mobiles[]
   SellerPerformanceKPI SellerPerformanceKPI[]
 }
 
@@ -466,15 +467,21 @@ model mobiles {
   itemType              String?                 @default("mobiles") @db.VarChar(45)
   paymentStatus         String                  @default("PAID")
   supplierId            Int?
+  financerId            Int?
+  margin                Decimal                 @default(0.00) @db.Decimal(10, 2)
+  isConsignment         Boolean                 @default(false)
   mobileHistory         mobileHistory[]
   mobileItems           mobileItems[]
   categories            categories              @relation(fields: [CategoryId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_mobiles_1")
+  Financer              Financer?               @relation(fields: [financerId], references: [id])
   Supplier              Supplier?               @relation(fields: [supplierId], references: [id])
   mobilesales           mobilesales[]
   mobiletransferHistory mobiletransferHistory[]
 
   @@index([CategoryId], map: "fk_mobiles_1_idx")
   @@index([supplierId], map: "mobiles_supplierId_fkey")
+  @@index([financerId], map: "mobiles_financerId_fkey")
+  @@index([isConsignment], map: "mobiles_isConsignment_fkey")
 }
 
 model mobilesales {
