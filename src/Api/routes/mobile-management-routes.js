@@ -11,6 +11,7 @@ import {
   confirmphonearrival,
 } from "../controllers/mobile-management-controller.js";
 import { validateSalesPayload } from "../../Utils/joivalidation.js";
+import { Authorization } from "../../middleware/Authorization.js";
 const route = express.Router();
 route.get("/mobile", verifyUser, findAllMobileAccessoryProduct);
 route.get("/profile/mobile/:id", verifyUser, findSpecificMobileProduct);
@@ -19,7 +20,7 @@ route.get(
   "/mobile/item/transferhistory/:id",
   findSpecificProductTransferHistory
 );
-route.post("/add-phone-stock", verifyUser, addNewPhoneProduct);
+route.post("/add-phone-stock", verifyUser, Authorization, addNewPhoneProduct);
 
 route.delete(
   "/create-phone-deletion/:id",

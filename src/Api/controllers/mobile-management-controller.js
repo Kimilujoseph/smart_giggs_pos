@@ -9,13 +9,6 @@ const addNewPhoneProduct = async (req, res, next) => {
   try {
     const user = req.user;
     console.log("User in addNewPhoneProduct:", user);
-    if (!["superuser", "manager"].includes(user.role)) {
-      throw new APIError(
-        "Not authorised",
-        STATUS_CODE.UNAUTHORIZED,
-        "not authorised to add new phone"
-      );
-    }
     const { phoneDetails } = req.body;
     const { supplierId, paymentStatus } = phoneDetails;
     let availableStock = 1;
@@ -33,15 +26,7 @@ const addNewPhoneProduct = async (req, res, next) => {
       error: false,
     });
   } catch (err) {
-    if (err instanceof APIError) {
-      return res
-        .status(err.statusCode)
-        .json({ message: err.message, error: true });
-    } else {
-      return res
-        .status(500)
-        .json({ message: "Internal Server Error", error: true });
-    }
+    next(err);
   }
 };
 
