@@ -13,9 +13,14 @@ import {
 import { validateSalesPayload } from "../../Utils/joivalidation.js";
 import { Authorization } from "../../middleware/Authorization.js";
 const route = express.Router();
-route.get("/mobile", verifyUser, findAllMobileAccessoryProduct);
-route.get("/profile/mobile/:id", verifyUser, findSpecificMobileProduct);
-route.get("/mobile/item/history/:id", findSpecificProductHistory);
+route.get("/mobile", verifyUser, Authorization, findAllMobileAccessoryProduct);
+route.get(
+  "/profile/mobile/:id",
+  verifyUser,
+  Authorization,
+  findSpecificMobileProduct
+);
+route.get("/mobile/item/history/:id", verifyUser, Authorization, findSpecificProductHistory);
 route.get(
   "/mobile/item/transferhistory/:id",
   findSpecificProductTransferHistory
@@ -29,5 +34,5 @@ route.delete(
 );
 route.post("/confirm/phone/", verifyUser, confirmphonearrival);
 //route.put("/update-phone-stock", verifyUser, updatePhoneStock);
-route.put("/update-phone-product/:id", verifyUser, createnewproductupdate);
+route.put("/update-phone-product/:id", verifyUser, Authorization, createnewproductupdate);
 export default route;

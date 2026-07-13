@@ -35,19 +35,11 @@ const findSpecificMobileProduct = async (req, res, next) => {
     const productID = req.params.id;
     const id = parseInt(productID, 10);
     const user = req.user;
-    if (user.role !== "manager" && user.role !== "superuser") {
-      throw new APIError("not allowed", 403, "not allowed to view the product");
-    }
     const foundproduct =
       await inventoryManagementSystem.findSpecificMobileProduct(id);
     return res.status(200).json({ status: 200, data: foundproduct });
   } catch (err) {
-    console.log("@@", err);
-    if (err instanceof APIError) {
-      return res.status(err.statusCode).json({ message: err.message });
-    } else {
-      return res.status(500).json({ message: "Internal Server Error" });
-    }
+    next(err);
   }
 };
 
@@ -96,14 +88,7 @@ const findAllMobileAccessoryProduct = async (req, res, next) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
-    const user = req.user;
-    if (user.role !== "superuser" && user.role !== "manager") {
-      throw new APIError(
-        "unauthorized",
-        STATUS_CODE.UNAUTHORIZED,
-        "not allowed to distribute the product"
-      );
-    }
+
     const { filterdItem, totalItems } =
       await inventoryManagementSystem.findAllMobileAccessory(page, limit);
     res.status(200).json({
@@ -113,12 +98,7 @@ const findAllMobileAccessoryProduct = async (req, res, next) => {
       page,
     });
   } catch (err) {
-    console.log(err);
-    if (err instanceof APIError) {
-      return res.status(err.statusCode).json({ message: err.message });
-    } else {
-      return res.status(500).json({ message: "Internal Server Error" });
-    }
+    next(err);
   }
 };
 
@@ -129,13 +109,7 @@ const createnewproductupdate = async (req, res, next) => {
     const id = req.params.id;
     const updates = req.body;
 
-    if (!["manager", "superuser"].includes(user.role)) {
-      throw new APIError(
-        "not authorised",
-        STATUS_CODE.UNAUTHORIZED,
-        "Not authorised to commit an update"
-      );
-    }
+
     // Call the service method to update the phone stock
     const updatedPhone = await inventoryManagementSystem.updatePhoneStock(
       id,
@@ -149,12 +123,8 @@ const createnewproductupdate = async (req, res, next) => {
       message: "Phone stock updated successfully",
     });
   } catch (err) {
-    console.log("@@", err);
-    if (err instanceof APIError) {
-      return res.status(err.statusCode).json({ message: err.message });
-    } else {
-      return res.status(500).json({ message: "Internal Server Error" });
-    }
+    console.log("errored", err)
+    next(err);
   }
 };
 

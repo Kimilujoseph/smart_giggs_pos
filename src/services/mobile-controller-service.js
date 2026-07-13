@@ -5,7 +5,7 @@ import { phoneinventoryrepository } from "../databases/repository/mobile-invento
 import { ShopmanagementRepository } from "../databases/repository/shop-repository.js";
 import { Sales } from "../databases/repository/sales-repository.js";
 import { CategoryManagementRepository } from "../databases/repository/category-contoller-repository.js";
-import { APIError, STATUS_CODE } from "../Utils/app-error.js";
+import { APIError, STATUS_CODE, NotFoundError, BadRequestError } from "../Utils/app-error.js";
 import { validateUpdateInputs } from "../helpers/updateValidationHelper.js";
 import prisma from "../databases/client.js";
 
@@ -248,97 +248,62 @@ class MobilemanagementService {
     }
   }
   async updatePhoneStock(id, updates, userId) {
-    try {
-      const mobileId = Number(id);
-      const user = parseInt(userId, 10);
-      if (isNaN(mobileId)) {
-        throw new APIError(
-          "service error",
-          STATUS_CODE.BAD_REQUEST,
-          "invalid value provided"
-        );
-      }
-      const validUpdates = validateUpdateInputs(updates);
-      const [shopFound, mobileFound] = await Promise.all([
-        this.shop.findShop({ name: "WareHouse" }),
-        this.mobile.findItem(mobileId),
-      ]);
-      if (!shopFound) {
-        throw new APIError(
-          "Shop not found",
-          STATUS_CODE.NOT_FOUND,
-          "Shop not found"
-        );
-      }
-      const shopId = shopFound.id;
-      if (!mobileFound) {
-        throw new APIError(
-          "not found",
-          STATUS_CODE.NOT_FOUND,
-          "mobile not found"
-        );
-      }
-      if (
-        mobileFound.stockStatus === "sold" &&
-        validUpdates.stockStatus !== "sold"
-      ) {
-        throw new APIError(
-          "BAD REQUEST",
-          STATUS_CODE.BAD_REQUEST,
-          `IMEI ${mobileFound.IMEI} already sold please contact the admin`
-        );
-      }
-      if (validUpdates.productCost && validUpdates.commission) {
-        if (validUpdates.commission > validUpdates.productCost * 0.2) {
-          throw new APIError(
-            "Commission cannot exceed 50% of product cost",
-            STATUS_CODE.BAD_REQUEST,
-            "Commission cannot exceed 50% of product cost"
-          );
-        }
-      }
-      const updatedPhone = await this.mobile.updatethephoneStock(
-        mobileId,
-        validUpdates,
-        user,
-        shopId,
-        mobileFound.IMEI
-      );
-      return updatedPhone;
-    } catch (err) {
-      //console.log(err);
-      if (err instanceof APIError) {
-        throw err;
-      }
-      throw new APIError(
-        "Service Error",
-        STATUS_CODE.INTERNAL_ERROR,
-        err.message || "Unable to update phone stock"
+
+    const mobileId = Number(id);
+    const user = parseInt(userId, 10);
+    if (isNaN(mobileId)) {
+      throw new BadRequestError(
+        "invalid value provided"
       );
     }
+    const validUpdates = validateUpdateInputs(updates);
+    const [shopFound, mobileFound] = await Promise.all([
+      this.shop.findShop({ name: "WareHouse" }),
+      this.mobile.findItem(mobileId),
+    ]);
+    if (!shopFound) {
+      throw new NotFoundError("Shop not found");
+    }
+    const shopId = shopFound.id;
+    if (!mobileFound) {
+      throw new NotFoundError("mobile not found");
+    }
+    if (
+      mobileFound.stockStatus === "sold" &&
+      validUpdates.stockStatus !== "sold"
+    ) {
+      throw new BadRequestError(
+        `IMEI ${mobileFound.IMEI} already sold please contact the admin`
+      );
+    }
+    if (validUpdates.productCost && validUpdates.commission) {
+      if (validUpdates.commission > validUpdates.productCost * 0.2) {
+        throw new BadRequestError(
+          "Commission cannot exceed 50% of product cost",
+        );
+      }
+    }
+    const updatedPhone = await this.mobile.updatethephoneStock(
+      mobileId,
+      validUpdates,
+      user,
+      shopId,
+      mobileFound.IMEI
+    );
+    return updatedPhone;
   }
 
   async findAllMobileAccessory(page, limit) {
-    try {
-      const { stockAvailable, totalItems } =
-        await this.mobile.findAllMobileStockAvailable(page, limit);
-      const filterdItem = stockAvailable.filter(
-        (item) =>
-          item !== null ||
-          item.history !== null ||
-          item.stockStatus === "Deleted"
-      );
-      return { filterdItem, totalItems, page, limit };
-    } catch (err) {
-      if (err instanceof APIError) {
-        throw err;
-      }
-      throw new APIError(
-        "item service error",
-        STATUS_CODE.INTERNAL_ERROR,
-        "cannot find item"
-      );
-    }
+
+    const { stockAvailable, totalItems } =
+      await this.mobile.findAllMobileStockAvailable(page, limit);
+    const filterdItem = stockAvailable.filter(
+      (item) =>
+        item !== null ||
+        item.history !== null ||
+        item.stockStatus === "Deleted"
+    );
+    return { filterdItem, totalItems, page, limit };
   }
 
   //it won't do the actuall deletion but instead an update of

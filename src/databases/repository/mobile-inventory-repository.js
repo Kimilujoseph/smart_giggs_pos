@@ -4,6 +4,8 @@ import {
   STATUS_CODE,
   InternalServerError,
   NotFoundError,
+  DuplicationError,
+  BadRequestError
 } from "../../Utils/app-error.js";
 
 class phoneinventoryrepository {
@@ -412,17 +414,14 @@ class phoneinventoryrepository {
       });
       return updatedPhone;
     } catch (err) {
+      //console.log("erro in update", err);
       if (err.code === "P2002") {
-        throw new APIError(
-          "Duplicate Key Error",
-          STATUS_CODE.BAD_REQUEST,
+        throw new DuplicationError(
           `A product with  ${IMEI} IMEI already exists.`
         );
       }
-      throw new APIError(
-        "Database Error",
-        STATUS_CODE.INTERNAL_ERROR,
-        err.message || "Unable to update the phone"
+      throw new InternalServerError(
+        "Unable to update the phone"
       );
     }
   }
@@ -540,15 +539,15 @@ class phoneinventoryrepository {
               name: true,
             },
           },
+          Financer: {
+            select: {
+              name: true,
+            }
+          }
         },
       });
-      //console.log(productFound);
       return productFound;
     } catch (err) {
-      //console.log("error", err);
-      if (err instanceof APIError) {
-        throw err;
-      }
       throw new APIError(
         "databaseERROR",
         STATUS_CODE.INTERNAL_ERROR,
