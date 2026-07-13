@@ -109,7 +109,7 @@ class CategoryManagementService {
             throw new NotFoundError("category currently not available")
         }
         const item = category.mobiles.length > 0 ? category.mobiles : category.accessories;
-        // console.log("item", item);  /
+        //console.log("item", item);
         const newCategory = {
             id: category.id,
             itemName: category.itemName,

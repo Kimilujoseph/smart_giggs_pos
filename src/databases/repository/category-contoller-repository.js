@@ -234,6 +234,14 @@ class CategoryManagementRepository {
               stockStatus: true,
               color: true,
               IMEI: true,
+              margin: true,
+              productCost: true,
+              isConsignment: true,
+              Financer: {
+                select: {
+                  name: true
+                }
+              },
               mobileItems: {
                 select: {
                   shops: {
