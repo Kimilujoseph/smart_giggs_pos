@@ -2,7 +2,7 @@ import { ShopmanagementRepository } from "../databases/repository/shop-repositor
 import { usermanagemenRepository } from "../databases/repository/usermanagement-controller-repository.js";
 import { InvetorymanagementService } from "./invetory-controller-services.js";
 import { MobilemanagementService } from "./mobile-controller-service.js";
-import { APIError, STATUS_CODE, NotFoundError } from "../Utils/app-error.js";
+import { APIError, STATUS_CODE, BadRequestError, NotFoundError } from "../Utils/app-error.js";
 
 class ShopmanagementService {
   constructor() {
@@ -344,37 +344,25 @@ class ShopmanagementService {
   }
 
   async findproductbysearch(shopName, productName, page, limit) {
-    try {
-      const products = await this.repository.searchProductName(
-        productName,
-        shopName,
-        page,
-        limit
-      );
-      // The repository will now return a paginated structure,
-      // so the check for empty items should be done on the items array inside.
-      if (
-        products.phoneItems.items.length === 0 &&
-        products.stockItems.items.length === 0
-      ) {
-        throw new APIError(
-          "No products found",
-          STATUS_CODE.NOT_FOUND,
-          "product not found"
-        );
-      }
-      return products;
-    } catch (err) {
-      console.log("err", err);
-      if (err instanceof APIError) {
-        throw err;
-      }
-      throw new APIError(
-        "Service Error",
-        STATUS_CODE.INTERNAL_ERROR,
-        "Internal server error"
+
+    const products = await this.repository.searchProductName(
+      productName,
+      shopName,
+      page,
+      limit
+    );
+    // The repository will now return a paginated structure,
+    // so the check for empty items should be done on the items array inside.
+    if (
+      products.phoneItems.items.length === 0 &&
+      products.stockItems.items.length === 0
+    ) {
+      throw new NotFoundError(
+        "No products found",
+        "product not found"
       );
     }
+    return products;
   }
 }
 

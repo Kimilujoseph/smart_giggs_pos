@@ -440,6 +440,11 @@ class ShopmanagementRepository {
           mobiles: {
             include: {
               categories: true,
+              Financer: {
+                select: {
+                  name: true
+                }
+              }
             },
           },
         },
@@ -481,10 +486,6 @@ class ShopmanagementRepository {
         },
       };
     } catch (err) {
-      console.log("erroror", err);
-      if (err instanceof APIError) {
-        throw err;
-      }
       throw new APIError(
         "err fetching products",
         STATUS_CODE.INTERNAL_ERROR,

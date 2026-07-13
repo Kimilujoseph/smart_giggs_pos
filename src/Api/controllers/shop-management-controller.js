@@ -212,15 +212,7 @@ const searchproduct = async (req, res) => {
       error: false,
     });
   } catch (err) {
-    if (err instanceof APIError) {
-      return res
-        .status(err.statusCode)
-        .json({ message: err.message, error: true });
-    } else {
-      return res
-        .status(500)
-        .json({ message: "internal Server Error", error: true });
-    }
+    next(err)
   }
 };
 const getShopStockOverview = async (req, res, next) => {
