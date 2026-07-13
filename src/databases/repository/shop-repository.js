@@ -160,6 +160,13 @@ class ShopmanagementRepository {
                 productCost: true,
                 discount: true,
                 stockStatus: true,
+                Financer: {
+                  select: {
+                    name: true,
+                  }
+                },
+                margin: true,
+                isConsignment: true,
               },
             },
           },

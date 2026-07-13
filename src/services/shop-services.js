@@ -36,71 +36,62 @@ class ShopmanagementService {
   }
 
   async findSpecificShop({ name, page, limit, status, itemType }) {
-    try {
-      const shopFound = await this.repository.findShop({ name });
 
-      if (!shopFound) {
-        throw new NotFoundError("shop does not exist")
-      }
+    const shopFound = await this.repository.findShop({ name });
 
-      const assignedSellers = shopFound.assignment
-        .filter((assignment) => assignment.status === "assigned")
-        .map((seller) => ({
-          id: seller.id,
-          sellerId: seller.actors.id,
-          assignmentId: seller.id,
-          name: seller.actors.name,
-          phone: seller.actors.phone,
-          fromDate: seller.fromDate,
-          toDate: seller.toDate,
-          status: seller.status,
-        }));
-
-      let mobileItems = { items: [], totalPages: 0, currentPage: page, totalItems: 0 };
-      let accessoryItems = { items: [], totalPages: 0, currentPage: page, totalItems: 0 };
-
-      if (itemType === 'mobile' || itemType === 'all' || !itemType) {
-        mobileItems = await this.repository.findSpecificShopItem({
-          shopID: shopFound.id,
-          requestedItem: 'mobileItems',
-          page,
-          limit,
-          status
-        });
-      }
-
-      if (itemType === 'accessory' || itemType === 'all' || !itemType) {
-        accessoryItems = await this.repository.findSpecificShopItem({
-          shopID: shopFound.id,
-          requestedItem: 'accessoryItems',
-          page,
-          limit,
-          status
-        });
-      }
-
-      const filteredShop = {
-        _id: shopFound.id.toString(),
-        name: shopFound.shopName,
-        address: shopFound.address,
-        sellers: assignedSellers,
-        mobileItems: mobileItems,
-        accessoryItems: accessoryItems,
-      };
-
-      return {
-        filteredShop: filteredShop,
-      };
-    } catch (error) {
-      if (error instanceof APIError) {
-        throw error;
-      }
-      throw new APIError(
-        "Internal Server Error",
-        STATUS_CODE.INTERNAL_ERROR,
-        error.message
-      );
+    if (!shopFound) {
+      throw new NotFoundError("shop does not exist")
     }
+
+    const assignedSellers = shopFound.assignment
+      .filter((assignment) => assignment.status === "assigned")
+      .map((seller) => ({
+        id: seller.id,
+        sellerId: seller.actors.id,
+        assignmentId: seller.id,
+        name: seller.actors.name,
+        phone: seller.actors.phone,
+        fromDate: seller.fromDate,
+        toDate: seller.toDate,
+        status: seller.status,
+      }));
+
+    let mobileItems = { items: [], totalPages: 0, currentPage: page, totalItems: 0 };
+    let accessoryItems = { items: [], totalPages: 0, currentPage: page, totalItems: 0 };
+
+    if (itemType === 'mobile' || itemType === 'all' || !itemType) {
+      mobileItems = await this.repository.findSpecificShopItem({
+        shopID: shopFound.id,
+        requestedItem: 'mobileItems',
+        page,
+        limit,
+        status
+      });
+    }
+    //console.log('mobileItems', JSON.stringify(mobileItems, null, 2))
+
+    if (itemType === 'accessory' || itemType === 'all' || !itemType) {
+      accessoryItems = await this.repository.findSpecificShopItem({
+        shopID: shopFound.id,
+        requestedItem: 'accessoryItems',
+        page,
+        limit,
+        status
+      });
+    }
+
+    const filteredShop = {
+      _id: shopFound.id.toString(),
+      name: shopFound.shopName,
+      address: shopFound.address,
+      sellers: assignedSellers,
+      mobileItems: mobileItems,
+      accessoryItems: accessoryItems,
+    };
+    // console.log('filteredShop', JSON.stringify(filteredShop, null, 2))
+    return {
+      filteredShop: filteredShop,
+    };
   }
 
   async findAllShop() {
