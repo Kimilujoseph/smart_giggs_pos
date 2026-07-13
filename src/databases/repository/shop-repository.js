@@ -162,6 +162,7 @@ class ShopmanagementRepository {
                 stockStatus: true,
                 Financer: {
                   select: {
+                    id: true,
                     name: true,
                   }
                 },
@@ -442,7 +443,8 @@ class ShopmanagementRepository {
               categories: true,
               Financer: {
                 select: {
-                  name: true
+                  name: true,
+                  id: true
                 }
               }
             },

@@ -95,9 +95,9 @@ class salesmanagment {
           itemType === "mobiles"
             ? await this.mobile.findMobileItem(parseInt(itemId), tx)
             : await this.accessory.findAccessoryItemProduct(
-                parseInt(itemId),
-                tx
-              );
+              parseInt(itemId),
+              tx
+            );
 
         if (!itemToSell) {
           throw new NotFoundError("product sold not found");
@@ -122,7 +122,7 @@ class salesmanagment {
           );
         }
 
-        const profit = soldprice - productDetails.productCost * soldUnits;
+        const profit = productDetails.financeId ? margin * soldUnits : soldprice - productDetails.productCost * soldUnits;
         const commission = productDetails.commission * soldUnits;
 
         const saleData = {
@@ -198,9 +198,8 @@ class salesmanagment {
         const financeStatusKey =
           financeStatus === null ? "null" : financeStatus;
 
-        const analyticsKey = `${today.toISOString()}-${CategoryId}-${
-          shop.id
-        }-${sellerId}-${financeStatusKey}-${financeIdKey}`;
+        const analyticsKey = `${today.toISOString()}-${CategoryId}-${shop.id
+          }-${sellerId}-${financeStatusKey}-${financeIdKey}`;
 
         const currentAnalytics = analyticsAggregator.get(analyticsKey) || {
           date: today,
@@ -394,22 +393,22 @@ class salesmanagment {
     const [paginatedMobileSales, paginatedAccessorySales] = await Promise.all([
       userId
         ? this.sales.findUserSales({
-            ...paginatedSalesDetails,
-            salesTable: "mobilesales",
-          })
+          ...paginatedSalesDetails,
+          salesTable: "mobilesales",
+        })
         : this.sales.findSales({
-            ...paginatedSalesDetails,
-            salesTable: "mobilesales",
-          }),
+          ...paginatedSalesDetails,
+          salesTable: "mobilesales",
+        }),
       userId
         ? this.sales.findUserSales({
-            ...paginatedSalesDetails,
-            salesTable: "accessorysales",
-          })
+          ...paginatedSalesDetails,
+          salesTable: "accessorysales",
+        })
         : this.sales.findSales({
-            ...paginatedSalesDetails,
-            salesTable: "accessorysales",
-          }),
+          ...paginatedSalesDetails,
+          salesTable: "accessorysales",
+        }),
     ]);
 
     const combinedSales = [
