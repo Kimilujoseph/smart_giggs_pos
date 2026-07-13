@@ -118,7 +118,7 @@ class salesmanagment {
           !["available", "distributed"].includes(productDetails.stockStatus)
         ) {
           throw new BadRequestError(
-            "the selected product is not availble for sale"
+            "the selected product is not available for sale"
           );
         }
 
