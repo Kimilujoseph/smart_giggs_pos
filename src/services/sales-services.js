@@ -291,11 +291,18 @@ class salesmanagment {
       return allSalesResults;
     });
   }
+  async _getAccountReceivableSummary(salesQueryPayload) {
+    const accountRecevible = await this.analytics.getAccountReceivableSummary(salesQueryPayload)
+    return accountRecevible
+  }
 
-  //the _getHyBridSalesdata seems to have two have two functions fetching sales and doing a summary we need to create a separate function for analytis
+  async _getFinancerCommissionSummary(salesQueryPayload) {
+    const commissionAnalysis = await this.analytics.getFinancerCommissionSummary(salesQueryPayload)
+    return commissionAnalysis
+  }
 
   async _getSummarySalesData(filters) {
-    console.log("filters", filters)
+    //console.log("filters", filters)
     const {
       startDate,
       endDate,
@@ -306,14 +313,14 @@ class salesmanagment {
       financeStatus,
     } = filters;
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
+    //convert today to midnight
+    const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
     const parsedStartDate = startDate;
     const parsedEndDate = endDate;
 
-    //console.log("parsed start date", parsedStartDate, "parsed end date", parsedEndDate)
 
     const historicalEndDate = parsedEndDate < today ? parsedEndDate : today;
+
     const historicalTotals = await this.analytics.getSalesAnalytics({
       startDate: parsedStartDate,
       endDate: historicalEndDate,
@@ -323,7 +330,7 @@ class salesmanagment {
       financerId: parseInt(financerId),
       financeStatus,
     });
-    console.log("historical totals", historicalTotals)
+    //console.log("historical totals", historicalTotals)
 
     //hisrotical data is an array of two object mobile and accessory totals
     let historicalMobileTotals = historicalTotals.filter((item) => item.category === "mobiles")[0];
@@ -350,7 +357,6 @@ class salesmanagment {
       totalItems: 0,
       totalFinanceAmount: 0,
     };
-
     if (parsedEndDate >= today) {
       const todaySalesDetails = {
         startDate: today,
@@ -365,39 +371,39 @@ class salesmanagment {
       };
 
       const [mobileSales, accessorySales] = await Promise.all([
-        this.sales.findSales({
+        this.sales.findSummarySales({
           ...todaySalesDetails,
           salesTable: "mobilesales",
         }),
-        this.sales.findSales({
+        this.sales.findSummarySales({
           ...todaySalesDetails,
           salesTable: "accessorysales",
         }),
       ]);
 
-      // console.log("mobile sales", mobileSales)
+      //console.log("mobile sales", mobileSales)
       // console.log("accessory sales", accessorySales)
       todaysMobileTotals = {
         category: "mobile",
         totalRevenue:
-          (mobileSales.totals.totalSales || 0),
+          (mobileSales._sum.soldPrice || 0),
         grossProfit:
-          (mobileSales.totals.totalProfit || 0),
+          (mobileSales._sum.profit || 0),
         totalCommission:
-          (mobileSales.totals.totalCommission || 0),
+          (mobileSales._sum.commission || 0),
         totalItems:
-          (mobileSales.totals.totalItems || 0)
+          (mobileSales._count || 0)
       };
       todaysAccessoryTotals = {
         category: "accessory",
         totalRevenue:
-          (accessorySales.totals.totalSales || 0),
+          (accessorySales._sum.soldPrice || 0),
         grossProfit:
-          (accessorySales.totals.totalProfit || 0),
+          (accessorySales._sum.profit || 0),
         totalCommission:
-          (accessorySales.totals.totalCommission || 0),
+          (accessorySales._sum.commission || 0),
         totalItems:
-          (accessorySales.totals.totalItems || 0)
+          (accessorySales._count || 0)
       };
     }
 
@@ -439,7 +445,7 @@ class salesmanagment {
     } = filters;
 
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    //today.setHours(0, 0, 0, 0);
 
     const parsedStartDate = startDate;
     const parsedEndDate = endDate;
@@ -455,7 +461,7 @@ class salesmanagment {
       page: parseInt(page),
       limit: parseInt(limit),
     };
-    console.log("model submited", model)
+
     let salesTable = model === "mobiles" ? "mobilesales" : "accessorysales"
 
     const salesFoundForATable = await Promise.all([
@@ -488,7 +494,7 @@ class salesmanagment {
 
   async generategeneralsales(filters) {
     try {
-      console.log("filter when fetching general sales ", filters)
+
       return await this._getHybridSalesData(filters);
     } catch (err) {
       this.handleServiceError(err);
@@ -497,7 +503,7 @@ class salesmanagment {
 
   async getUserSales(filters) {
     try {
-      console.log("get user sales called", filters);
+
       return await this._getHybridSalesData(filters);
     } catch (err) {
       console.log(err)

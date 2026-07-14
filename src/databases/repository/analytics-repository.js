@@ -6,7 +6,7 @@ const prisma = new PrismaClient();
 class AnalyticsRepository {
   async getSalesAnalytics({ startDate, endDate, shopId, sellerId, categoryId, financerId, financeStatus }) {
     try {
-      // console.log("analytics query filters", startDate, endDate, shopId, sellerId, categoryId, financerId, financeStatus)
+      //console.log("analytics query filters", startDate, endDate, shopId, sellerId, categoryId, financerId, financeStatus)
       const conditions = [
         Prisma.sql`d.date >= ${startDate}`,
         Prisma.sql`d.date <= ${endDate}`,
@@ -50,7 +50,7 @@ class AnalyticsRepository {
     GROUP BY c.category;
   `
       );
-      //sconsole.log("sales results", result)
+      console.log("sales results", result)
 
       return result
     } catch (err) {
@@ -62,6 +62,103 @@ class AnalyticsRepository {
       );
     }
   }
+
+  async getAccountReceivableSummary(salesPayload) {
+    try {
+      //console.log("account receivable payload", salesPayload)
+      const { startDate, endDate, shopId, financerId, sellerId, categoryId } = salesPayload
+      console.log("analytics date", shopId, sellerId, categoryId, financerId, startDate, endDate)
+      const conditions = [
+        Prisma.sql`createdAt >= ${startDate}`,
+        Prisma.sql`createdAt <= ${endDate}`,
+      ];
+      if (shopId) {
+        conditions.push(Prisma.sql`shopId = ${shopId}`);
+      }
+
+      if (sellerId) {
+        conditions.push(Prisma.sql`sellerId = ${sellerId}`);
+      }
+
+      if (categoryId) {
+        conditions.push(Prisma.sql`categoryId = ${categoryId}`);
+      }
+
+      if (financerId) {
+        conditions.push(Prisma.sql`financerId = ${financerId}`);
+      }
+
+
+      conditions.push(Prisma.sql`financeStatus = 'pending'`);
+
+
+      const summary = await prisma.$queryRaw`
+        SELECT 
+         SUM(soldPrice) AS totalFinanceAmount
+        FROM mobilesales 
+        WHERE ${Prisma.join(conditions, " AND ")}
+
+      `
+
+      return summary
+    }
+    catch (err) {
+      console.log(err)
+      throw new APIError(
+        "Database Error",
+        STATUS_CODE.INTERNAL_ERROR,
+        "Failed to retrieve account receivable summary"
+      )
+    }
+  }
+
+  async getFinancerCommissionSummary(salesPayload) {
+    try {
+      const { startDate, endDate, shopId, financerId, sellerId, categoryId } = salesPayload
+      console.log("analytics date", shopId, sellerId, categoryId, financerId, startDate, endDate)
+      const conditions = [
+        Prisma.sql`createdAt >= ${startDate}`,
+        Prisma.sql`createdAt <= ${endDate}`,
+      ];
+
+      if (shopId) {
+        conditions.push(Prisma.sql`shopId = ${shopId}`)
+      }
+
+      if (sellerId) {
+        conditions.push(Prisma.sql`sellerId = ${sellerId}`)
+      }
+
+      if (categoryId) {
+        conditions.push(Prisma.sql`categoryId = ${categoryId}`)
+      }
+
+      if (financerId) {
+        conditions.push(Prisma.sql`financerId = ${financerId}`)
+      }
+
+      const summary = await prisma.$queryRaw`
+        SELECT 
+         SUM(commissionPaid) AS totalCommissionPaid,
+         SUM(commission - commissionPaid) AS totalCommissionPending
+        FROM mobilesales 
+        WHERE ${Prisma.join(conditions, " AND ")}
+
+      `
+
+      return summary
+    }
+    catch (err) {
+      //console.log(err)
+      throw new APIError(
+        "Database Error",
+        STATUS_CODE.INTERNAL_ERROR,
+        "Failed to retrieve financer commission summary"
+      )
+    }
+  }
+
+
   async getTopProducts({ metric = 'revenue', limit = 10, startDate, endDate }) {
     try {
       const validMetrics = {

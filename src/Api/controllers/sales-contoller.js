@@ -8,11 +8,12 @@ const salesService = new salesmanagment();
 const handleGetSales = async (req, res, next) => {
   try {
     const { user, salesQuery } = req;
-    const { shopId, categoryId, userId, financerId } = req.params;
+    const { shopId, categoryId, userId, financerId } = req.query;
+    console.log("reqqw", req.query)
     const { model } = req.query;
     let serviceMethod;
     const servicePayload = { ...salesQuery, ...req.query };
-    console.log("payload from req", servicePayload)
+    //console.log("payload from req", servicePayload)
 
 
     //console.log("console .log", servicePayload)
@@ -39,6 +40,7 @@ const handleGetSales = async (req, res, next) => {
       servicePayload.categoryId = parseInt(categoryId, 10);
     } else if (userId) {
       const parsedUserId = parseInt(userId, 10);
+      console.log("##$#$#$#$#", parsedUserId)
       if (
         !checkRole(user.role, ["manager", "superuser"]) &&
         user.id !== parsedUserId
@@ -46,7 +48,7 @@ const handleGetSales = async (req, res, next) => {
         throw new APIError(
           "Not authorized",
           STATUS_CODE.UNAUTHORIZED,
-          "You are not authorized to view this user's sales."
+          "You are not authorized to@@ view this user's sales."
         );
       }
       serviceMethod = "getUserSales";
@@ -113,12 +115,15 @@ const handleSummarySales = async (req, res, next) => {
 
     const salesQueryPayLoad = { ...salesQuery, ...req.query }
     console.log("payload", salesQueryPayLoad);
-    const salesAnaytics = await salesService._getSummarySalesData(salesQueryPayLoad)
-    console.log(salesAnaytics);
+    const [salesAnaytics, accountRecevable, commissionAnalysis] = await Promise.all([
+      salesService._getSummarySalesData(salesQueryPayLoad),
+      salesService._getAccountReceivableSummary(salesQueryPayLoad),
+      salesService._getFinancerCommissionSummary(salesQueryPayLoad)
+    ])
     handleResponse({
       res,
       message: "Sales summary retrieved successfully",
-      data: salesAnaytics,
+      data: { ...salesAnaytics, accountReceivable: accountRecevable, commissionAnalysis: commissionAnalysis },
     })
 
   } catch (err) {
@@ -147,7 +152,7 @@ const handleBulkSale = async (req, res, next) => {
 const handleUpdateFinanceStatus = async (req, res, next) => {
   try {
     const { saleType, saleId } = req.params;
-    const { status } = req.body;
+    const { status } = req.query;
 
     if (!status) {
       throw new APIError(

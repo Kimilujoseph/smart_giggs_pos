@@ -39,6 +39,64 @@ class Sales {
     }
   }
 
+
+  //a small version of the findsales since we only need few details for the summary
+
+  async findSummarySales({
+    salesTable,
+    startDate,
+    endDate,
+    shopId,
+    categoryId,
+    userId,
+    financerId,
+    financeStatus,
+  }) {
+    try {
+      const salesmodel = prisma[salesTable]
+      //lets build the where clause 
+
+      const whereClause = {
+        createdAt: {
+          gte: startDate,
+          lte: endDate
+        }
+      }
+      if (shopId) {
+        whereClause.shopID = shopId
+      }
+      if (categoryId) {
+        whereClause.categoryId = categoryId
+      }
+      if (userId) {
+        whereClause.sellerId = userId
+      }
+      if (financerId) {
+        whereClause.financerId = financerId
+      }
+      if (financeStatus) {
+        whereClause.financeStatus = financeStatus
+      }
+
+      //aggregate
+      const totalS = await salesmodel.aggregate({
+        where: whereClause,
+        _sum: {
+          soldPrice: true,
+          profit: true,
+          commission: true,
+          commissionPaid: true,
+          financeAmount: true,
+        },
+        _count: true,
+      })
+      return totalS
+
+    } catch (err) {
+      throw new InternalServerError("Internal server error");
+    }
+  }
+
   async findSales({
     salesTable,
     startDate,
@@ -197,7 +255,7 @@ class Sales {
         },
       };
     } catch (err) {
-      console.error("Database error:", err);
+      console.error("Database erro@@@@r:", err);
       throw new APIError(
         "Database error",
         STATUS_CODE.INTERNAL_ERROR,
