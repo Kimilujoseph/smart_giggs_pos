@@ -15,7 +15,7 @@ const handleGetSales = async (req, res, next) => {
     console.log("payload from req", servicePayload)
 
 
-    console.log("console .log", servicePayload)
+    //console.log("console .log", servicePayload)
 
     if (shopId) {
       if (!checkRole(user.role, ["manager", "superuser"])) {
