@@ -1,10 +1,11 @@
 const transformSales = (rawSale) => {
-  //console.log("paginated sales ", rawSale);
+  // console.log("paginated sales ", rawSale);
 
+  ////console.log("#$#$#$", rawSale.Payment)
   const productDetails = rawSale.productDetails || rawSale.mobiles || rawSale.accessories || {};
   const categoryDetails = rawSale.categoryDetails || rawSale.categories || {};
   const sellerDetails = rawSale.sellerDetails || rawSale.actors || {};
-  console.log('seller d@@@@@@@@etails', sellerDetails)
+  //console.log('seller d@@@@@@@@etails', sellerDetails)
   const shopDetails = rawSale.shopDetails || rawSale.shops || {};
 
   const base = {

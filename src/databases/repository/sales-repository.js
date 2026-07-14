@@ -169,7 +169,7 @@ class Sales {
         }),
       ]);
 
-      console.log("sales results@@@@@@@@@@@@@", results)
+      // console.log("sales results@@@@@@@@@@@@@", results)
 
       const transformSale = (sale) => ({
         ...sale,
@@ -197,7 +197,7 @@ class Sales {
         },
       };
     } catch (err) {
-      //console.error("Database error:", err);
+      console.error("Database error:", err);
       throw new APIError(
         "Database error",
         STATUS_CODE.INTERNAL_ERROR,

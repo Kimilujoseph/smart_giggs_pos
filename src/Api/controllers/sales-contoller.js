@@ -11,13 +11,11 @@ const handleGetSales = async (req, res, next) => {
     const { shopId, categoryId, userId, financerId } = req.params;
     const { model } = req.query;
     let serviceMethod;
-    const servicePayload = { ...salesQuery };
-    if (model === 'mobile') {
-      servicePayload.model = 'mobile';
-    }
-    if (model === 'accessory') {
-      servicePayload.model = 'accessory';
-    }
+    const servicePayload = { ...salesQuery, ...req.query };
+    console.log("payload from req", servicePayload)
+
+
+    console.log("console .log", servicePayload)
 
     if (shopId) {
       if (!checkRole(user.role, ["manager", "superuser"])) {
@@ -109,6 +107,25 @@ const handleGetSales = async (req, res, next) => {
   }
 };
 
+const handleSummarySales = async (req, res, next) => {
+  try {
+    const { user, salesQuery } = req;
+
+    const salesQueryPayLoad = { ...salesQuery, ...req.query }
+    console.log("payload", salesQueryPayLoad);
+    const salesAnaytics = await salesService._getSummarySalesData(salesQueryPayLoad)
+    console.log(salesAnaytics);
+    handleResponse({
+      res,
+      message: "Sales summary retrieved successfully",
+      data: salesAnaytics,
+    })
+
+  } catch (err) {
+    next(err)
+  }
+}
+
 const handleBulkSale = async (req, res, next) => {
   try {
     const { user } = req;
@@ -163,4 +180,4 @@ const handleUpdateFinanceStatus = async (req, res, next) => {
   }
 };
 
-export { handleGetSales, handleBulkSale, handleUpdateFinanceStatus };
+export { handleGetSales, handleBulkSale, handleUpdateFinanceStatus, handleSummarySales };

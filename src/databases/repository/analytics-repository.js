@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, Prisma } from "@prisma/client";
 import { APIError, STATUS_CODE, InternalServerError } from "../../Utils/app-error.js";
 
 const prisma = new PrismaClient();
@@ -6,45 +6,50 @@ const prisma = new PrismaClient();
 class AnalyticsRepository {
   async getSalesAnalytics({ startDate, endDate, shopId, sellerId, categoryId, financerId, financeStatus }) {
     try {
-      const whereClause = {
-        date: {
-          gte: startDate,
-          lt: endDate,
-        },
-      };
+      // console.log("analytics query filters", startDate, endDate, shopId, sellerId, categoryId, financerId, financeStatus)
+      const conditions = [
+        Prisma.sql`d.date >= ${startDate}`,
+        Prisma.sql`d.date <= ${endDate}`,
+      ];
 
       if (shopId) {
-        whereClause.shopId = shopId;
+        conditions.push(Prisma.sql`d.shopId = ${shopId}`);
       }
+
       if (sellerId) {
-        whereClause.sellerId = sellerId;
+        conditions.push(Prisma.sql`d.sellerId = ${sellerId}`);
       }
+
       if (categoryId) {
-        whereClause.categoryId = categoryId;
+        conditions.push(Prisma.sql`d.categoryId = ${categoryId}`);
       }
+
       if (financerId) {
-        whereClause.financeId = financerId;
+        conditions.push(Prisma.sql`d.financeId = ${financerId}`);
       }
+
       if (financeStatus) {
-        whereClause.financeStatus = financeStatus;
+        conditions.push(Prisma.sql`d.financeStatus = ${financeStatus}`);
       }
 
       // console.log("whre clause generated", whereClause)
 
-      const result = await prisma.$queryRaw`
-SELECT
-    c.category,
-    SUM(d.totalUnitsSold) AS totalUnitsSold,
-    SUM(d.totalRevenue) AS totalRevenue,
-    SUM(d.grossProfit) AS grossProfit,
-    SUM(d.totalCommission) AS totalCommission,
-    SUM(d.totalfinanceAmount) AS totalfinanceAmount
-FROM DailySalesAnalytics d
-JOIN Categories c
-    ON d.categoryId = c._id
-GROUP BY c.category;
-`;
-
+      const result = await prisma.$queryRaw(
+        Prisma.sql`
+    SELECT
+      c.category,
+      SUM(d.totalUnitsSold) AS totalUnitsSold,
+      SUM(d.totalRevenue) AS totalRevenue,
+      SUM(d.grossProfit) AS grossProfit,
+      SUM(d.totalCommission) AS totalCommission,
+      SUM(d.totalfinanceAmount) AS totalfinanceAmount
+    FROM DailySalesAnalytics d
+    JOIN Categories c
+      ON d.categoryId = c._id
+    WHERE ${Prisma.join(conditions, " AND ")}
+    GROUP BY c.category;
+  `
+      );
       //sconsole.log("sales results", result)
 
       return result
