@@ -31,26 +31,25 @@ class AnalyticsRepository {
 
       // console.log("whre clause generated", whereClause)
 
-      const result = await prisma.dailySalesAnalytics.aggregate({
-        where: whereClause,
-        _sum: {
-          totalUnitsSold: true,
-          totalRevenue: true,
-          grossProfit: true,
-          totalCommission: true,
-          totalfinanceAmount: true,
-        },
-      });
+      const result = await prisma.$queryRaw`
+SELECT
+    c.category,
+    SUM(d.totalUnitsSold) AS totalUnitsSold,
+    SUM(d.totalRevenue) AS totalRevenue,
+    SUM(d.grossProfit) AS grossProfit,
+    SUM(d.totalCommission) AS totalCommission,
+    SUM(d.totalfinanceAmount) AS totalfinanceAmount
+FROM DailySalesAnalytics d
+JOIN Categories c
+    ON d.categoryId = c._id
+GROUP BY c.category;
+`;
 
-      return {
-        totalUnitsSold: Number(result._sum.totalUnitsSold) || 0,
-        totalRevenue: Number(result._sum.totalRevenue) || 0,
-        grossProfit: Number(result._sum.grossProfit) || 0,
-        totalCommission: Number(result._sum.totalCommission) || 0,
-        totalfinanceAmount: Number(result._sum.totalfinanceAmount) || 0,
-      };
+      //sconsole.log("sales results", result)
+
+      return result
     } catch (err) {
-      //console.error("Analytics Repository Error:", err);
+      console.error("Analytics Repository Error:", err);
       throw new APIError(
         "Database Error",
         STATUS_CODE.INTERNAL_ERROR,

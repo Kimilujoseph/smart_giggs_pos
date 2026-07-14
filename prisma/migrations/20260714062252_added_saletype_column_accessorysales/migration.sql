@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE `accessorysales` ADD COLUMN `salesType` VARCHAR(255) NULL DEFAULT 'direct';

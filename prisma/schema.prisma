@@ -279,6 +279,7 @@ model accessorysales {
   sellerId                           Int
   soldPrice                          Decimal                              @db.Decimal(10, 2)
   status                             String?                              @default("COMPLETED") @db.VarChar(100)
+  salesType                       String?                           @default("direct") @db.VarChar(255)
   profit                             Int                                  @db.UnsignedInt
   createdAt                          DateTime?                            @default(now()) @db.DateTime(0)
   commisssionStatus                  accessorysales_commisssionStatus?

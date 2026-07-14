@@ -4,11 +4,12 @@ const transformSales = (rawSale) => {
   const productDetails = rawSale.productDetails || rawSale.mobiles || rawSale.accessories || {};
   const categoryDetails = rawSale.categoryDetails || rawSale.categories || {};
   const sellerDetails = rawSale.sellerDetails || rawSale.actors || {};
+  console.log('seller d@@@@@@@@etails', sellerDetails)
   const shopDetails = rawSale.shopDetails || rawSale.shops || {};
 
   const base = {
     saleId: rawSale.id,
-    soldprice: Number(rawSale.soldPrice),
+    soldprice: (rawSale.salesType !== "direct" && categoryDetails.category === 'mobiles' && !['manager', 'superuser'].includes(sellerDetails.role)) ? 0 : Number(rawSale.soldPrice),
     netprofit: rawSale.profit,
     commission: rawSale.commission,
     commissionpaid: rawSale.commissionPaid,
@@ -24,7 +25,7 @@ const transformSales = (rawSale) => {
     productType: categoryDetails.itemType || "N/A",
     productname: categoryDetails.itemName || "Unknown",
     productCategory: categoryDetails.category || "Uncategorized",
-    totalnetprice: Number(rawSale.soldPrice),
+    totalnetprice: (rawSale.salesType !== "direct" && categoryDetails.category === 'mobiles' && !['manager', 'superuser'].includes(sellerDetails.role)) ? 0 : Number(rawSale.soldPrice),
     totalsoldunits: rawSale.quantity || 1,
     totaltransaction: 1,
     _id: {

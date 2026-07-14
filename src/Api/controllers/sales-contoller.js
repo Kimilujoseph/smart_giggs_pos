@@ -9,9 +9,15 @@ const handleGetSales = async (req, res, next) => {
   try {
     const { user, salesQuery } = req;
     const { shopId, categoryId, userId, financerId } = req.params;
-
+    const { model } = req.query;
     let serviceMethod;
     const servicePayload = { ...salesQuery };
+    if (model === 'mobile') {
+      servicePayload.model = 'mobile';
+    }
+    if (model === 'accessory') {
+      servicePayload.model = 'accessory';
+    }
 
     if (shopId) {
       if (!checkRole(user.role, ["manager", "superuser"])) {
@@ -77,7 +83,7 @@ const handleGetSales = async (req, res, next) => {
         "No sales found for the given criteria."
       );
     }
-    //console.log("returned report",report )
+
     const finalReport = Array.isArray(report) ? report[0] : report;
     const { sales, analytics } = finalReport;
 
@@ -107,7 +113,7 @@ const handleBulkSale = async (req, res, next) => {
   try {
     const { user } = req;
     const { ...salePayload } = req.body;
-    //console.log("Received bulk sale payload:", salePayload);
+    console.log("Received bulk sale payload:", JSON.stringify(salePayload));
     const results = await salesService.createBulkSale(salePayload, user);
     // console.log("Bulk sale results:", results);
 

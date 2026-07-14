@@ -324,8 +324,16 @@ class salesmanagment {
       financeStatus,
     });
 
-    // console.log("historical  sales data", parsedEndDate >= today)
-    let todaysTotals = {
+
+    //hisrotical data is an array of two object mobile and accessory totals
+    let historicalMobileTotals = historicalTotals.filter((item) => item.category === "mobiles")[0];
+    let historicalAccessoryTotals = historicalTotals.filter((item) => item.category === "accessories")[0];
+
+    console.log("historical mobile totals", historicalMobileTotals)
+    console.log("historical accessory totals", historicalAccessoryTotals)
+
+    let todaysMobileTotals = {
+      category: "mobile",
       totalRevenue: 0,
       grossProfit: 0,
       totalCommission: 0,
@@ -333,6 +341,16 @@ class salesmanagment {
       totalItems: 0,
       totalFinanceAmount: 0,
     };
+    let todaysAccessoryTotals = {
+      category: "accessory",
+      totalRevenue: 0,
+      grossProfit: 0,
+      totalCommission: 0,
+      totalCommissionPaid: 0,
+      totalItems: 0,
+      totalFinanceAmount: 0,
+    };
+
     if (parsedEndDate >= today) {
       const todaySalesDetails = {
         startDate: today,
@@ -343,7 +361,7 @@ class salesmanagment {
         financerId,
         financeStatus,
         page: 1,
-        limit: 500, // A large limit to get all of today's sales
+        limit: 150, // A large limit to get all of today's sales
       };
 
       const [mobileSales, accessorySales] = await Promise.all([
@@ -360,21 +378,27 @@ class salesmanagment {
       // console.log("3433434544545", accessorySales)
       // console.log("3433434544mobile545", mobileSales)
 
-      todaysTotals = {
+      todaysMobileTotals = {
+        category: "mobile",
         totalRevenue:
-          (mobileSales.totals.totalSales || 0) +
+          (mobileSales.totals.totalSales || 0),
+        grossProfit:
+          (mobileSales.totals.totalProfit || 0),
+        totalCommission:
+          (mobileSales.totals.totalCommission || 0),
+        totalItems:
+          (mobileSales.totals.totalItems || 0)
+      };
+      todaysAccessoryTotals = {
+        category: "accessory",
+        totalRevenue:
           (accessorySales.totals.totalSales || 0),
         grossProfit:
-          (mobileSales.totals.totalProfit || 0) +
           (accessorySales.totals.totalProfit || 0),
         totalCommission:
-          (mobileSales.totals.totalCommission || 0) +
           (accessorySales.totals.totalCommission || 0),
-        //totalCommissionPaid: (mobileSales.totals.totalCommissionPaid || 0) + (accessorySales.totals.totalCommissionPaid || 0),
         totalItems:
-          (mobileSales.totals.totalItems || 0) +
-          (accessorySales.totals.totalItems || 0),
-        //totalFinanceAmount: (mobileSales.totals.financeAmount || 0) + (accessorySales.totals.financeAmount || 0),
+          (accessorySales.totals.totalItems || 0)
       };
     }
 
@@ -418,21 +442,25 @@ class salesmanagment {
 
     combinedSales.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     const paginatedSales = combinedSales.slice(0, limit);
+    // console.log("@@@@@", paginatedSales)
     const totalItemsForPagination =
       (paginatedMobileSales.totals.totalItems || 0) +
       (paginatedAccessorySales.totals.totalItems || 0);
 
     // 4. Combine totals for the final analytics object
     const finalTotals = {
-      totalSales:
-        (historicalTotals.totalRevenue || 0) + (todaysTotals.totalRevenue || 0),
+      totalSales: Number(historicalMobileTotals?.totalRevenue || 0) + Number(todaysMobileTotals.totalRevenue || 0) + Number(historicalAccessoryTotals?.totalRevenue || 0) + Number(todaysAccessoryTotals.totalRevenue || 0),
       totalProfit:
-        (historicalTotals.grossProfit || 0) + (todaysTotals.grossProfit || 0),
+        Number(historicalMobileTotals?.grossProfit || 0) + Number(todaysMobileTotals.grossProfit || 0) + Number(historicalAccessoryTotals?.grossProfit || 0) + Number(todaysAccessoryTotals.grossProfit || 0),
       totalCommission:
-        (historicalTotals.totalCommission || 0) +
-        (todaysTotals.totalCommission || 0),
-      //totalCommissionPaid: (historicalTotals.totalCommissionPaid || 0) + (todaysTotals.totalCommissionPaid || 0),
-      // totalFinanceAmount: (historicalTotals.totalfinanceAmount || 0) + (todaysTotals.totalFinanceAmount || 0),
+        Number(historicalMobileTotals?.totalCommission || 0) +
+        Number(todaysMobileTotals.totalCommission || 0) + Number(historicalAccessoryTotals?.totalCommission || 0) + Number(todaysAccessoryTotals.totalCommission || 0),
+      totalMobileSales: Number(historicalMobileTotals?.totalRevenue || 0) + Number(todaysMobileTotals.totalRevenue || 0),
+      totalAccessorySales: Number(historicalAccessoryTotals?.totalRevenue || 0) + Number(todaysAccessoryTotals.totalRevenue || 0),
+      totalMobileProfit: Number(historicalMobileTotals?.grossProfit || 0) + Number(todaysMobileTotals.grossProfit || 0),
+      totalAccessoryProfit: Number(historicalAccessoryTotals?.grossProfit || 0) + Number(todaysAccessoryTotals.grossProfit || 0),
+      totalMobileCommission: Number(historicalMobileTotals?.totalCommission || 0) + Number(todaysMobileTotals.totalCommission || 0),
+      totalAccessoryCommission: Number(historicalAccessoryTotals?.totalCommission || 0) + Number(todaysAccessoryTotals.totalCommission || 0),
     };
 
     return {

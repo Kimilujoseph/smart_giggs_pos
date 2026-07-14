@@ -79,75 +79,75 @@ class Sales {
       const includeClause =
         salesTable === "mobilesales"
           ? {
-              mobiles: {
-                select: {
-                  IMEI: true,
-                  productCost: true,
-                  batchNumber: true,
-                  phoneType: true,
-                  supplierId: true,
-                  storage: true,
-                  color: true,
-                  paymentStatus: true,
-                },
+            mobiles: {
+              select: {
+                IMEI: true,
+                productCost: true,
+                batchNumber: true,
+                phoneType: true,
+                supplierId: true,
+                storage: true,
+                color: true,
+                paymentStatus: true,
               },
-              shops: {
-                select: {
-                  id: true,
-                  shopName: true,
-                },
+            },
+            shops: {
+              select: {
+                id: true,
+                shopName: true,
               },
-              categories: {
-                select: {
-                  itemName: true,
-                  itemModel: true,
-                  itemType: true,
-                  brand: true,
-                  category: true,
-                },
+            },
+            categories: {
+              select: {
+                itemName: true,
+                itemModel: true,
+                itemType: true,
+                brand: true,
+                category: true,
               },
-              actors: {
-                select: {
-                  id: true,
-                  name: true,
-                },
+            },
+            actors: {
+              select: {
+                id: true,
+                name: true,
               },
-              Financer: {
-                select: {
-                  name: true,
-                },
+            },
+            Financer: {
+              select: {
+                name: true,
               },
-              //Payment: true
-            }
+            },
+            //Payment: true
+          }
           : {
-              accessories: true,
-              shops: {
-                select: {
-                  shopName: true,
-                },
+            accessories: true,
+            shops: {
+              select: {
+                shopName: true,
               },
-              categories: {
-                select: {
-                  itemName: true,
-                  itemModel: true,
-                  itemType: true,
-                  brand: true,
-                  category: true,
-                },
+            },
+            categories: {
+              select: {
+                itemName: true,
+                itemModel: true,
+                itemType: true,
+                brand: true,
+                category: true,
               },
-              actors: {
-                select: {
-                  id: true,
-                  name: true,
-                },
+            },
+            actors: {
+              select: {
+                id: true,
+                name: true,
               },
-              Financer: {
-                select: {
-                  name: true,
-                },
+            },
+            Financer: {
+              select: {
+                name: true,
               },
-              //Payment: true
-            };
+            },
+            //Payment: true
+          };
       const [results, totals] = await Promise.all([
         salesModel.findMany({
           where: whereClause,
@@ -168,6 +168,8 @@ class Sales {
           _count: true,
         }),
       ]);
+
+      console.log("sales results@@@@@@@@@@@@@", results)
 
       const transformSale = (sale) => ({
         ...sale,
@@ -213,12 +215,12 @@ class Sales {
     }
     return salesTable === "mobilesales"
       ? prisma.mobiles.findMany({
-          where: { id: { in: productID } },
-          include: { categories: true },
-        })
+        where: { id: { in: productID } },
+        include: { categories: true },
+      })
       : prisma.accessories.findMany({
-          where: { id: { in: productID } },
-        });
+        where: { id: { in: productID } },
+      });
   }
   mapFinanceDetails(sale) {
     return {
@@ -239,6 +241,9 @@ class Sales {
     financeStatus,
   }) {
     try {
+
+      ////add a condition is role seller and saletype is not equal to direct to not return all data except soldPr
+
       const salesModel = this.prisma[salesTable];
       const skip = (page - 1) * limit;
       const whereClause = {
@@ -257,75 +262,77 @@ class Sales {
       const includeClause =
         salesTable === "mobilesales"
           ? {
-              mobiles: {
-                select: {
-                  IMEI: true,
-                  productCost: true,
-                  batchNumber: true,
-                  phoneType: true,
-                  supplierId: true,
-                  storage: true,
-                  color: true,
-                  paymentStatus: true,
-                },
+            mobiles: {
+              select: {
+                IMEI: true,
+                productCost: true,
+                batchNumber: true,
+                phoneType: true,
+                supplierId: true,
+                storage: true,
+                color: true,
+                paymentStatus: true,
               },
-              shops: {
-                select: {
-                  id: true,
-                  shopName: true,
-                },
+            },
+            shops: {
+              select: {
+                id: true,
+                shopName: true,
               },
-              categories: {
-                select: {
-                  itemName: true,
-                  itemModel: true,
-                  itemType: true,
-                  brand: true,
-                  category: true,
-                },
+            },
+            categories: {
+              select: {
+                itemName: true,
+                itemModel: true,
+                itemType: true,
+                brand: true,
+                category: true,
               },
-              actors: {
-                select: {
-                  id: true,
-                  name: true,
-                },
+            },
+            actors: {
+              select: {
+                id: true,
+                name: true,
+                role: true,
               },
-              Financer: {
-                select: {
-                  name: true,
-                },
+            },
+            Financer: {
+              select: {
+                name: true,
               },
-              //Payment: true
-            }
+            },
+            //Payment: true
+          }
           : {
-              accessories: true,
-              shops: {
-                select: {
-                  shopName: true,
-                },
+            accessories: true,
+            shops: {
+              select: {
+                shopName: true,
               },
-              categories: {
-                select: {
-                  itemName: true,
-                  itemModel: true,
-                  itemType: true,
-                  brand: true,
-                  category: true,
-                },
+            },
+            categories: {
+              select: {
+                itemName: true,
+                itemModel: true,
+                itemType: true,
+                brand: true,
+                category: true,
               },
-              actors: {
-                select: {
-                  id: true,
-                  name: true,
-                },
+            },
+            actors: {
+              select: {
+                id: true,
+                name: true,
+                role: true,
               },
-              Financer: {
-                select: {
-                  name: true,
-                },
+            },
+            Financer: {
+              select: {
+                name: true,
               },
-              //Payment: true
-            };
+            },
+            //Payment: true
+          };
 
       const results = await salesModel.findMany({
         where: whereClause,
@@ -452,23 +459,23 @@ class Sales {
     // Add table-specific properties
     return tableName === "mobilesales"
       ? {
-          ...base,
-          saleType: sale.salesType,
-          productDetails: {
-            ...base.productDetails,
-            storage: sale.mobiles?.storage,
-            color: sale.mobiles?.color,
-          },
-        }
+        ...base,
+        saleType: sale.salesType,
+        productDetails: {
+          ...base.productDetails,
+          storage: sale.mobiles?.storage,
+          color: sale.mobiles?.color,
+        },
+      }
       : {
-          ...base,
-          saleType: sale.financeStatus === "N/A" ? "direct" : "finance",
-          productDetails: {
-            ...base.productDetails,
-            color: sale.accessories?.color,
-            stockStatus: sale.accessories?.stockStatus,
-          },
-        };
+        ...base,
+        saleType: sale.financeStatus === "N/A" ? "direct" : "finance",
+        productDetails: {
+          ...base.productDetails,
+          color: sale.accessories?.color,
+          stockStatus: sale.accessories?.stockStatus,
+        },
+      };
   }
   async updateFinanceStatus({ salesTable, saleId, status }) {
     try {
