@@ -192,7 +192,7 @@ class salesmanagment {
         const today = new Date(
           Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
         );
-        const parsedFinanceId = financeId ? parseInt(financeId) : null;
+        const parsedFinanceId = financeId ? parseInt(financeId) : 1;
         const financeIdKey =
           parsedFinanceId === null ? "null" : parsedFinanceId;
         const financeStatusKey =
