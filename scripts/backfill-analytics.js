@@ -24,7 +24,7 @@ async function backfillSales(salesTable) {
           ? { mobiles: true }
           : { accessories: true },
     });
-
+    // console.log("salesfound", sales)
     if (sales.length === 0) {
       hasMore = false;
       continue;
@@ -39,9 +39,8 @@ async function backfillSales(salesTable) {
       const saleDate = new Date(sale.createdAt);
       saleDate.setUTCHours(0, 0, 0, 0); // Normalize to the start of the UTC day
 
-      const key = `${saleDate.toISOString()}-${sale.shopID}-${sale.sellerId}-${
-        sale.categoryId
-      }-${sale.financeStatus}-${sale.financerId || null}`;
+      const key = `${saleDate.toISOString()}-${sale.shopID}-${sale.sellerId}-${sale.categoryId
+        }-${sale.financeStatus}-${sale.financerId || null}`;
 
       const quantity = sale.quantity || 0;
       const soldPrice = Number(sale.soldPrice) || 0;

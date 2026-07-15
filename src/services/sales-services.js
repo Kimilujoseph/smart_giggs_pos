@@ -137,7 +137,7 @@ class salesmanagment {
           commission,
           financeAmount: financeAmount ? parseInt(financeAmount) : 0,
           financeStatus: financeStatus,
-          financerId: financeId ? parseInt(financeId) : null,
+          financerId: financeId ? parseInt(financeId) : 1,
         };
 
         let createdSale;
@@ -313,14 +313,16 @@ class salesmanagment {
       financeStatus,
     } = filters;
     const today = new Date();
-    //convert today to midnight
-    const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    const parsedStartDate = startDate;
-    const parsedEndDate = endDate;
-
-
-    const historicalEndDate = parsedEndDate < today ? parsedEndDate : today;
-
+    //convert today to midnight;
+    const parsedStartDate = new Date(startDate);
+    const parsedEndDate = new Date(endDate);
+    // console.log(typeof (parsedEndDate))
+    // console.log("@@@@@@@@", parsedStartDate)
+    // console.log("parsedEnddate", parsedEndDate)
+    // console.log("today", today)
+    // console.log(today > parsedEndDate)
+    const historicalEndDate = today > parsedEndDate ? parsedEndDate : today;
+    //console.log("historical enddate", historicalEndDate)
     const historicalTotals = await this.analytics.getSalesAnalytics({
       startDate: parsedStartDate,
       endDate: historicalEndDate,
@@ -447,8 +449,8 @@ class salesmanagment {
     const today = new Date();
     //today.setHours(0, 0, 0, 0);
 
-    const parsedStartDate = startDate;
-    const parsedEndDate = endDate;
+    const parsedStartDate = new Date(startDate);
+    const parsedEndDate = new Date(endDate);
 
     const paginatedSalesDetails = {
       startDate: parsedStartDate,

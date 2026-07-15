@@ -9,7 +9,7 @@ const handleGetSales = async (req, res, next) => {
   try {
     const { user, salesQuery } = req;
     const { shopId, categoryId, userId, financerId } = req.query;
-    console.log("reqqw", req.query)
+    // console.log("reqqw", req.query)
     const { model } = req.query;
     let serviceMethod;
     const servicePayload = { ...salesQuery, ...req.query };
@@ -114,7 +114,7 @@ const handleSummarySales = async (req, res, next) => {
     const { user, salesQuery } = req;
 
     const salesQueryPayLoad = { ...salesQuery, ...req.query }
-    console.log("payload", salesQueryPayLoad);
+    //console.log("payload", salesQueryPayLoad);
     const [salesAnaytics, accountRecevable, commissionAnalysis] = await Promise.all([
       salesService._getSummarySalesData(salesQueryPayLoad),
       salesService._getAccountReceivableSummary(salesQueryPayLoad),
