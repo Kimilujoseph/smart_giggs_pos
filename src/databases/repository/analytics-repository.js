@@ -44,13 +44,13 @@ class AnalyticsRepository {
       SUM(d.totalCommission) AS totalCommission,
       SUM(d.totalfinanceAmount) AS totalfinanceAmount
     FROM DailySalesAnalytics d
-    JOIN Categories c
+    JOIN categories c
       ON d.categoryId = c._id
     WHERE ${Prisma.join(conditions, " AND ")}
     GROUP BY c.category;
   `
       );
-      console.log("sales results", result)
+      //console.log("sales results", result)
 
       return result
     } catch (err) {
