@@ -195,7 +195,7 @@ const removeAssignment = async (req, res) => {
     }
   }
 };
-const searchproduct = async (req, res) => {
+const searchproduct = async (req, res, next) => {
   try {
     const shopName = req.params.shopName;
     const { productName, page, limit } = req.query;
