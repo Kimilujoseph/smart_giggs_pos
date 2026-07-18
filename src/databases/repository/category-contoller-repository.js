@@ -73,41 +73,77 @@ class CategoryManagementRepository {
       }
 
       const categoryIds = categories.map(c => c.id);
-      // console.log("categoryIds", categoryIds);
-      //Just go through the accessories table, group them by their CategoryId, and give me the sum of availableStock for each group.
-      //and do the same for the mobiles
-      const accessoryStock = await prisma.accessories.groupBy({
-        by: ['CategoryId'],
+      const [accessoryIDs, mobileIDs] = await Promise.all([
+        prisma.accessories.groupBy({
+          by: ['CategoryId', 'id'],
+          select: {
+            CategoryId: true,
+            id: true
+          },
+          where: {
+            CategoryId: { in: categoryIds }
+          }
+        }),
+        prisma.mobiles.groupBy({
+          by: ['CategoryId', 'id'],
+          select: {
+            id: true
+          },
+          where: {
+            CategoryId: { in: categoryIds }
+          }
+        })
+      ])
+      // console.log("@@@@@accessoryIDs", accessoryIDs)
+      //console.log("@@@@@mobileID2323s", mobileIDs)
+      const accessoryIDsMap = accessoryIDs.map(c => c.id);
+      // console.log("accessoryIDsMap@@@@@@", accessoryIDsMap);
+      const mobileIDsMap = mobileIDs.map(c => c.id);
+      //console.log("@@@@mobileId$%$$%%", mobileIDsMap)
+      const accessoryStock = await prisma.accessoryItems.groupBy({
+        by: ['accessoryID'],
         _sum: {
-          availableStock: true,
+          quantity: true,
         },
         where: {
-          CategoryId: { in: categoryIds }
+          accessoryID: { in: accessoryIDsMap }
         }
       });
-      //it will result to an array of objects
-      const mobileStock = await prisma.mobiles.groupBy({
-        by: ['CategoryId'],
+      // console.log("@@@@@AccessoryItems", accessoryStock)
+      const mobileStock = await prisma.mobileItems.groupBy({
+        by: ['mobileID'],
         _sum: {
-          availableStock: true,
+          quantity: true,
         },
         where: {
-          CategoryId: { in: categoryIds }
+          mobileID: { in: mobileIDsMap }
         }
       });
+      // console.log("@@@@@MobileItems", mobileStock)
 
-      const accessoryStockMap = new Map(accessoryStock.map(item => [item.CategoryId, item._sum.availableStock || 0]));
-      //console.log("accessoryStockMap", accessoryStockMap);
-      const mobileStockMap = new Map(mobileStock.map(item => [item.CategoryId, item._sum.availableStock || 0]));
-      //console.log("mobileStockMap", mobileStockMap);
+      const accessoryStockMap = new Map(accessoryStock.map(item => [item.accessoryID, item._sum.quantity || 0]));
+      /// console.log("accessoryStockMap@@@@@@", accessoryStockMap);
+      const mobileStockMap = new Map(mobileStock.map(item => [item.mobileID, item._sum.quantity || 0]));
+      //console.log("mobileStockMap@@@@@@", mobileStockMap);
+      const mobileTotalStock = new Map();
+      mobileIDs.forEach(mobile => {
+        const stock = mobileStockMap.get(mobile.id)
+        mobileTotalStock.set(mobile.CategoryId, (mobileTotalStock.get(mobile.CategoryId) || 0) + stock)
+      })
+      const accessoriesTotalStock = new Map();
+      accessoryIDs.forEach(accessory => {
+        const stock = accessoryStockMap.get(accessory.id)
+        accessoriesTotalStock.set(accessory.CategoryId, (accessoriesTotalStock.get(accessory.CategoryId) || 0) + stock)
+      })
+      // console.log("mobileStockTOTALMap@@@@@@", accessoriesTotalStock);
       const categoriesWithStock = categories.map(category => ({
         ...category,
-        availableStock: (accessoryStockMap.get(category.id) || 0) + (mobileStockMap.get(category.id) || 0)
+        availableStock: (accessoriesTotalStock.get(category.id) || 0) + (mobileTotalStock.get(category.id) || 0)
       }));
       //console.log("categoriesWithStock", categoriesWithStock);
       return { categoriesWithStock, totalItems };
     } catch (err) {
-      console.log("err", err);
+      ///console.log("err", err);
       throw new APIError(
         "Service Error",
         STATUS_CODE.INTERNAL_ERROR,

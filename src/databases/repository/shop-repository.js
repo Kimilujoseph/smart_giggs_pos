@@ -208,7 +208,7 @@ class ShopmanagementRepository {
         items: items,
       };
     } catch (err) {
-      console.log("error@@@@@", err)
+      //console.log("error@@@@@", err)
       if (err instanceof BadRequestError) {
         throw err;
       }
