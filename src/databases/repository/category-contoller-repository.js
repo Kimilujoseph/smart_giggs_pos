@@ -94,12 +94,9 @@ class CategoryManagementRepository {
           }
         })
       ])
-      // console.log("@@@@@accessoryIDs", accessoryIDs)
-      //console.log("@@@@@mobileID2323s", mobileIDs)
+
       const accessoryIDsMap = accessoryIDs.map(c => c.id);
-      // console.log("accessoryIDsMap@@@@@@", accessoryIDsMap);
       const mobileIDsMap = mobileIDs.map(c => c.id);
-      //console.log("@@@@mobileId$%$$%%", mobileIDsMap)
       const accessoryStock = await prisma.accessoryItems.groupBy({
         by: ['accessoryID'],
         _sum: {
@@ -119,7 +116,7 @@ class CategoryManagementRepository {
           mobileID: { in: mobileIDsMap }
         }
       });
-      // console.log("@@@@@MobileItems", mobileStock)
+      console.log("@@@@@MobileItems", mobileStock)
 
       const accessoryStockMap = new Map(accessoryStock.map(item => [item.accessoryID, item._sum.quantity || 0]));
       /// console.log("accessoryStockMap@@@@@@", accessoryStockMap);
@@ -128,14 +125,16 @@ class CategoryManagementRepository {
       const mobileTotalStock = new Map();
       mobileIDs.forEach(mobile => {
         const stock = mobileStockMap.get(mobile.id)
+
         mobileTotalStock.set(mobile.CategoryId, (mobileTotalStock.get(mobile.CategoryId) || 0) + stock)
       })
+      console.log("mobileTotalStock@@@@@@", mobileTotalStock);
       const accessoriesTotalStock = new Map();
       accessoryIDs.forEach(accessory => {
         const stock = accessoryStockMap.get(accessory.id)
         accessoriesTotalStock.set(accessory.CategoryId, (accessoriesTotalStock.get(accessory.CategoryId) || 0) + stock)
       })
-      // console.log("mobileStockTOTALMap@@@@@@", accessoriesTotalStock);
+      //console.log("mobileStockTOTALMap@@@@@@", accessoriesTotalStock);
       const categoriesWithStock = categories.map(category => ({
         ...category,
         availableStock: (accessoriesTotalStock.get(category.id) || 0) + (mobileTotalStock.get(category.id) || 0)
