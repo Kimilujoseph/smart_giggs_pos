@@ -2,7 +2,7 @@ import { salesmanagment } from "../../services/sales-services.js";
 import { checkRole } from "../../helpers/authorisation.js";
 import { handleError, handleResponse } from "../../helpers/responseUtils.js";
 import { APIError, STATUS_CODE } from "../../Utils/app-error.js";
-
+//import reportQueue from "../../queues/salesReportQueue.js";
 const salesService = new salesmanagment();
 
 const handleGetSales = async (req, res, next) => {
@@ -131,6 +131,24 @@ const handleSummarySales = async (req, res, next) => {
   }
 }
 
+//remember we are using and assigning the job to bullmq
+const handleGenerateReport = async (req, res, next) => {
+  try {
+    const { salesQuery } = req;
+    const salesPayload = { ...salesQuery, ...req.query }
+    const job = await salesService._createReportQueue(salesPayload)
+    return res.status(200).json({
+      success: true,
+      message: "Report generation job added successfully",
+      jobId: job.id,
+      status: 'queued'
+    })
+
+  } catch (err) {
+    next(err)
+  }
+}
+
 const handleBulkSale = async (req, res, next) => {
   try {
     const { user } = req;
@@ -185,4 +203,4 @@ const handleUpdateFinanceStatus = async (req, res, next) => {
   }
 };
 
-export { handleGetSales, handleBulkSale, handleUpdateFinanceStatus, handleSummarySales };
+export { handleGetSales, handleBulkSale, handleUpdateFinanceStatus, handleSummarySales, handleGenerateReport };

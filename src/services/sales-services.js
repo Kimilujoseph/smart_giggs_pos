@@ -15,7 +15,7 @@ import {
   BadRequestError,
 } from "../Utils/app-error.js";
 import CustomerRepository from "../databases/repository/customer-repository.js";
-
+import reportQueue from "../queues/salesReportQueue.js";
 const prisma = new PrismaClient();
 
 class salesmanagment {
@@ -300,7 +300,23 @@ class salesmanagment {
     const commissionAnalysis = await this.analytics.getFinancerCommissionSummary(salesQueryPayload)
     return commissionAnalysis
   }
+  //create a queue fro report generateion
+  async _createReportQueue(filters) {
+    const { startDate, endDate, shopId, userId, categoryId, financerId, financeStatus } = filters
 
+    const JobData = {
+      startDate: startDate,
+      endDate: endDate,
+      shopId: shopId ? parseInt(shopId) : null,
+      userId: userId ? parseInt(userId) : null,
+      categoryId: categoryId ? parseInt(categoryId) : null,
+      financerId: financerId ? parseInt(financerId) : null,
+      financeStatus: financeStatus || null,
+      requestedAt: new Date().toISOString()
+    }
+    const Job = await reportQueue.add(`report-${userId}-${Date.now()}`, JobData)
+    return Job
+  }
   async _getSummarySalesData(filters) {
     //console.log("filters", filters)
     const {

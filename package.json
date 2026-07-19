@@ -20,6 +20,7 @@
   "dependencies": {
     "@prisma/client": "^6.19.3",
     "bcryptjs": "^2.4.3",
+    "bullmq": "^5.80.9",
     "bwip-js": "^4.5.0",
     "cloudinary": "^2.2.0",
     "cookie-parser": "^1.4.6",
@@ -31,6 +32,7 @@
     "express-mysql-session": "^3.0.3",
     "express-session": "^1.18.0",
     "glob": "^13.0.6",
+    "ioredis": "^5.11.1",
     "joi": "^17.13.3",
     "jsonwebtoken": "^9.0.2",
     "mailgun.js": "^10.2.3",
