@@ -1,6 +1,6 @@
 import express from "express";
 import verifyUser from "../../middleware/verification.js";
-import { handleGetSales, handleBulkSale, handleUpdateFinanceStatus, handleSummarySales, handleGenerateReport } from "../controllers/sales-contoller.js";
+import { handleGetSales, handleBulkSale, handleUpdateFinanceStatus, handleSummarySales, handleGenerateReport, handleGetReportStatus } from "../controllers/sales-contoller.js";
 import { parseSalesQuery } from "../../middleware/query-parser.js";
 import { checkRole } from "../../helpers/authorisation.js";
 
@@ -13,7 +13,8 @@ route.get("/report/user/:userId", verifyUser, parseSalesQuery, handleGetSales);
 route.get("/report/financer/:financerId", verifyUser, parseSalesQuery, handleGetSales);
 route.get("/report", verifyUser, parseSalesQuery, handleGetSales);
 route.get("/report/summary", verifyUser, parseSalesQuery, handleSummarySales);
-route.post("/report/generate", verifyUser, parseSalesQuery, handleGenerateReport)
+route.post("/report/generate", verifyUser, parseSalesQuery, handleGenerateReport);
+route.get("/report/status/:jobId", verifyUser, handleGetReportStatus);
 
 // Make a sale route
 route.post("/items/sale", verifyUser, handleBulkSale);

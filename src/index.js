@@ -5,6 +5,7 @@ import { connectionDB } from "./databases/connectionDB.js";
 import dotEnv from "dotenv";
 import { QueryAnalyzer } from "./databases/repository/queryAnalyzer.js";
 import { calculateAndStoreKPIs } from "../scripts/calculate-kpis.js";
+import { initHybridWorker } from "./workers/hybridWorker.js";
 dotEnv.config();
 const analyzer = new QueryAnalyzer()
 
@@ -14,6 +15,11 @@ const startServer = async () => {
   await analyzer.analyze(async () => {
     const app = express();
     await App(app);
+    
+    initHybridWorker().catch(err => {
+      logger.error(`Failed to initialize Hybrid PDF Worker: ${err.message}`);
+    });
+
     app.listen(PORT, HOST, () => {
       logger.info(`Server running on port ${PORT}`);
     })

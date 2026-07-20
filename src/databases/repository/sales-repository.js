@@ -175,6 +175,12 @@ class Sales {
                 name: true,
               },
             },
+            Customer: {
+              select: {
+                name: true,
+                phoneNumber: true,
+              },
+            },
             //Payment: true
           }
           : {
@@ -202,6 +208,12 @@ class Sales {
             Financer: {
               select: {
                 name: true,
+              },
+            },
+            Customer: {
+              select: {
+                name: true,
+                phoneNumber: true,
               },
             },
             //Payment: true
@@ -359,6 +371,12 @@ class Sales {
                 name: true,
               },
             },
+            Customer: {
+              select: {
+                name: true,
+                phoneNumber: true,
+              },
+            },
             //Payment: true
           }
           : {
@@ -387,6 +405,12 @@ class Sales {
             Financer: {
               select: {
                 name: true,
+              },
+            },
+            Customer: {
+              select: {
+                name: true,
+                phoneNumber: true,
               },
             },
             //Payment: true

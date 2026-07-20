@@ -46,6 +46,8 @@ const transformSales = (rawSale) => {
     sellername: sellerDetails.name || "Unknown Seller",
     shopname: shopDetails.shopName || "Unknown Shop",
     paymentDetails: rawSale.Payment || {},
+    customerName: rawSale.Customer?.name || "walk-in-customer",
+    customerphonenumber: rawSale.Customer?.phoneNumber || "N/A",
   };
 
   if (rawSale.mobiles || categoryDetails.itemType?.toLowerCase() === 'mobiles') {

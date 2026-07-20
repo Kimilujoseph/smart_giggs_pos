@@ -330,22 +330,23 @@ class salesmanagment {
     } = filters;
     const today = new Date();
     //convert today to midnight;
-    const parsedStartDate = new Date(startDate);
-    const parsedEndDate = new Date(endDate);
-    // console.log(typeof (parsedEndDate))
-    // console.log("@@@@@@@@", parsedStartDate)
-    // console.log("parsedEnddate", parsedEndDate)
-    // console.log("today", today)
-    // console.log(today > parsedEndDate)
+    const parsedStartDate = startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const parsedEndDate = endDate ? new Date(endDate) : new Date();
+
+    const parsedShopId = isNaN(parseInt(shopId)) ? undefined : parseInt(shopId);
+    const parsedUserId = isNaN(parseInt(userId)) ? undefined : parseInt(userId);
+    const parsedCategoryId = isNaN(parseInt(categoryId)) ? undefined : parseInt(categoryId);
+    const parsedFinancerId = isNaN(parseInt(financerId)) ? undefined : parseInt(financerId);
+
     const historicalEndDate = today > parsedEndDate ? parsedEndDate : today;
     //console.log("historical enddate", historicalEndDate)
     const historicalTotals = await this.analytics.getSalesAnalytics({
       startDate: parsedStartDate,
       endDate: historicalEndDate,
-      shopId: parseInt(shopId),
-      sellerId: parseInt(userId),
-      categoryId: parseInt(categoryId),
-      financerId: parseInt(financerId),
+      shopId: parsedShopId,
+      sellerId: parsedUserId,
+      categoryId: parsedCategoryId,
+      financerId: parsedFinancerId,
       financeStatus,
     });
     //console.log("historical totals", historicalTotals)
@@ -379,10 +380,10 @@ class salesmanagment {
       const todaySalesDetails = {
         startDate: today,
         endDate: parsedEndDate,
-        shopId: parseInt(shopId),
-        userId: parseInt(userId),
-        categoryId: parseInt(categoryId),
-        financerId: parseInt(financerId),
+        shopId: parsedShopId,
+        userId: parsedUserId,
+        categoryId: parsedCategoryId,
+        financerId: parsedFinancerId,
         financeStatus,
         page: 1,
         limit: 150,
@@ -443,9 +444,6 @@ class salesmanagment {
     return {
       ...finalTotals
     }
-
-
-
   }
 
   async _getHybridSalesData(filters) {
@@ -465,25 +463,32 @@ class salesmanagment {
     const today = new Date();
     //today.setHours(0, 0, 0, 0);
 
-    const parsedStartDate = new Date(startDate);
-    const parsedEndDate = new Date(endDate);
+    const parsedStartDate = startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const parsedEndDate = endDate ? new Date(endDate) : new Date();
+
+    const parsedShopId = isNaN(parseInt(shopId)) ? undefined : parseInt(shopId);
+    const parsedUserId = isNaN(parseInt(userId)) ? undefined : parseInt(userId);
+    const parsedCategoryId = isNaN(parseInt(categoryId)) ? undefined : parseInt(categoryId);
+    const parsedFinancerId = isNaN(parseInt(financerId)) ? undefined : parseInt(financerId);
+    const parsedPage = isNaN(parseInt(page)) ? 1 : parseInt(page);
+    const parsedLimit = isNaN(parseInt(limit)) ? 10000 : parseInt(limit);
 
     const paginatedSalesDetails = {
       startDate: parsedStartDate,
       endDate: parsedEndDate,
-      shopId: parseInt(shopId),
-      userId: parseInt(userId),
-      categoryId: parseInt(categoryId),
-      financerId: parseInt(financerId),
+      shopId: parsedShopId,
+      userId: parsedUserId,
+      categoryId: parsedCategoryId,
+      financerId: parsedFinancerId,
       financeStatus,
-      page: parseInt(page),
-      limit: parseInt(limit),
+      page: parsedPage,
+      limit: parsedLimit,
     };
 
     let salesTable = model === "mobiles" ? "mobilesales" : "accessorysales"
 
     const salesFoundForATable = await Promise.all([
-      userId
+      parsedUserId
         ? this.sales.findUserSales({
           ...paginatedSalesDetails,
           salesTable: salesTable,
@@ -503,8 +508,8 @@ class salesmanagment {
     return {
       sales: {
         sales: salesFoundForATable[0].data.map(transformSales),
-        totalPages: Math.ceil(totalItemsForPagination / limit),
-        currentPage: page,
+        totalPages: Math.ceil(totalItemsForPagination / parsedLimit),
+        currentPage: parsedPage,
       },
 
     };
@@ -590,6 +595,17 @@ class salesmanagment {
     } catch (err) {
       this.handleServiceError(err);
     }
+  }
+
+  async getReportStatus(jobId) {
+    const job = await reportQueue.getJob(jobId);
+    if (!job) {
+      throw new NotFoundError("Job not found");
+    }
+    const state = await job.getState();
+    const progress = job.progress;
+    const result = job.returnvalue;
+    return { id: job.id, state, progress, result };
   }
 }
 

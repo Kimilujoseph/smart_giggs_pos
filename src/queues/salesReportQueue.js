@@ -1,4 +1,4 @@
-import Queue from 'bullmq';
+import { Queue } from 'bullmq';
 import IORedis from 'ioredis'
 
 const redisConnection = new IORedis({
@@ -23,4 +23,5 @@ const reportQueue = new Queue('report-generation', {
 })
 
 
-export default reportQueue
+export { redisConnection };
+export default reportQueue;

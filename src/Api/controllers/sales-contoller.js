@@ -203,4 +203,28 @@ const handleUpdateFinanceStatus = async (req, res, next) => {
   }
 };
 
-export { handleGetSales, handleBulkSale, handleUpdateFinanceStatus, handleSummarySales, handleGenerateReport };
+const handleGetReportStatus = async (req, res, next) => {
+  try {
+    const { jobId } = req.params;
+    const jobInfo = await salesService.getReportStatus(jobId);
+
+    if (jobInfo.state === 'completed' && jobInfo.result) {
+      const bufferData = jobInfo.result.data || jobInfo.result;
+      const buffer = Buffer.from(bufferData);
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename=report-${jobId}.pdf`);
+      return res.send(buffer);
+    }
+
+    return res.status(200).json({
+      success: true,
+      jobId: jobInfo.id,
+      status: jobInfo.state,
+      progress: jobInfo.progress
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export { handleGetSales, handleBulkSale, handleUpdateFinanceStatus, handleSummarySales, handleGenerateReport, handleGetReportStatus };

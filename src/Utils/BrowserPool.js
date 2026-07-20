@@ -16,6 +16,9 @@ class BrowserPool {
         this.isInitializing = false
 
     }
+    async initialize() {
+        return this.intialize();
+    }
 
     async createNewBrowserInstance() {
         try {
