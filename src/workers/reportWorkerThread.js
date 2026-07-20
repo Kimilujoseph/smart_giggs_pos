@@ -1,7 +1,11 @@
 import { parentPort, workerData } from "worker_threads";
 import { salesmanagment } from "../services/sales-services.js";
 import puppeteer from "puppeteer";
+import { PrismaClient } from "@prisma/client";
 
+// Each worker thread gets its own Prisma instance so it can be disconnected
+// cleanly when the thread finishes — preventing connection pool exhaustion.
+const prisma = new PrismaClient();
 const salesService = new salesmanagment();
 
 async function processReport() {
@@ -15,28 +19,37 @@ async function processReport() {
                 parentPort.postMessage({ type: "MEMORY_WARNING", usage });
             }
         } catch (error) {
-            console.error("Memory Monitor Error", error);
+            console.error("[Worker] Memory Monitor Error", error);
         }
     }, 5000);
 
     try {
-        console.log("Processing report for job: ", jobParams);
-        const summaryData = await salesService._getSummarySalesData(jobParams);
-        const mobileSales = await salesService.generategeneralsales({ ...jobParams, model: "mobiles" });
-        const accessorysales = await salesService.generategeneralsales({ ...jobParams, model: "accessory" });
-        const rawData = [...mobileSales.sales.sales, ...accessorysales.sales.sales];
+        console.log("[Worker] Fetching data for job params:", jobParams);
+        const [summaryData, mobileSalesResult, accessorySalesResult] =
+            await Promise.all([
+                salesService._getSummarySalesData(jobParams),
+                salesService.generategeneralsales({ ...jobParams, model: "mobiles" }),
+                salesService.generategeneralsales({ ...jobParams, model: "accessory" }),
+            ]);
 
-        const sales = rawData || [];
+        const mobileSales = mobileSalesResult?.sales?.sales || [];
+        const accessorySales = accessorySalesResult?.sales?.sales || [];
+        const sales = [...mobileSales, ...accessorySales].sort(
+            (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+        );
+
         const totalSales = summaryData?.totalSales || 0;
-
-        const financerName = sales.length > 0 ? (sales[0].financeDetails?.financer || "N/A") : "N/A";
+        const financerName =
+            sales.length > 0 ? sales[0].financeDetails?.financer || "N/A" : "N/A";
         const generatedDate = new Date().toLocaleDateString("en-KE", {
             year: "numeric",
             month: "long",
             day: "numeric",
             hour: "2-digit",
-            minute: "2-digit"
+            minute: "2-digit",
         });
+
+        console.log(`[Worker] Data fetched. Rows: ${sales.length}. Rendering PDF...`);
 
         const htmlContent = `
         <!DOCTYPE html>
@@ -49,7 +62,7 @@ async function processReport() {
                 body {
                     font-family: Arial, sans-serif;
                     margin: 20px;
-                    font-size: 10px; /* Smaller, readable font */
+                    font-size: 10px;
                 }
                 h1, h2 {
                     text-align: center;
@@ -60,27 +73,23 @@ async function processReport() {
                     border-collapse: separate;
                     border-spacing: 0;
                     margin-top: 20px;
-                    font-size: 9px; /* Smaller font for table */
+                    font-size: 9px;
                     border: 1px solid #ddd;
-                    border-radius: 8px; /* Rounded edges */
+                    border-radius: 8px;
                     overflow: hidden;
                 }
                 th, td {
                     border: 1px solid #ddd;
                     padding: 6px;
                     text-align: left;
-                    word-wrap: break-word; /* Prevent overflow */
+                    word-wrap: break-word;
                 }
                 th {
                     background-color: #f4f4f4;
                     color: #333;
                 }
-                tr:nth-child(even) {
-                    background-color: #f9f9f9; /* Alternate row colors */
-                }
-                tr:hover {
-                    background-color: #f1f1f1; /* Highlight row on hover */
-                }
+                tr:nth-child(even) { background-color: #f9f9f9; }
+                tr:hover { background-color: #f1f1f1; }
                 .trust-badge {
                     text-align: center;
                     margin-top: 10px;
@@ -106,9 +115,7 @@ async function processReport() {
         <body>
             <h1>Captech Limited Sales Report</h1>
             <h2>Finance Report for ${financerName}</h2>
-            <div class="trust-badge">
-                Trusted by leading businesses worldwide
-            </div>
+            <div class="trust-badge">Trusted by leading businesses worldwide</div>
             <table>
                 <thead>
                     <tr>
@@ -122,57 +129,76 @@ async function processReport() {
                     </tr>
                 </thead>
                 <tbody>
-                    ${sales.map((sale, index) => `
+                    ${sales
+                .map(
+                    (sale, index) => `
                         <tr>
-                            <td>${index + 1}</td> <!-- Row number -->
-                            <td>${sale.productname}</td>
-                            <td>${sale.productmodel}</td>
-                            <td>${sale.IMEI}</td>
-                            <td>${sale.productType}</td>
-                            <td>${sale.soldprice}</td>
-                            <td>${sale.customerphonenumber}</td>
-                        </tr>
-                    `).join("")}
+                            <td>${index + 1}</td>
+                            <td>${sale.productname ?? ""}</td>
+                            <td>${sale.productmodel ?? ""}</td>
+                            <td>${sale.IMEI ?? ""}</td>
+                            <td>${sale.productType ?? ""}</td>
+                            <td>${sale.soldprice ?? ""}</td>
+                            <td>${sale.customerphonenumber ?? ""}</td>
+                        </tr>`
+                )
+                .join("")}
                 </tbody>
             </table>
             <div class="total-sales">
-                Total Sales Amount: ${totalSales.toLocaleString("en-KE", { style: "currency", currency: "KES" })}
+                Total Sales Amount: ${totalSales.toLocaleString("en-KE", {
+                    style: "currency",
+                    currency: "KES",
+                })}
             </div>
             <div class="footer">
                 This document was generated on ${generatedDate}.
             </div>
         </body>
-        </html>
-    `;
+        </html>`;
 
         browser = await puppeteer.connect({ browserWSEndpoint: wsEndpoint });
         page = await browser.newPage();
+
+        // Set a generous timeout for content-heavy pages
+        page.setDefaultNavigationTimeout(30000);
+
         await page.setContent(htmlContent, { waitUntil: "domcontentloaded" });
 
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // Replace the arbitrary 1s sleep with a proper network-idle wait
+        await page.waitForNetworkIdle({ timeout: 5000 }).catch(() => {
+            // If network never goes idle (fonts, etc.) just continue
+        });
 
         const pdfBuffer = await page.pdf({
             format: "A4",
             printBackground: true,
             margin: { top: "10mm", right: "10mm", bottom: "10mm", left: "10mm" },
             displayHeaderFooter: true,
-            headerTemplate: '<div style="font-size: 10px; margin-left: 1cm;">Finance Report</div>',
-            footerTemplate: '<div style="font-size: 8px; margin-right: 1cm; color: #888; width: 100%; text-align: right;">Page <span class="pageNumber"></span> of <span class="totalPages"></span></div>'
+            headerTemplate:
+                '<div style="font-size:10px; margin-left:1cm;">Finance Report</div>',
+            footerTemplate:
+                '<div style="font-size:8px; margin-right:1cm; color:#888; width:100%; text-align:right;">Page <span class="pageNumber"></span> of <span class="totalPages"></span></div>',
         });
+
+        console.log(`[Worker] PDF generated. Size: ${pdfBuffer.length} bytes`);
 
         parentPort.postMessage({ type: "PROGRESS", progress: 100 });
         parentPort.postMessage({ type: "COMPLETE", buffer: pdfBuffer });
     } catch (err) {
-        console.error("Error occurred in reportWorkerThread: ", err);
+        console.error("[Worker] Error in processReport:", err.message);
         parentPort.postMessage({ type: "error", error: err.message });
     } finally {
-        if (page) {
-            await page.close().catch(console.error);
-        }
-        if (browser) {
-            await browser.disconnect().catch(console.error);
-        }
+        // Close the Puppeteer page and disconnect from the browser
+        if (page) await page.close().catch(console.error);
+        if (browser) await browser.disconnect().catch(console.error);
+
         clearInterval(memoryMonitor);
+
+        // FIX: Disconnect Prisma so the DB connection pool is released.
+        // Without this, each worker thread leaks open DB connections until
+        // the OS closes them, eventually exhausting the MySQL connection pool.
+        await prisma.$disconnect().catch(console.error);
     }
 }
 
