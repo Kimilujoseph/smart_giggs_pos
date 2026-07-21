@@ -1,7 +1,7 @@
 import puppeteer from "puppeteer";
 
 class BrowserPool {
-    constructor(maxBrowsers = 3) {
+    constructor(maxBrowsers = parseInt(process.env.MAX_BROWSER || "1", 10)) {
         this.maxBrowsers = maxBrowsers;
         this.pool = [];
         this.isInitializing = false;
@@ -14,6 +14,7 @@ class BrowserPool {
         this.isInitializing = true;
         const launches = [];
         for (let i = 0; i < this.maxBrowsers; i++) {
+            console.log("Launching browser instance", i + 1);
             launches.push(this.createNewBrowserInstance());
         }
         await Promise.all(launches);
@@ -21,9 +22,9 @@ class BrowserPool {
     }
 
     // Alias so both spellings work
-    async initialize() {
-        return this.intialize();
-    }
+    // async initialize() {
+    //     return this.intialize();
+    // }
 
     async createNewBrowserInstance() {
         try {
@@ -150,4 +151,4 @@ class BrowserPool {
     }
 }
 
-export default new BrowserPool(parseInt(process.env.MAX_BROWSER || "3", 10));
+export default new BrowserPool(parseInt(process.env.MAX_BROWSER || "2", 10));

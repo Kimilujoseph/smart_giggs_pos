@@ -51,6 +51,8 @@ class WorkerThreadPool {
             if (settled) return;
             settled = true;
             fn(value);
+            console.log("terminating the worker process")
+            worker.terminate().catch(console.error);
         };
 
         // Kill the worker if it takes longer than WORKER_TIMEOUT_MS
@@ -65,7 +67,7 @@ class WorkerThreadPool {
             } else if (message.type === "COMPLETE") {
                 clearTimeout(timeoutId);
                 settle(resolve, Buffer.from(message.buffer));
-                // Worker will exit naturally after posting COMPLETE (processReport returns)
+
             } else if (message.type === "error") {
                 clearTimeout(timeoutId);
                 settle(reject, new Error(message.error));

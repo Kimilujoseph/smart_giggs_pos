@@ -17,7 +17,10 @@ const reportQueue = new Queue('report-generation', {
             type: 'exponential',
             delay: 1000,
         },
-        removeOnComplete: true,
+        removeOnComplete: {
+            age: 3600,
+            count: 20
+        },
         removeOnFail: true
     }
 })
