@@ -5,3 +5,4 @@ src/public/barcodes
 *.md
 node_cron_test.js
 *.sh
+logs/

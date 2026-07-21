@@ -37,8 +37,9 @@ async function initHybridWorker() {
         {
             connection: redisConnection,
             concurrency,
-            // Prevent a stalled job from blocking the queue forever.
-            // BullMQ will re-queue any job whose worker goes silent for 30s.
+
+            lockDuration: 120_000,
+
             stalledInterval: 30000,
             maxStalledCount: 1,
         }

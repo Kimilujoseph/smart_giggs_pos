@@ -51,14 +51,14 @@ class WorkerThreadPool {
             if (settled) return;
             settled = true;
             fn(value);
-            console.log("terminating the worker process")
-            worker.terminate().catch(console.error);
         };
 
-        // Kill the worker if it takes longer than WORKER_TIMEOUT_MS
+        // Force-kill the worker if it takes longer than WORKER_TIMEOUT_MS.
+        // This is the ONLY legitimate place to call worker.terminate().
         const timeoutId = setTimeout(() => {
-            settle(reject, new Error(`[ThreadPool] Worker timed out after ${WORKER_TIMEOUT_MS / 1000}s`));
+            console.warn(`[ThreadPool] Worker timed out after ${WORKER_TIMEOUT_MS / 1000}s — force terminating.`);
             worker.terminate().catch(console.error);
+            settle(reject, new Error(`[ThreadPool] Worker timed out after ${WORKER_TIMEOUT_MS / 1000}s`));
         }, WORKER_TIMEOUT_MS);
 
         worker.on("message", (message) => {

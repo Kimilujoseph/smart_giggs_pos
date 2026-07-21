@@ -485,7 +485,8 @@ async function processReport() {
     if (browser) await browser.disconnect().catch(console.error);
     clearInterval(memoryMonitor);
     await prisma.$disconnect().catch(console.error);
-    console.log("I am done  terminating now from thread pool")
+    // Exit cleanly so the thread pool slot is freed with code 0.
+    // Do NOT rely on the parent calling worker.terminate() here—that exits with code 1.
     process.exit(0);
   }
 }
