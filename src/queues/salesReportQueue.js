@@ -21,7 +21,7 @@ const redisConnection = new IORedis({
     enableReadyCheck: false,
     maxRetriesPerRequest: null
 })
-const reportQueue = new Queue('report-generation', {
+const reportQueue = new Queue(process.env.SALES_REPORT_QUEUE_NAME, {
     connection: redisConnection,
     defaultJobOptions: {
         attempts: 3,

@@ -13,7 +13,7 @@ async function initHybridWorker() {
     const concurrency = maxThreads;
 
     const worker = new Worker(
-        "report-generation",
+        process.env.SALES_REPORT_QUEUE_NAME,
         async (job) => {
             let wsEndpoint;
             try {
