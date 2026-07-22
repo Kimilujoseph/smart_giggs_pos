@@ -1,4 +1,9 @@
 import puppeteer from "puppeteer";
+import { fileURLToPath } from 'url'
+import dotenv from "dotenv"
+import { dirname, resolve } from 'path'
+const __dirname = dirname(fileURLToPath(import.meta.url))
+dotenv.config({ path: resolve(__dirname, '../../.env') })
 
 class BrowserPool {
     constructor(maxBrowsers = parseInt(process.env.MAX_BROWSER || "1", 10)) {
@@ -30,7 +35,7 @@ class BrowserPool {
         try {
             const browser = await puppeteer.launch({
                 headless: true,
-                executablePath: "/usr/bin/chromium",
+                executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
                 args: [
                     "--no-sandbox",
                     "--disable-setuid-sandbox",
