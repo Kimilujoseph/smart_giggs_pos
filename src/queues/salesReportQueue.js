@@ -13,6 +13,8 @@ const redisConnection = new IORedis({
     host: process.env.REDIS_HOST,
     port: Number(process.env.REDIS_PORT) || 6379,
     password: process.env.REDIS_PASSWORD || undefined,
+    username: process.env.REDIS_USERNAME || undefined,
+
     // Force IPv4 — on some systems 'localhost' resolves to ::1 (IPv6)
     // which causes ECONNREFUSED if Redis only binds to 127.0.0.1.
     family: 4,
