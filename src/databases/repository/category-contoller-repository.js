@@ -127,7 +127,7 @@ class CategoryManagementRepository {
         const stock = item._sum.availableStock || 0;
         accessoryMap.set(item.CategoryId, (accessoryMap.get(item.CategoryId) || 0) + stock);
       });
-      console.log("accessoryMap@@@@@@", accessoryMap);
+      // console.log("accessoryMap@@@@@@", accessoryMap);
 
       const mobileMap = new Map();
       mobileIDs.forEach(item => {
