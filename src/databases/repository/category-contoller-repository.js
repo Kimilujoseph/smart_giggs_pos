@@ -76,9 +76,8 @@ class CategoryManagementRepository {
       const [accessoryIDs, mobileIDs] = await Promise.all([
         prisma.accessories.groupBy({
           by: ['CategoryId', 'id'],
-          select: {
-            CategoryId: true,
-            id: true
+          _sum: {
+            availableStock: true
           },
           where: {
             CategoryId: { in: categoryIds }
@@ -86,14 +85,19 @@ class CategoryManagementRepository {
         }),
         prisma.mobiles.groupBy({
           by: ['CategoryId', 'id'],
-          select: {
-            id: true
+          _sum: {
+            availableStock: true
           },
           where: {
             CategoryId: { in: categoryIds }
           }
         })
       ])
+
+
+
+      // console.log("accessoryIDs", accessoryIDs)
+      // console.log("mobileIDs", mobileIDs)
 
       const accessoryIDsMap = accessoryIDs.map(c => c.id);
       const mobileIDsMap = mobileIDs.map(c => c.id);
@@ -116,33 +120,44 @@ class CategoryManagementRepository {
           mobileID: { in: mobileIDsMap }
         }
       });
-      console.log("@@@@@MobileItems", mobileStock)
+      //console.log("@@@@@MobileItems", mobileStock)
+
+      const accessoryMap = new Map();
+      accessoryIDs.forEach(item => {
+        const stock = item._sum.availableStock || 0;
+        accessoryMap.set(item.CategoryId, (accessoryMap.get(item.CategoryId) || 0) + stock);
+      });
+      console.log("accessoryMap@@@@@@", accessoryMap);
+
+      const mobileMap = new Map();
+      mobileIDs.forEach(item => {
+        const stock = item._sum.availableStock || 0;
+        mobileMap.set(item.CategoryId, (mobileMap.get(item.CategoryId) || 0) + stock);
+      });
 
       const accessoryStockMap = new Map(accessoryStock.map(item => [item.accessoryID, item._sum.quantity || 0]));
-      /// console.log("accessoryStockMap@@@@@@", accessoryStockMap);
       const mobileStockMap = new Map(mobileStock.map(item => [item.mobileID, item._sum.quantity || 0]));
-      //console.log("mobileStockMap@@@@@@", mobileStockMap);
+
       const mobileTotalStock = new Map();
       mobileIDs.forEach(mobile => {
-        const stock = mobileStockMap.get(mobile.id)
+        const stock = mobileStockMap.get(mobile.id) || 0;
+        mobileTotalStock.set(mobile.CategoryId, (mobileTotalStock.get(mobile.CategoryId) || 0) + stock);
+      });
 
-        mobileTotalStock.set(mobile.CategoryId, (mobileTotalStock.get(mobile.CategoryId) || 0) + stock)
-      })
-      console.log("mobileTotalStock@@@@@@", mobileTotalStock);
       const accessoriesTotalStock = new Map();
       accessoryIDs.forEach(accessory => {
-        const stock = accessoryStockMap.get(accessory.id)
-        accessoriesTotalStock.set(accessory.CategoryId, (accessoriesTotalStock.get(accessory.CategoryId) || 0) + stock)
-      })
-      //console.log("mobileStockTOTALMap@@@@@@", accessoriesTotalStock);
+        const stock = accessoryStockMap.get(accessory.id) || 0;
+        accessoriesTotalStock.set(accessory.CategoryId, (accessoriesTotalStock.get(accessory.CategoryId) || 0) + stock);
+      });
+      console.log("accessoriesTotalStockMap@@@@@@", accessoriesTotalStock);
       const categoriesWithStock = categories.map(category => ({
         ...category,
-        availableStock: (accessoriesTotalStock.get(category.id) || 0) + (mobileTotalStock.get(category.id) || 0)
+        availableStock: (accessoriesTotalStock.get(category.id) || 0) + (mobileTotalStock.get(category.id) || 0) + (accessoryMap.get(category.id) || 0) + (mobileMap.get(category.id) || 0)
       }));
       //console.log("categoriesWithStock", categoriesWithStock);
       return { categoriesWithStock, totalItems };
     } catch (err) {
-      ///console.log("err", err);
+      console.log("err", err);
       throw new APIError(
         "Service Error",
         STATUS_CODE.INTERNAL_ERROR,
