@@ -72,25 +72,25 @@ class CategoryManagementRepository {
     const [accessoryStock, mobileStock] = await Promise.all([
       accessoryIDsMap.length > 0
         ? prisma.accessoryItems.groupBy({
-            by: ['accessoryID'],
-            _sum: {
-              quantity: true,
-            },
-            where: {
-              accessoryID: { in: accessoryIDsMap }
-            }
-          })
+          by: ['accessoryID'],
+          _sum: {
+            quantity: true,
+          },
+          where: {
+            accessoryID: { in: accessoryIDsMap }
+          }
+        })
         : [],
       mobileIDsMap.length > 0
         ? prisma.mobileItems.groupBy({
-            by: ['mobileID'],
-            _sum: {
-              quantity: true,
-            },
-            where: {
-              mobileID: { in: mobileIDsMap }
-            }
-          })
+          by: ['mobileID'],
+          _sum: {
+            quantity: true,
+          },
+          where: {
+            mobileID: { in: mobileIDsMap }
+          }
+        })
         : []
     ]);
 
@@ -124,9 +124,9 @@ class CategoryManagementRepository {
     const totalStockMap = new Map();
     categoryIds.forEach(id => {
       const total = (accessoriesTotalStock.get(id) || 0) +
-                    (mobileTotalStock.get(id) || 0) +
-                    (accessoryMap.get(id) || 0) +
-                    (mobileMap.get(id) || 0);
+        (mobileTotalStock.get(id) || 0) +
+        (accessoryMap.get(id) || 0) +
+        (mobileMap.get(id) || 0);
       totalStockMap.set(id, total);
     });
 
@@ -336,34 +336,129 @@ class CategoryManagementRepository {
 
 
   async searchForCategory(searchItem) {
+    const normalizeBigInt = (rows) =>
+      rows.map(row =>
+        Object.fromEntries(
+          Object.entries(row).map(([k, v]) => [k, typeof v === 'bigint' ? Number(v) : v])
+        )
+      );
 
     try {
-      const words = searchItem.trim().split(" ").filter(w => w.length > 0);
-      if (words.length === 0) {
+      const rawWords = searchItem.trim().split(/\s+/).filter(w => w.length > 0);
+      if (rawWords.length === 0) {
+        return [];
+      }
+      console.log("raw words||", rawWords)
+      // Step 2: Expand hyphenated/dotted tokens into sub-tokens
+      // e.g. "POWER-3.0-ADAPTER" → ["POWER", "3.0", "ADAPTER"] → ["POWER", "3", "0", "ADAPTER"]
+      const allTokens = [];
+      for (const word of rawWords) {
+        // Split on hyphens and dots to handle tokens like POWER-3.0-ADAPTER
+        const subTokens = word.split(/[-.]/).filter(t => t.length > 0);
+        if (subTokens.length > 1) {
+          // Push both the original word and sub-tokens so we can LIKE on original too
+          allTokens.push({ original: word, subTokens });
+        } else {
+          allTokens.push({ original: word, subTokens: [word] });
+        }
+      }
+      const fulltextWords = [];
+      const likePatterns = []; // These will be searched as LIKE '%token%' on all name columns
+
+      for (const { original, subTokens } of allTokens) {
+        const hasSpecialChars = /[-.]/.test(original);
+
+        if (hasSpecialChars) {
+          // For hyphenated/dotted words: use LIKE on the original word for exact sub-string match
+          // AND add long sub-tokens to fulltext for broader recall
+          likePatterns.push(original); // e.g. "POWER-3.0-ADAPTER"
+          for (const sub of subTokens) {
+            if (sub.length >= 3) {
+              fulltextWords.push(sub); // e.g. "POWER", "ADAPTER"
+            } else {
+              likePatterns.push(sub); // e.g. "3", "0"
+            }
+          }
+        } else if (original.length < 3) {
+          // Short words that MySQL FULLTEXT ignores — use LIKE
+          likePatterns.push(original);
+        } else {
+          // Normal long word — use FULLTEXT
+          fulltextWords.push(original);
+        }
+      }
+
+      // Step 4: Build the FULLTEXT query string (boolean mode with prefix wildcard)
+      // Each word is required (+) and prefix-matched (*)
+      const fulltextQuery = fulltextWords.map(w => `+${w}*`).join(" ");
+
+      let categories;
+
+      if (fulltextWords.length === 0 && likePatterns.length === 0) {
         return [];
       }
 
-      const searchQuery = words.map(w => `+${w}%`).join(" ");
-      // console.log("search query created|", searchQuery)
-      const categories = await prisma.$queryRaw`
-      SELECT c._id as id,
-      c.itemName,
-  c.itemModel,
-  c.minPrice,
-  c.itemType,
-  c.brand,
-  c.maxPrice,
-  c.category,
-  c.status,
-      MATCH(c.itemName, c.itemModel, c.brand,c.category)
-      AGAINST(${searchQuery} IN BOOLEAN MODE) AS relevance
-      FROM categories c
-      WHERE
-      MATCH(c.itemName, c.itemModel, c.brand,c.category)
-      AGAINST(${searchQuery} IN BOOLEAN MODE)
-      ORDER BY relevance DESC;
-      `
-      //console.log("categories", categories);
+      // Step 5: Build SQL dynamically depending on what kind of tokens we have
+      if (fulltextWords.length > 0 && likePatterns.length === 0) {
+        // Pure FULLTEXT search — the fast path (original behaviour, but corrected)
+        categories = await prisma.$queryRaw`
+          SELECT c._id as id,
+            c.itemName,
+            c.itemModel,
+            c.minPrice,
+            c.itemType,
+            c.brand,
+            c.maxPrice,
+            c.category,
+            c.status,
+            MATCH(c.itemName, c.itemModel, c.brand, c.category)
+              AGAINST(${fulltextQuery} IN BOOLEAN MODE) AS relevance
+          FROM categories c
+          WHERE
+            MATCH(c.itemName, c.itemModel, c.brand, c.category)
+              AGAINST(${fulltextQuery} IN BOOLEAN MODE)
+          ORDER BY relevance DESC
+        `;
+        categories = normalizeBigInt(categories);
+      } else {
+        const sanitizedLikePatterns = likePatterns.map(p =>
+          p.replace(/[^a-zA-Z0-9\-\.]/g, "")
+        );
+        const likeConditions = sanitizedLikePatterns
+          .map(p => `(c.itemName LIKE '%${p}%' OR c.itemModel LIKE '%${p}%' OR c.brand LIKE '%${p}%' OR c.category LIKE '%${p}%')`)
+          .join(" AND ");
+
+        let whereClause;
+        let selectRelevance;
+
+        if (fulltextWords.length > 0) {
+
+          selectRelevance = `MATCH(c.itemName, c.itemModel, c.brand, c.category) AGAINST('${fulltextQuery.replace(/'/g, "\\'")}' IN BOOLEAN MODE) AS relevance`;
+          whereClause = `MATCH(c.itemName, c.itemModel, c.brand, c.category) AGAINST('${fulltextQuery.replace(/'/g, "\\'")}' IN BOOLEAN MODE) AND ${likeConditions}`;
+        } else {
+          selectRelevance = `1 AS relevance`;
+          whereClause = likeConditions;
+        }
+
+        const sql = `
+          SELECT c._id as id,
+            c.itemName,
+            c.itemModel,
+            c.minPrice,
+            c.itemType,
+            c.brand,
+            c.maxPrice,
+            c.category,
+            c.status,
+            ${selectRelevance}
+          FROM categories c
+          WHERE ${whereClause}
+          ORDER BY relevance DESC
+        `;
+
+        categories = await prisma.$queryRawUnsafe(sql);
+        categories = normalizeBigInt(categories);
+      }
 
 
       if (!categories || categories.length === 0) {
