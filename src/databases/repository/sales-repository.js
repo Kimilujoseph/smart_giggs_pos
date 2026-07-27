@@ -108,8 +108,10 @@ class Sales {
     userId,
     financerId,
     financeStatus,
+    itemType
   }) {
     try {
+      console.log("item type @@@@@@@@@@@@", itemType)
       const salesModel = prisma[salesTable];
       const skip = (page - 1) * limit;
       const whereClause = {
@@ -125,6 +127,11 @@ class Sales {
       if (categoryId) {
         whereClause.categoryId = categoryId;
       }
+      if (itemType) {
+        whereClause.categories = {
+          itemType: itemType
+        }
+      }
 
       if (financerId) {
         whereClause.financerId = financerId;
@@ -133,7 +140,7 @@ class Sales {
       if (financeStatus) {
         whereClause.financeStatus = financeStatus;
       }
-
+      // console.log("generatedWhere clause", whereClause)
       const includeClause =
         salesTable === "mobilesales"
           ? {

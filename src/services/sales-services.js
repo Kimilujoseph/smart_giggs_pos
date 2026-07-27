@@ -469,7 +469,8 @@ class salesmanagment {
       categoryId,
       financerId,
       financeStatus,
-      model
+      model,
+      itemType
     } = filters;
 
     const today = new Date();
@@ -493,6 +494,7 @@ class salesmanagment {
       categoryId: parsedCategoryId,
       financerId: parsedFinancerId,
       financeStatus,
+      itemType,
       page: parsedPage,
       limit: parsedLimit,
     };
@@ -500,15 +502,10 @@ class salesmanagment {
     let salesTable = model === "mobiles" ? "mobilesales" : "accessorysales"
 
     const salesFoundForATable = await Promise.all([
-      parsedUserId
-        ? this.sales.findUserSales({
-          ...paginatedSalesDetails,
-          salesTable: salesTable,
-        })
-        : this.sales.findSales({
-          ...paginatedSalesDetails,
-          salesTable: salesTable,
-        })
+      this.sales.findSales({
+        ...paginatedSalesDetails,
+        salesTable: salesTable,
+      })
     ]);
 
     //console.log("sales found for a table", salesFoundForATable)

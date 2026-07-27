@@ -54,7 +54,7 @@ class AnalyticsService {
         try {
             const summaryData = await this.repository.getShopPerformanceSummary(options);
 
-            // console.log("$#$#$", summaryData)
+            //console.log("$#$#$", summaryData)
             const grouped = summaryData.reduce((acc, row) => {
                 let shop = acc.find(s => s.shopId === row.shopId);
 
@@ -78,7 +78,7 @@ class AnalyticsService {
 
                 return acc;
             }, []);
-            // console.log("grouped", JSON.stringify(grouped))
+            //console.log("grouped", JSON.stringify(grouped))
             return grouped;
         } catch (err) {
             throw new InternalServerError("Internal server error")

@@ -1,5 +1,6 @@
 import { parentPort, workerData } from "worker_threads";
 import { salesmanagment } from "../services/sales-services.js";
+import { KpiService } from "../services/kpi-service.js";
 import puppeteer from "puppeteer";
 import { PrismaClient } from "@prisma/client";
 import dotenv from "dotenv";
@@ -8,6 +9,7 @@ dotenv.config();
 // prevent connection-pool exhaustion across concurrent workers.
 const prisma = new PrismaClient();
 const salesService = new salesmanagment();
+const kpiService = new KpiService();
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -421,20 +423,22 @@ async function processReport() {
     console.log("[Worker] Fetching data for job params:", jobParams);
 
     // All three DB fetches run in parallel
-    const [summaryData, mobileSalesResult, accessorySalesResult] =
+    const [summaryData, smartphoneSalesResult, smallphoneSalesResult, accessorySalesResult, simcardSalesResult] =
       await Promise.all([
         salesService._getSummarySalesData(jobParams),
-        salesService.generategeneralsales({ ...jobParams, model: "mobiles" }),
-        salesService.generategeneralsales({ ...jobParams, model: "accessory" }),
+        salesService.generategeneralsales({ ...jobParams, model: "mobiles", itemType: "smartphones" }),
+        salesService.generategeneralsales({ ...jobParams, model: "mobiles", itemType: "smallphones" }),
+        salesService.generategeneralsales({ ...jobParams, model: "accessory", itemType: "accessories" }),
+        salesService.generategeneralsales({ ...jobParams, model: "simcards", itemType: "simcards" }),
       ]);
-
-    const mobileSalesRows = mobileSalesResult?.sales?.sales || [];
+    const salesKpi = await kpiService.getKpiAchievementReport(summaryData, { startDate: jobParams.startDate, endDate: jobParams.endDate });
+    const smartphoneSalesRows = smartphoneSalesResult?.sales?.sales || [];
+    const smallphoneSalesRows = smallphoneSalesResult?.sales?.sales || [];
     const accessorySalesRows = accessorySalesResult?.sales?.sales || [];
+    const simcardSalesRows = simcardSalesResult?.sales?.sales || [];
 
     // Merge and sort newest-first
-    const sales = [...mobileSalesRows, ...accessorySalesRows].sort(
-      (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-    );
+    const sales = [...smartphoneSalesRows, ...smallphoneSalesRows, ...accessorySalesRows, ...simcardSalesRows];
 
     console.log(
       `[Worker] Fetched ${sales.length} rows. ` +
