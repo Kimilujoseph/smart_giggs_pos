@@ -352,95 +352,107 @@ class salesmanagment {
     //console.log("historical totals", historicalTotals)
 
     //hisrotical data is an array of two object mobile and accessory totals
-    let historicalMobileTotals = historicalTotals.filter((item) => item.category === "mobiles")[0];
-    let historicalAccessoryTotals = historicalTotals.filter((item) => item.category === "accessories")[0];
+    let historicalSmartPhone = historicalTotals.filter((item) => item.itemType === "smartphones")[0];
+    let historicalSmallPhones = historicalTotals.filter((item) => item.itemType === "smallphones")[0];
+    let historicalAccessoryTotals = historicalTotals.filter((item) => item.itemType === "accessories")[0];
+    let historicalSimCardTotals = historicalTotals.filter((item) => item.itemType === "simcards")[0];
 
     // console.log("historical mobile totals", historicalMobileTotals)
     // console.log("historical accessory totals", historicalAccessoryTotals)
 
-    let todaysMobileTotals = {
-      category: "mobile",
-      totalRevenue: 0,
-      grossProfit: 0,
-      totalCommission: 0,
-      totalCommissionPaid: 0,
-      totalItems: 0,
-      totalFinanceAmount: 0,
-    };
-    let todaysAccessoryTotals = {
-      category: "accessory",
-      totalRevenue: 0,
-      grossProfit: 0,
-      totalCommission: 0,
-      totalCommissionPaid: 0,
-      totalItems: 0,
-      totalFinanceAmount: 0,
-    };
-    if (parsedEndDate >= today) {
-      const todaySalesDetails = {
-        startDate: today,
-        endDate: parsedEndDate,
-        shopId: parsedShopId,
-        userId: parsedUserId,
-        categoryId: parsedCategoryId,
-        financerId: parsedFinancerId,
-        financeStatus,
-        page: 1,
-        limit: 150,
-      };
+    // let todaysMobileTotals = {
+    //   category: "mobile",
+    //   totalRevenue: 0,
+    //   grossProfit: 0,
+    //   totalCommission: 0,
+    //   totalCommissionPaid: 0,
+    //   totalItems: 0,
+    //   totalFinanceAmount: 0,
+    // };
+    // let todaysAccessoryTotals = {
+    //   category: "accessory",
+    //   totalRevenue: 0,
+    //   grossProfit: 0,
+    //   totalCommission: 0,
+    //   totalCommissionPaid: 0,
+    //   totalItems: 0,
+    //   totalFinanceAmount: 0,
+    // };
+    // if (parsedEndDate >= today) {
+    //   const todaySalesDetails = {
+    //     startDate: today,
+    //     endDate: parsedEndDate,
+    //     shopId: parsedShopId,
+    //     userId: parsedUserId,
+    //     categoryId: parsedCategoryId,
+    //     financerId: parsedFinancerId,
+    //     financeStatus,
+    //     page: 1,
+    //     limit: 150,
+    //   };
 
-      const [mobileSales, accessorySales] = await Promise.all([
-        this.sales.findSummarySales({
-          ...todaySalesDetails,
-          salesTable: "mobilesales",
-        }),
-        this.sales.findSummarySales({
-          ...todaySalesDetails,
-          salesTable: "accessorysales",
-        }),
-      ]);
+    //   const [mobileSales, accessorySales] = await Promise.all([
+    //     this.sales.findSummarySales({
+    //       ...todaySalesDetails,
+    //       salesTable: "mobilesales",
+    //     }),
+    //     this.sales.findSummarySales({
+    //       ...todaySalesDetails,
+    //       salesTable: "accessorysales",
+    //     }),
+    //   ]);
 
-      //console.log("mobile sales", mobileSales)
-      // console.log("accessory sales", accessorySales)
-      todaysMobileTotals = {
-        category: "mobile",
-        totalRevenue:
-          (mobileSales._sum.soldPrice || 0),
-        grossProfit:
-          (mobileSales._sum.profit || 0),
-        totalCommission:
-          (mobileSales._sum.commission || 0),
-        totalItems:
-          (mobileSales._count || 0)
-      };
-      todaysAccessoryTotals = {
-        category: "accessory",
-        totalRevenue:
-          (accessorySales._sum.soldPrice || 0),
-        grossProfit:
-          (accessorySales._sum.profit || 0),
-        totalCommission:
-          (accessorySales._sum.commission || 0),
-        totalItems:
-          (accessorySales._count || 0)
-      };
-    }
+    //   console.log("mobile sales", mobileSales)
+    //   console.log("accessory sales", accessorySales)
+    //   todaysMobileTotals = {
+    //     category: "mobile",
+    //     totalRevenue:
+    //       (mobileSales._sum.soldPrice || 0),
+    //     grossProfit:
+    //       (mobileSales._sum.profit || 0),
+    //     totalCommission:
+    //       (mobileSales._sum.commission || 0),
+    //     totalItems:
+    //       (mobileSales._count || 0)
+    //   };
+    //   todaysAccessoryTotals = {
+    //     category: "accessory",
+    //     totalRevenue:
+    //       (accessorySales._sum.soldPrice || 0),
+    //     grossProfit:
+    //       (accessorySales._sum.profit || 0),
+    //     totalCommission:
+    //       (accessorySales._sum.commission || 0),
+    //     totalItems:
+    //       (accessorySales._count || 0)
+    //   };
+    // }
 
     const finalTotals = {
-      totalSales: Number(historicalMobileTotals?.totalRevenue || 0) + Number(todaysMobileTotals.totalRevenue || 0) + Number(historicalAccessoryTotals?.totalRevenue || 0) + Number(todaysAccessoryTotals.totalRevenue || 0),
+      totalSales: Number(historicalSmartPhone?.totalRevenue || 0) + Number(historicalSmallPhones?.totalRevenue || 0) + Number(historicalAccessoryTotals?.totalRevenue || 0) + Number(historicalSimCardTotals?.totalRevenue || 0),
       totalProfit:
-        Number(historicalMobileTotals?.grossProfit || 0) + Number(todaysMobileTotals.grossProfit || 0) + Number(historicalAccessoryTotals?.grossProfit || 0) + Number(todaysAccessoryTotals.grossProfit || 0),
+        Number(historicalSmartPhone?.grossProfit || 0) + Number(historicalSmallPhones?.grossProfit || 0) + Number(historicalAccessoryTotals?.grossProfit || 0) + Number(historicalSimCardTotals?.grossProfit || 0),
       totalCommission:
-        Number(historicalMobileTotals?.totalCommission || 0) +
-        Number(todaysMobileTotals.totalCommission || 0) + Number(historicalAccessoryTotals?.totalCommission || 0) + Number(todaysAccessoryTotals.totalCommission || 0),
-      totalMobileSales: Number(historicalMobileTotals?.totalRevenue || 0) + Number(todaysMobileTotals.totalRevenue || 0),
-      totalAccessorySales: Number(historicalAccessoryTotals?.totalRevenue || 0) + Number(todaysAccessoryTotals.totalRevenue || 0),
-      totalMobileProfit: Number(historicalMobileTotals?.grossProfit || 0) + Number(todaysMobileTotals.grossProfit || 0),
-      totalAccessoryProfit: Number(historicalAccessoryTotals?.grossProfit || 0) + Number(todaysAccessoryTotals.grossProfit || 0),
-      totalMobileCommission: Number(historicalMobileTotals?.totalCommission || 0) + Number(todaysMobileTotals.totalCommission || 0),
-      totalAccessoryCommission: Number(historicalAccessoryTotals?.totalCommission || 0) + Number(todaysAccessoryTotals.totalCommission || 0),
+        Number(historicalSmartPhone?.totalCommission || 0) +
+        Number(historicalSmallPhones?.totalCommission || 0) + Number(historicalAccessoryTotals?.totalCommission || 0) + Number(historicalSimCardTotals?.totalCommission || 0),
+      totalSmartphoneSales: Number(historicalSmartPhone?.totalRevenue || 0),
+      totalSmallPhoneSales: Number(historicalSmallPhones?.totalRevenue || 0),
+      totalAccessorySales: Number(historicalAccessoryTotals?.totalRevenue || 0),
+      totalSimCardSales: Number(historicalSimCardTotals?.totalRevenue || 0),
+      totalSmartphoneProfit: Number(historicalSmartPhone?.grossProfit || 0),
+      totalSmallPhoneProfit: Number(historicalSmallPhones?.grossProfit || 0),
+      totalAccessoryProfit: Number(historicalAccessoryTotals?.grossProfit || 0),
+      totalSimCardProfit: Number(historicalSimCardTotals?.grossProfit || 0),
+      totalSmartphoneCommission: Number(historicalSmartPhone?.totalCommission || 0),
+      totalSmallPhoneCommission: Number(historicalSmallPhones?.totalCommission || 0),
+      totalAccessoryCommission: Number(historicalAccessoryTotals?.totalCommission || 0),
+      totalSimCardCommission: Number(historicalSimCardTotals?.totalCommission || 0),
+      totalSmartphoneUnitsSold: Number(historicalSmartPhone?.totalUnitsSold || 0),
+      totalSmallPhoneUnitsSold: Number(historicalSmallPhones?.totalUnitsSold || 0),
+      totalAccessoryUnitsSold: Number(historicalAccessoryTotals?.totalUnitsSold || 0),
+      totalSimCardUnitsSold: Number(historicalSimCardTotals?.totalUnitsSold || 0),
     };
-
+    // console.log("final totals", finalTotals)
     return {
       ...finalTotals
     }

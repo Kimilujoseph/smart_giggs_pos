@@ -670,6 +670,7 @@ enum categories_itemType {
   smallphones
   mobiles
   accessories
+  simcards
 }
 
 enum accessorytransferhistory_type {

@@ -22,53 +22,114 @@ class KpiService {
     }
   }
 
-  async getKpiAchievementReport(filters) {
-    const { sellerId, startDate, endDate, period = 'today' } = filters;
 
-    if (period.toLowerCase() === 'year') {
-      throw new APIError('Unsupported feature', 400, 'a year kpi will be available soon');
+
+  async getKpiAchievementReport(summaryReport, period) {
+    const {
+      totalSmartphoneUnitsSold,
+      totalSmallPhoneUnitsSold,
+      totalAccessoryUnitsSold,
+      totalSimCardUnitsSold
+    } = summaryReport;
+    //console.log("summaryPeriod", period)
+    const { startDate, endDate } = period;
+
+    const diffInDays =
+      (new Date(endDate) - new Date(startDate)) / (1000 * 60 * 60 * 24);
+
+    let calculatedPeriod;
+
+    if (diffInDays === 0) {
+      calculatedPeriod = "day";
+    } else if (diffInDays <= 7) {
+      calculatedPeriod = "week";
+    } else if (diffInDays <= 30) {
+      calculatedPeriod = "month";
+    } else {
+      calculatedPeriod = "custom";
     }
 
     const kpiTargets = {
-      day: { smartphones: 2, smallphones: 2, accessories: 3 },
-      week: { smartphones: 12, smallphones: 12, accessories: 18 },
-      month: { smartphones: 52, smallphones: 52, accessories: 78 },
-    };
+      day: {
+        smartphones: 2,
+        smallphones: 3,
+        accessories: 4,
+        simCard: 5,
+      },
+      week: {
+        smartphones: 12,
+        smallphones: 18,
+        accessories: 18,
+        simCard: 25,
+      },
+      month: {
+        smartphones: 48,
+        smallphones: 72,
+        accessories: 72,
+        simCard: 100,
+      },
 
-    const targets = kpiTargets[period.toLowerCase()];
-    if (!targets) {
-      throw new Error("Invalid period specified. Must be one of 'day', 'week', 'month'.");
-    }
-
-    const salesData = await this.repository.getSalesForKpiReport({ sellerId, startDate, endDate });
-
-    const actualSales = {
-      smartphones: 0,
-      smallphones: 0,
-      accessories: 0,
-    };
-
-    salesData.forEach(sale => {
-      if (actualSales.hasOwnProperty(sale.itemType)) {
-        actualSales[sale.itemType] += sale.count;
-      }
-    });
-
-    const report = {
-      period,
-      sellerId,
-      startDate,
-      endDate,
-      targets,
-      actualSales,
-      achievement: {
-        smartphones: actualSales.smartphones >= targets.smartphones,
-        smallphones: actualSales.smallphones >= targets.smallphones,
-        accessories: actualSales.accessories >= targets.accessories,
+      custom: {
+        smartphones: 48,
+        smallphones: 72,
+        accessories: 72,
+        simCard: 100,
       },
     };
 
-    report.overallAchievement = Object.values(report.achievement).every(Boolean);
+    const targets = kpiTargets[calculatedPeriod];
+
+    const calculate = (actual, target) => ({
+      target,
+      actual,
+      achievement: Number(((actual / target) * 100).toFixed(2)),
+      achieved: actual >= target,
+      remaining: Math.max(target - actual, 0),
+    });
+
+    const report = {
+      smartphones: calculate(
+        totalSmartphoneUnitsSold,
+        targets.smartphones
+      ),
+
+      smallPhones: calculate(
+        totalSmallPhoneUnitsSold,
+        targets.smallphones
+      ),
+
+      accessories: calculate(
+        totalAccessoryUnitsSold,
+        targets.accessories
+      ),
+
+      simCards: calculate(
+        totalSimCardUnitsSold,
+        targets.simCard
+      ),
+    };
+
+    // Overall KPI (weighted)
+    const totalActual =
+      totalSmartphoneUnitsSold +
+      totalSmallPhoneUnitsSold +
+      totalAccessoryUnitsSold +
+      totalSimCardUnitsSold;
+
+    const totalTarget =
+      targets.smartphones +
+      targets.smallphones +
+      targets.accessories +
+      targets.simCard;
+
+    report.overall = {
+      actual: totalActual,
+      target: totalTarget,
+      achievement: Number(
+        ((totalActual / totalTarget) * 100).toFixed(2)
+      ),
+      achieved: totalActual >= totalTarget,
+    };
 
     return report;
   }

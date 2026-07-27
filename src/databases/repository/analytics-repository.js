@@ -37,7 +37,7 @@ class AnalyticsRepository {
       const result = await prisma.$queryRaw(
         Prisma.sql`
     SELECT
-      c.category,
+      c.itemType,
       SUM(d.totalUnitsSold) AS totalUnitsSold,
       SUM(d.totalRevenue) AS totalRevenue,
       SUM(d.grossProfit) AS grossProfit,
@@ -47,7 +47,7 @@ class AnalyticsRepository {
     JOIN categories c
       ON d.categoryId = c._id
     WHERE ${Prisma.join(conditions, " AND ")}
-    GROUP BY c.category;
+    GROUP BY c.itemType;
   `
       );
       //console.log("sales results", result)
@@ -213,27 +213,37 @@ class AnalyticsRepository {
           lt: new Date(endDate),
         };
       }
+      const results = await prisma.$queryRaw`
+SELECT
+    d.shopId,
+    c.itemType,
+    s.shopName,
+    SUM(d.totalRevenue) AS totalRevenue,
+    SUM(d.grossProfit) AS grossProfit,
+    SUM(d.totalUnitsSold) AS totalUnitsSold,
+    SUM(d.totalCommission) AS totalCommission,
+    SUM(d.totalfinanceAmount) AS totalFinanceAmount
 
-      const results = await prisma.dailySalesAnalytics.groupBy({
-        by: ['shopId'],
-        where: whereClause,
-        _sum: {
-          totalRevenue: true,
-          grossProfit: true,
-          totalUnitsSold: true,
-          totalCommission: true,
-          totalfinanceAmount: true,
-        },
-        orderBy: {
-          _sum: {
-            totalRevenue: 'desc',
-          },
-        },
-      });
+FROM dailySalesAnalytics d
+INNER JOIN categories c
+    ON d.categoryId = c._id
+INNER JOIN shops s 
+    ON d.shopId = s._id
+
+GROUP BY
+    d.shopId,
+    c.itemType,
+    s.shopName
+
+ORDER BY
+    totalRevenue DESC;
+`;
+
+      // console.log("sql result", results)
 
       return results;
     } catch (err) {
-      //console.error("Analytics Repository Error:", err);
+      console.error("Analytics Repository Error:", err);
       throw new APIError(
         "Database Error",
         STATUS_CODE.INTERNAL_ERROR,

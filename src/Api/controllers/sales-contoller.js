@@ -1,9 +1,11 @@
 import { salesmanagment } from "../../services/sales-services.js";
 import { checkRole } from "../../helpers/authorisation.js";
+import { KpiService } from '../../services/kpi-service.js';
 import { handleError, handleResponse } from "../../helpers/responseUtils.js";
 import { APIError, STATUS_CODE } from "../../Utils/app-error.js";
 //import reportQueue from "../../queues/salesReportQueue.js";
 const salesService = new salesmanagment();
+const kpiservice = new KpiService();
 
 const handleGetSales = async (req, res, next) => {
   try {
@@ -120,10 +122,13 @@ const handleSummarySales = async (req, res, next) => {
       salesService._getAccountReceivableSummary(salesQueryPayLoad),
       salesService._getFinancerCommissionSummary(salesQueryPayLoad)
     ])
+    //console.log("salesAnalytics", salesAnaytics)
+    const KPIachievement = await kpiservice.getKpiAchievementReport(salesAnaytics, { startDate: salesQueryPayLoad.startDate, endDate: salesQueryPayLoad.endDate });
+    //console.log("KPIachievement", KPIachievement)
     handleResponse({
       res,
       message: "Sales summary retrieved successfully",
-      data: { ...salesAnaytics, accountReceivable: accountRecevable, commissionAnalysis: commissionAnalysis },
+      data: { ...salesAnaytics, accountReceivable: accountRecevable, commissionAnalysis: commissionAnalysis, KPIachievement: KPIachievement },
     })
 
   } catch (err) {

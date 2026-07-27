@@ -54,35 +54,32 @@ class AnalyticsService {
         try {
             const summaryData = await this.repository.getShopPerformanceSummary(options);
 
-            //console.log("$#$#$", summaryData)
+            // console.log("$#$#$", summaryData)
+            const grouped = summaryData.reduce((acc, row) => {
+                let shop = acc.find(s => s.shopId === row.shopId);
 
-            const shopIds = summaryData.map(s => s.shopId);
+                if (!shop) {
+                    shop = {
+                        shopId: row.shopId,
+                        shopName: row.shopName.trim(),
+                        categories: {}
+                    };
 
-            if (shopIds.length === 0) {
-                return [];
-            }
-
-            const shops = await prisma.shops.findMany({
-                where: { id: { in: shopIds } },
-                select: { id: true, shopName: true },
-            });
-
-            const shopsMap = new Map();
-            shops.forEach(s => shopsMap.set(s.id, s.shopName));
-
-            const enrichedData = summaryData.map(s => {
-                return {
-                    shopId: s.shopId,
-                    shopName: shopsMap.get(s.shopId) || 'Unknown',
-                    totalRevenue: s._sum.totalRevenue,
-                    grossProfit: s._sum.grossProfit,
-                    totalUnitsSold: s._sum.totalUnitsSold,
-                    totalCommission: s._sum.totalCommission,
-                    totalfinanceAmount: s._sum.totalfinanceAmount,
+                    acc.push(shop);
                 }
-            });
-            //console.log("enriched data", enrichedData)
-            return enrichedData;
+
+                shop.categories[row.itemType] = {
+                    totalRevenue: Number(row.totalRevenue),
+                    grossProfit: Number(row.grossProfit),
+                    totalUnitsSold: Number(row.totalUnitsSold),
+                    totalCommission: Number(row.totalCommission),
+                    totalFinanceAmount: Number(row.totalFinanceAmount)
+                };
+
+                return acc;
+            }, []);
+            // console.log("grouped", JSON.stringify(grouped))
+            return grouped;
         } catch (err) {
             throw new InternalServerError("Internal server error")
         }
