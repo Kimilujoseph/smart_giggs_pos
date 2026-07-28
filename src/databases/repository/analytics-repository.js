@@ -224,7 +224,7 @@ SELECT
     SUM(d.totalCommission) AS totalCommission,
     SUM(d.totalfinanceAmount) AS totalFinanceAmount
 
-FROM dailySalesAnalytics d
+FROM  DailySalesAnalytics d
 INNER JOIN categories c
     ON d.categoryId = c._id
 INNER JOIN shops s 
