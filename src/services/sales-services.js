@@ -302,7 +302,7 @@ class salesmanagment {
   }
   //create a queue fro report generateion
   async _createReportQueue(filters) {
-    const { startDate, endDate, shopId, userId, categoryId, financerId, financeStatus } = filters
+    const { startDate, endDate, shopId, userId, categoryId, financerId, financeStatus, userRole } = filters
 
     const JobData = {
       startDate: startDate,
@@ -312,6 +312,7 @@ class salesmanagment {
       categoryId: categoryId ? parseInt(categoryId) : null,
       financerId: financerId ? parseInt(financerId) : null,
       financeStatus: financeStatus || null,
+      userRole: userRole || null,
       requestedAt: new Date().toISOString()
     }
     const Job = await reportQueue.add(`report-${userId}-${Date.now()}`, JobData)

@@ -111,7 +111,7 @@ class Sales {
     itemType
   }) {
     try {
-      console.log("item type @@@@@@@@@@@@", itemType)
+      //console.log("item type @@@@@@@@@@@@", itemType)
       const salesModel = prisma[salesTable];
       const skip = (page - 1) * limit;
       const whereClause = {

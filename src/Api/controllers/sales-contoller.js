@@ -140,7 +140,8 @@ const handleSummarySales = async (req, res, next) => {
 const handleGenerateReport = async (req, res, next) => {
   try {
     const { salesQuery } = req;
-    const salesPayload = { ...salesQuery, ...req.query }
+    const userRole = req.user.role;
+    const salesPayload = { ...salesQuery, ...req.query, userRole }
     const job = await salesService._createReportQueue(salesPayload)
     return res.status(200).json({
       success: true,

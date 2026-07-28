@@ -78,7 +78,7 @@ class AnalyticsService {
 
                 return acc;
             }, []);
-            //console.log("grouped", JSON.stringify(grouped))
+            console.log("grouped", JSON.stringify(grouped))
             return grouped;
         } catch (err) {
             throw new InternalServerError("Internal server error")
