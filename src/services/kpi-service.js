@@ -33,13 +33,14 @@ class KpiService {
     } = summaryReport;
     //console.log("summaryPeriod", period)
     const { startDate, endDate } = period;
-
+    //console.log("startDate", startDate)
+    //console.log("endDate", endDate)
     const diffInDays =
       (new Date(endDate) - new Date(startDate)) / (1000 * 60 * 60 * 24);
-
+    //console.log("diffInDays", diffInDays)
     let calculatedPeriod;
 
-    if (diffInDays === 0) {
+    if (diffInDays <= 1) {
       calculatedPeriod = "day";
     } else if (diffInDays <= 7) {
       calculatedPeriod = "week";
@@ -48,32 +49,32 @@ class KpiService {
     } else {
       calculatedPeriod = "custom";
     }
-
+    //console.log("calculatedPeriod", calculatedPeriod)
     const kpiTargets = {
       day: {
         smartphones: 2,
         smallphones: 3,
-        accessories: 4,
+        accessories: 3,
         simCard: 5,
       },
       week: {
         smartphones: 12,
         smallphones: 18,
         accessories: 18,
-        simCard: 25,
+        simCard: 30,
       },
       month: {
         smartphones: 48,
         smallphones: 72,
         accessories: 72,
-        simCard: 100,
+        simCard: 120,
       },
 
       custom: {
         smartphones: 48,
         smallphones: 72,
         accessories: 72,
-        simCard: 100,
+        simCard: 120,
       },
     };
 
