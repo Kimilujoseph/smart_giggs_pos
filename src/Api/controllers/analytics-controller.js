@@ -7,9 +7,8 @@ const analyticsService = new AnalyticsService();
 
 const getTopProducts = async (req, res, next) => {
     try {
-
-        const { metric, limit, startDate, endDate, financerId } = req.query;
-        const data = await analyticsService.getTopProductsAnalytics({ metric, limit, startDate, endDate, financerId });
+        const { startDate, endDate } = req.dateQuery;
+        const data = await analyticsService.getTopProductsAnalytics({ startDate, endDate });
 
         handleResponse({
             res,
@@ -23,10 +22,9 @@ const getTopProducts = async (req, res, next) => {
 
 const getShopPerformanceSummary = async (req, res, next) => {
     try {
-
-
-        const { startDate, endDate, financerId } = req.query;
-        const data = await analyticsService.getShopPerformanceSummary({ startDate, endDate, financerId });
+        const { startDate, endDate } = req.dateQuery;
+        //console.log("startDate", startDate)
+        const data = await analyticsService.getShopPerformanceSummary({ startDate, endDate });
 
         handleResponse({
             res,

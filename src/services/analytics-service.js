@@ -16,33 +16,7 @@ class AnalyticsService {
     async getTopProductsAnalytics(options) {
         try {
             const topProductsData = await this.repository.getTopProducts(options);
-
-            const categoryIds = topProductsData.map(p => p.categoryId);
-
-            if (categoryIds.length === 0) {
-                return [];
-            }
-            const categoryDetails = new Map()
-
-            const categories = await prisma.categories.findMany({
-                where: { id: { in: categoryIds } }
-            })
-
-            categories.forEach(p => categoryDetails.set(p.id, { name: p.itemName, brand: p.brand }))
-
-            const enrichedData = topProductsData.map(p => {
-                const details = categoryDetails.get(p.categoryId);
-                // console.log("categories@@@@@@@@@@@", details)
-                return {
-                    productId: p.productId,
-                    productName: details ? `${details.brand} ${details.name}` : 'Unknown',
-                    totalRevenue: p._sum.totalRevenue,
-                    grossProfit: p._sum.grossProfit,
-                    totalUnitsSold: p._sum.totalUnitsSold,
-                }
-            });
-
-            return enrichedData;
+            return topProductsData;
         } catch (err) {
             throw new InternalServerError("Internal server error")
         }
@@ -78,7 +52,7 @@ class AnalyticsService {
 
                 return acc;
             }, []);
-            console.log("grouped", JSON.stringify(grouped))
+            //console.log("grouped", JSON.stringify(grouped))
             return grouped;
         } catch (err) {
             throw new InternalServerError("Internal server error")

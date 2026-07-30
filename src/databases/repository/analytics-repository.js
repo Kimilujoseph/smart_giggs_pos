@@ -159,43 +159,33 @@ class AnalyticsRepository {
   }
 
 
-  async getTopProducts({ metric = 'revenue', limit = 10, startDate, endDate }) {
+  async getTopProducts({ startDate, endDate }) {
+
     try {
-      const validMetrics = {
-        profit: 'grossProfit',
-        revenue: 'totalRevenue',
-        units: 'totalUnitsSold',
-      };
+      let limit = 10;
 
-      const metricField = validMetrics[metric] || 'totalRevenue';
+      const results = await prisma.$queryRaw`
+SELECT
+    c._id,
+    c.itemName,
+    c.brand,
+    SUM(d.totalUnitsSold) AS totalUnitsSold,
+    SUM(d.totalRevenue) AS totalRevenue,
+    SUM(d.grossProfit) AS grossProfit
+FROM DailySalesAnalytics d
+JOIN categories c
+    ON d.categoryId = c._id
+WHERE d.date >= ${startDate}
+  AND d.date <= ${endDate}
+GROUP BY d.categoryId
+ORDER BY totalRevenue DESC
+LIMIT ${limit}
+`;
 
-      const whereClause = {};
-      if (startDate && endDate) {
-        whereClause.date = {
-          gte: new Date(startDate),
-          lt: new Date(endDate),
-        };
-      }
-
-      const results = await prisma.dailySalesAnalytics.groupBy({
-        by: ['categoryId'],
-        where: whereClause,
-        _sum: {
-          grossProfit: true,
-          totalRevenue: true,
-          totalUnitsSold: true,
-        },
-        orderBy: {
-          _sum: {
-            [metricField]: 'desc',
-          },
-        },
-        take: Number(limit),
-      });
-
+      //console.log("resu@@lts", JSON.stringify(results))
       return results;
     } catch (err) {
-      // console.error("Analytics Repository Error:", err);
+      console.error("Analytics Repository Error:", err);
       throw new APIError(
         "Database Error",
         STATUS_CODE.INTERNAL_ERROR,
@@ -229,6 +219,7 @@ INNER JOIN categories c
     ON d.categoryId = c._id
 INNER JOIN shops s 
     ON d.shopId = s._id
+    WHERE d.date >= ${startDate} AND d.date <= ${endDate}
 
 GROUP BY
     d.shopId,
