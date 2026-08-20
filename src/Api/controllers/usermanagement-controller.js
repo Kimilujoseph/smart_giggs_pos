@@ -107,7 +107,7 @@ const userUpdateRole = async (req, res, next) => {
 const userProfileUpdate = async (req, res, next) => {
   try {
     const userData = { ...req.body }
-    userData.userID = userID
+    userData.userID = req.user.id
     const updatedUserProfile = await usermanagement.updateUserProfile(userData);
     return res.status(200).json({
       message: "successfully updated your profile",
