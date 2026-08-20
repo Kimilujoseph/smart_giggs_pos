@@ -15,7 +15,7 @@ module.exports = {
 
       // Clustering
       exec_mode: "cluster",
-      instances: 3,
+      instances: process.env.INSTANCES,
 
       autorestart: true,
       watch: false,
@@ -27,15 +27,15 @@ module.exports = {
       error: `./logs/${process.env.APP_NAME}-error-production.log`,
       merge_logs: true,
     },
-    {
-      name: process.env.CRON_JOB_APP_NAME,
-      script: "./src/cron_jobs_app.js",
-      instances: 1,
-      exec_mode: "fork",
-      watch: false,
-      output: `./logs/${process.env.CRON_JOB_APP_NAME}-out-production.log`,
-      error: `./logs/${process.env.CRON_JOB_APP_NAME}-error-production.log`,
-    },
+    // {
+    //   name: process.env.CRON_JOB_APP_NAME,
+    //   script: "./src/cron_jobs_app.js",
+    //   instances: 1,
+    //   exec_mode: "fork",
+    //   watch: false,
+    //   output: `./logs/${process.env.CRON_JOB_APP_NAME}-out-production.log`,
+    //   error: `./logs/${process.env.CRON_JOB_APP_NAME}-error-production.log`,
+    // },
     {
       // Dedicated PDF generation process.
       // Runs as a single fork — owns the BrowserPool (Chromium) and BullMQ
@@ -54,7 +54,7 @@ module.exports = {
       max_memory_restart: "1500M",
       autorestart: true,
       output: `./logs/${process.env.PDF_WORKER_APP_NAME || "smart-giggs-pdf-worker"}-out-production.log`,
-      error:  `./logs/${process.env.PDF_WORKER_APP_NAME || "smart-giggs-pdf-worker"}-error-production.log`,
+      error: `./logs/${process.env.PDF_WORKER_APP_NAME || "smart-giggs-pdf-worker"}-error-production.log`,
       merge_logs: true,
     },
   ],
