@@ -91,7 +91,7 @@ const createNewProductUpdate = async (req, res, next) => {
     const id = req.params.id;
     const updates = req.body;
 
-    console.log(req.body)
+
 
     const updatedAccessory = await accessoryManagementService.updateAccessoryStock(
       id,
