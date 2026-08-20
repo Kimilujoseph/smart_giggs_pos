@@ -15,11 +15,11 @@ module.exports = {
 
       // Clustering
       exec_mode: "cluster",
-      instances: 2,
+      instances: process.env.INSTANCES,
 
       autorestart: true,
       watch: false,
-      max_memory_restart: "1G",
+      max_memory_restart: "1000M",
 
       // Log Management
       log_date_format: "YYYY-MM-DD HH:mm:ss Z",
@@ -27,15 +27,15 @@ module.exports = {
       error: `./logs/${process.env.APP_NAME}-error-test.log`,
       merge_logs: true,
     },
-    {
-      name: process.env.CRON_JOB_APP_NAME,
-      script: "./src/cron_jobs_app.js",
-      instances: 1,
-      exec_mode: "fork",
-      watch: false,
-      output: `./logs/${process.env.CRON_JOB_APP_NAME}-out-test.log`,
-      error: `./logs/${process.env.CRON_JOB_APP_NAME}-error-test.log`,
-    },
+    // {
+    //   name: process.env.CRON_JOB_APP_NAME,
+    //   script: "./src/cron_jobs_app.js",
+    //   instances: 1,
+    //   exec_mode: "fork",
+    //   watch: false,
+    //   output: `./logs/${process.env.CRON_JOB_APP_NAME}-out-test.log`,
+    //   error: `./logs/${process.env.CRON_JOB_APP_NAME}-error-test.log`,
+    // },
     {
       // Dedicated PDF generation process.
       // Runs as a single fork — owns the BrowserPool (Chromium) and BullMQ
@@ -51,7 +51,7 @@ module.exports = {
         MAX_THREADS: "4",
         ...process.env,
       },
-      max_memory_restart: "1500M",
+      max_memory_restart: "1000M",
       autorestart: true,
       output: `./logs/${process.env.PDF_WORKER_APP_NAME}-out-production.log`,
       error: `./logs/${process.env.PDF_WORKER_APP_NAME}-error-production.log`,
