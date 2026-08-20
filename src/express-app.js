@@ -26,7 +26,7 @@ import paymentRoutes from "./Api/routes/payment-routes.js";
 import kpiRoutes from "./Api/routes/kpi-routes.js";
 import expenseRoutes from "./Api/routes/expense-routes.js";
 import config from "./Config/index.js";
-const { APP_SECRET, MONGO_URL } = config;
+const { APP_SECRET, MONGO_URL, ALLOWED_ORIGINS } = config;
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -96,15 +96,17 @@ const App = async (app) => {
   )
   //SET COOKIES
   app.use(cookies("captecstoresession"));
+  const defaultOrigins = [
+    "http://localhost:4422"
+  ];
+
+  const allowedOrigins = ALLOWED_ORIGINS
+    ? ALLOWED_ORIGINS.split(",").map((origin) => origin.trim()).filter(Boolean)
+    : defaultOrigins;
+
   app.use(
     cors({
-      origin: [
-        "http://localhost:4422",
-        "https://augustusstores.co.ke",
-        "https://smartgiggs.co.ke",
-        "https://captech-limited.co.ke",
-        "https://highlights.co.ke",
-      ],
+      origin: allowedOrigins,
       credentials: true,
     })
   );
