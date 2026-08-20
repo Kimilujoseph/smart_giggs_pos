@@ -103,6 +103,7 @@ const App = async (app) => {
         "https://augustusstores.co.ke",
         "https://smartgiggs.co.ke",
         "https://captech-limited.co.ke",
+        "https://highlights.co.ke",
       ],
       credentials: true,
     })
