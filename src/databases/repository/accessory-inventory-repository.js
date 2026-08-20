@@ -248,16 +248,13 @@ class AccessoryInventoryRepository {
       return updatedAccessory;
     } catch (err) {
       if (err.code === "P2002") {
-        throw new APIError(
-          "Duplicate Key Error",
-          STATUS_CODE.BAD_REQUEST,
+        throw new DuplicationError(
+
           `An accessory with the same batch number already exists.`
         );
       }
-      throw new APIError(
-        "Database Error",
-        STATUS_CODE.INTERNAL_ERROR,
-        err.message || "Unable to update the accessory"
+      throw new InternalServerError(
+        "Unable to update the accessory"
       );
     }
   }

@@ -114,6 +114,7 @@ class AccessoryManagementService {
       );
     }
     const validUpdates = validateItemsInputs(updates);
+
     if (validUpdates.productCost && validUpdates.commission) {
       if (validUpdates.commission > accessoryFound.productCost * 0.2) {
         throw new ValidationError(

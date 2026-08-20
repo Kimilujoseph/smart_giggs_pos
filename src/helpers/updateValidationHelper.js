@@ -117,7 +117,7 @@ const validateItemsInputs = (accessoryDetails) => {
     }
     validValues[field] = [
       "CategoryId",
-      "SupplierId",
+      "supplierId",
       "commission",
       "productcost",
       "faultyItems",
