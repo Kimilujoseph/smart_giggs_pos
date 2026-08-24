@@ -414,6 +414,7 @@ class ShopmanagementRepository {
             { categories: { itemModel: { contains: searchTerm } } },
             { categories: { brand: { contains: searchTerm } } },
             { IMEI: { contains: searchTerm } },
+            { batchNumber: { contains: searchTerm } }
           ],
         },
       };
@@ -422,13 +423,12 @@ class ShopmanagementRepository {
         shopID: shop.id,
         status: "confirmed",
         accessories: {
-          categories: {
-            OR: [
-              { itemName: { contains: searchTerm } },
-              { itemModel: { contains: searchTerm } },
-              { brand: { contains: searchTerm } },
-            ],
-          },
+          OR: [
+            { categories: { itemName: { contains: searchTerm } } },
+            { categories: { itemModel: { contains: searchTerm } } },
+            { categories: { brand: { contains: searchTerm } } },
+            { batchNumber: { contains: searchTerm } }
+          ],
         },
       };
       //status should be confirmed
@@ -489,6 +489,7 @@ class ShopmanagementRepository {
         },
       };
     } catch (err) {
+      console.log(err);
       throw new APIError(
         "err fetching products",
         STATUS_CODE.INTERNAL_ERROR,

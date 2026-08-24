@@ -205,6 +205,7 @@ const searchproduct = async (req, res, next) => {
       page,
       limit
     );
+    //console.log("search", JSON.stringify(search, null, 2))
 
     return res.status(200).json({
       message: "Search successful",
