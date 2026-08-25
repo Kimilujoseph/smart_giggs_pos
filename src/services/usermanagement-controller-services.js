@@ -63,6 +63,9 @@ class userManagmentService {
     if (!userFound) {
       throw new NotFoundError("SPECIFIED USER NOT FOUND");
     }
+    if (userFound.workingstatus !== "active") {
+      throw new BadRequestError("Account is inactive, Please contact admin for more details.");
+    }
     const userId = userFound.id;
     ///const userAssignedShop = await this.repository.findAssignedShop(userId);
     const shopAssigned = userFound.assignment.filter(
