@@ -18,6 +18,7 @@ class AccessoryManagementService {
       const { accessoryDetails, user } = newAccessoryProduct;
 
       const { CategoryId, supplierId } = accessoryDetails;
+      console.log("accessory details", accessoryDetails)
 
       const category = parseInt(CategoryId, 10);
       const categoryExist = await this.category.getCategoryById(category, tx);
@@ -138,6 +139,9 @@ class AccessoryManagementService {
     else {
       //remove a property from the validUpdates i.e faultyItems
       delete validUpdates["faultyItems"];
+      const ModelName = validUpdates.modelName;
+      delete validUpdates["modelName"];
+      validUpdates.ModelName = ModelName;
       const updatedAccessory = await this.accessory.updateTheAccessoryStock(
         accessoryId,
         validUpdates,

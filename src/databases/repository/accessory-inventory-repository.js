@@ -59,7 +59,7 @@ class AccessoryInventoryRepository {
       discount,
       barcodePath,
       supplierId,
-      ModelName
+      modelName
     },
     tx
   ) {
@@ -75,7 +75,7 @@ class AccessoryInventoryRepository {
           faultyItems,
           supplierName,
           availableStock,
-          ModelName,
+          ModelName: modelName,
           productCost: productcost,
           commission,
           color,
