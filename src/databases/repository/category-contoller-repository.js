@@ -275,6 +275,7 @@ class CategoryManagementRepository {
               stockStatus: true,
               faultyItems: true,
               color: true,
+              soldUnits: true,
               accessoryItems: {
                 select: {
                   shops: {
@@ -284,6 +285,7 @@ class CategoryManagementRepository {
                     },
                   },
                   quantity: true,
+
                   status: true,
                   createdAt: true,
                   updatedAt: true,

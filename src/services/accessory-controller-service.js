@@ -18,7 +18,7 @@ class AccessoryManagementService {
       const { accessoryDetails, user } = newAccessoryProduct;
 
       const { CategoryId, supplierId } = accessoryDetails;
-      console.log("accessory details", accessoryDetails)
+
 
       const category = parseInt(CategoryId, 10);
       const categoryExist = await this.category.getCategoryById(category, tx);
