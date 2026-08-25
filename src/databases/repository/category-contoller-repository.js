@@ -271,6 +271,7 @@ class CategoryManagementRepository {
               availableStock: true,
               createdAt: true,
               batchNumber: true,
+              ModelName: true,
               stockStatus: true,
               faultyItems: true,
               color: true,
@@ -348,7 +349,7 @@ class CategoryManagementRepository {
       if (rawWords.length === 0) {
         return [];
       }
-      console.log("raw words||", rawWords)
+      // console.log("raw words||", rawWords)
       // Step 2: Expand hyphenated/dotted tokens into sub-tokens
       // e.g. "POWER-3.0-ADAPTER" → ["POWER", "3.0", "ADAPTER"] → ["POWER", "3", "0", "ADAPTER"]
       const allTokens = [];

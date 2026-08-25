@@ -96,6 +96,7 @@ const validateItemsInputs = (accessoryDetails) => {
     color: (value) => typeof value === "string" && value.length <= 30,
     productType: (value) => typeof value === "string",
     batchNumber: (value) => typeof value === "string",
+    ModelName: (value) => typeof value === "string",
     user: (value) => !isNaN(value),
   };
   const validValues = {};
