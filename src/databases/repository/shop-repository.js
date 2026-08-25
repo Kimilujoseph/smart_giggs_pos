@@ -188,6 +188,7 @@ class ShopmanagementRepository {
                 discount: true,
                 stockStatus: true,
                 batchNumber: true,
+                ModelName: true
               },
             },
           },
@@ -427,7 +428,8 @@ class ShopmanagementRepository {
             { categories: { itemName: { contains: searchTerm } } },
             { categories: { itemModel: { contains: searchTerm } } },
             { categories: { brand: { contains: searchTerm } } },
-            { batchNumber: { contains: searchTerm } }
+            { batchNumber: { contains: searchTerm } },
+            { ModelName: { contains: searchTerm } }
           ],
         },
       };

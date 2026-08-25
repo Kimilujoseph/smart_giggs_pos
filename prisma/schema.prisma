@@ -208,13 +208,15 @@ model Supplier {
 
 model accessories {
   id                       Int                        @id @unique(map: "_id_UNIQUE") @default(autoincrement()) @map("_id")
-  batchNumber              String                     @unique(map: "itemName_UNIQUE") @db.VarChar(255)
+  batchNumber              String                     @db.VarChar(255)
+  ModelName                String?                       @db.VarChar(255)
   productType              String?                    @db.VarChar(255)
   CategoryId               Int
   faultyItems              Int?                       @default(0) @db.UnsignedInt
   barcodePath              String?                    @db.VarChar(255)
   createdAt                DateTime?                  @default(now()) @db.DateTime(0)
   availableStock           Int?                       @default(0) @db.UnsignedInt
+  soldUnits                Int?                       @default(0) @db.UnsignedInt
   stockStatus              String?                    @default("available") @db.VarChar(255)
   color                    String?                    @default("white") @db.VarChar(255)
   productCost              Int?
@@ -232,6 +234,8 @@ model accessories {
 
   @@index([supplierId], map: "accessories_supplierId_fkey")
   @@index([CategoryId], map: "fk_accessories_1_idx")
+  @@unique([CategoryId, batchNumber])
+
 }
 
 model accessoryHistory {

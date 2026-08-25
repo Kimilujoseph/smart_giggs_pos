@@ -242,6 +242,8 @@ class salesmanagment {
               itemType === "mobiles"
                 ? productDetails.IMEI
                 : productDetails.batchNumber,
+            batchModelName:
+              itemType === 'mobiles' ? '' : productDetails.ModelName,
             productName: categoryDetails.itemName,
             productModel: categoryDetails.itemModel,
             brand: categoryDetails.brand,
@@ -287,7 +289,7 @@ class salesmanagment {
           });
         }
       }
-      //console.log(allSalesResults)
+      console.log(allSalesResults)
       return allSalesResults;
     });
   }

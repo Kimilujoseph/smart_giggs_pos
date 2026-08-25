@@ -327,6 +327,7 @@ class AccessoryInventoryRepository {
           productCost: true,
           commission: true,
           batchNumber: true,
+          ModelName: true,
         },
       });
       return stockItem;
