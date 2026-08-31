@@ -289,7 +289,7 @@ class salesmanagment {
           });
         }
       }
-      console.log(allSalesResults)
+      //console.log(allSalesResults)
       return allSalesResults;
     });
   }
