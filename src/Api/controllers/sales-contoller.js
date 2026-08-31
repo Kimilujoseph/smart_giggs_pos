@@ -169,7 +169,7 @@ const handleBulkSale = async (req, res, next) => {
       data: results.map((r) => r.value),
     });
   } catch (err) {
-    console.log("err",err)
+   // console.log("err",err)
     next(err);
   }
 };
