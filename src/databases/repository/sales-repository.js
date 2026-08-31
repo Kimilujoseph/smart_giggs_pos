@@ -35,6 +35,7 @@ class Sales {
       const prismaClient = tx || this.prisma;
       return await prismaClient.accessorysales.create(salesDetails);
     } catch (err) {
+      console.log("error",err)
       throw new InternalServerError("Internal server error");
     }
   }
