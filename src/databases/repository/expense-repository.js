@@ -179,25 +179,19 @@ class ExpenseRepository {
       throw new InternalServerError("Failed to delete expense");
     }
   }
-
+  async findExpense(id){
+    try{
+    const existing = await this.prisma.expense.findUnique({
+      where: {id:parseInt(id,10)}
+    })
+    return existing;
+    }catch(err){
+      console.log("err",err)
+      throw new InternalServerError('Internal server error')
+    }
+  }
   async approveExpense(id, approvedById) {
     try {
-      const existing = await this.prisma.expense.findUnique({
-        where: { id: parseInt(id, 10) },
-      });
-
-      if (!existing || existing.deletedAt) {
-        throw new NotFoundError("Expense not found");
-      }
-
-      if (existing.status === "APPROVED") {
-        throw new DuplicationError("Expense is already approved");
-      }
-
-      if (existing.status === "REJECTED") {
-        throw new InternalServerError("Cannot approve a rejected expense");
-      }
-
       return this.prisma.expense.update({
         where: { id: parseInt(id, 10) },
         data: {
@@ -211,27 +205,12 @@ class ExpenseRepository {
         },
       });
     } catch (err) {
-      if (err instanceof NotFoundError) throw err;
-      if (err instanceof DuplicationError) throw err;
-      if (err instanceof InternalServerError) throw err;
       throw new InternalServerError("Failed to approve expense");
     }
   }
 
   async rejectExpense(id, reason, userId) {
     try {
-      const existing = await this.prisma.expense.findUnique({
-        where: { id: parseInt(id, 10) },
-      });
-
-      if (!existing || existing.deletedAt) {
-        throw new NotFoundError("Expense not found");
-      }
-
-      if (existing.status === "APPROVED") {
-        throw new InternalServerError("Cannot reject an approved expense");
-      }
-
       return this.prisma.expense.update({
         where: { id: parseInt(id, 10) },
         data: {
@@ -243,8 +222,7 @@ class ExpenseRepository {
         },
       });
     } catch (err) {
-      if (err instanceof NotFoundError) throw err;
-      if (err instanceof InternalServerError) throw err;
+      console.log('error',err)
       throw new InternalServerError("Failed to reject expense");
     }
   }

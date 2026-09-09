@@ -1,6 +1,6 @@
 import express from "express";
 import verifyUser from "../../middleware/verification.js";
-import { generalAuthorization, Authorization } from "../../middleware/Authorization.js";
+import { generalAuthorization, Authorization,confirmationAuthorization } from "../../middleware/Authorization.js";
 import {
   addNewAccessoryProduct,
   createNewProductUpdate,
@@ -28,7 +28,7 @@ router.delete(
   verifyUser, Authorization,
   createNewSoftDeletion
 );
-router.post("/confirm/accessory/", verifyUser, confirmAccessoryArrival);
+router.post("/confirm/accessory/", verifyUser,confirmationAuthorization, confirmAccessoryArrival);
 router.put("/update-accessory-product/:id", verifyUser, Authorization, createNewProductUpdate);
 
 export default router;

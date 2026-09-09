@@ -14,7 +14,7 @@ import {
 } from "../controllers/expense-controller.js";
 import verifyUser from "../../middleware/verification.js";
 import { parseDateQuery } from "../../middleware/query-parser.js";
-import { Authorization,generalAuthorization } from "../../middleware/Authorization.js";
+import { generalAuthorization,expenseManagementAuthorization } from "../../middleware/Authorization.js";
 
 const router = express.Router();
 
@@ -23,14 +23,15 @@ router.post("/create", verifyUser, generalAuthorization, handleCreateExpense);
 
 router.get("/", verifyUser, parseDateQuery, handleGetExpenses);
 
-router.get("/pending", verifyUser, parseDateQuery, handleGetPendingExpenses);
+router.get("/pending", verifyUser, parseDateQuery,expenseManagementAuthorization, handleGetPendingExpenses);
 
-router.get("/analytics", verifyUser, handleGetAnalytics);
+router.get("/analytics", verifyUser,expenseManagementAuthorization, handleGetAnalytics);
 
 router.get(
   "/budget-utilization",
   verifyUser,
   parseDateQuery,
+  expenseManagementAuthorization,
   handleGetBudgetUtilization
 );
 
@@ -43,12 +44,12 @@ router.put("/:id", verifyUser, handleUpdateExpense);
 router.delete("/:id", verifyUser, handleDeleteExpense);
 
 // Approve expense (manager/superuser only)
-router.post("/:id/approve", verifyUser, handleApproveExpense);
+router.post("/:id/approve", verifyUser,expenseManagementAuthorization, handleApproveExpense);
 
-// Reject expense (manager/superuser only)
-router.post("/:id/reject", verifyUser, handleRejectExpense);
+// Reject expense (manager/superuser only) 
+router.post("/:id/reject", verifyUser,expenseManagementAuthorization, handleRejectExpense);
 
 // Get audit logs for expense (manager/superuser only)
-router.get("/:id/audit-logs", verifyUser, handleGetAuditLogs);
+router.get("/:id/audit-logs", verifyUser,expenseManagementAuthorization, handleGetAuditLogs);
 
 export default router;

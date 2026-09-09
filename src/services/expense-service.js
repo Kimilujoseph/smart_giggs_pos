@@ -4,6 +4,8 @@ import {
   APIError,
   STATUS_CODE,
   AuthorizationError,
+  BadRequestError,
+  DuplicationError,
   NotFoundError,
 } from "../Utils/app-error.js";
 
@@ -92,51 +94,41 @@ class ExpenseService {
   async deleteExpense(id, user) {
     const expense = await this.repository.getExpenseById(id);
 
-    if (
-      !["manager", "superuser"].includes(user.role) &&
-      expense.processedById !== user.id
-    ) {
-      throw new AuthorizationError(
-        "You are not authorized to delete this expense."
-      );
-    }
-
     if (expense.status === "APPROVED") {
-      throw new APIError(
-        "Cannot delete approved expense",
-        STATUS_CODE.FORBIDDEN,
-        "Approved expenses cannot be deleted."
-      );
+      throw new BadRequestError("The request is already approved")
     }
 
     return this.repository.softDeleteExpense(id, user.id);
   }
 
   async approveExpense(id, user) {
-    if (!["manager", "superuser"].includes(user.role)) {
-      throw new AuthorizationError(
-        "You are not authorized to approve expenses."
-      );
+    const existingExpense = await this.repository.findExpense(id);
+    if(!existingExpense || existingExpense.deletedAt){
+      throw NotFoundError('Expense Not Found')
     }
+      if (existingExpense.status === "APPROVED") {
+        throw new DuplicationError("Expense is already approved");
+      }
 
+      if (existingExpense.status === "REJECTED") {
+        throw new BadRequestError("Cannot approve a rejected expense");
+      }
     return this.repository.approveExpense(id, user.id);
   }
 
   async rejectExpense(id, reason, user) {
-    if (!["manager", "superuser"].includes(user.role)) {
-      throw new AuthorizationError(
-        "You are not authorized to reject expenses."
-      );
-    }
-
     if (!reason || reason.trim().length < 5) {
-      throw new APIError(
-        "Invalid rejection reason",
-        STATUS_CODE.BAD_REQUEST,
+      throw new BadRequestError(
         "Please provide a detailed rejection reason (min 5 characters)."
       );
     }
-
+     const existingExpense = await this.repository.findExpense(id);
+     if(!existingExpense || existingExpense.deletedAt){
+      throw new NotFoundError("Expense not found")
+     }
+     if(existingExpense.status === 'APPROVED'){
+      throw new BadRequestError("you are requesting an approved response")
+     }
     return this.repository.rejectExpense(id, reason, user.id);
   }
 

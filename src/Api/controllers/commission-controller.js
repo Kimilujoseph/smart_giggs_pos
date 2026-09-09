@@ -1,7 +1,7 @@
 import { CommissionService } from '../../services/commission-service.js';
 import { handleResponse } from '../../helpers/responseUtils.js';
 import { checkRole } from '../../helpers/authorisation.js';
-import { APIError, STATUS_CODE } from '../../Utils/app-error.js';
+import { APIError, STATUS_CODE,AuthorizationError } from '../../Utils/app-error.js';
 
 const commissionService = new CommissionService();
 
@@ -47,7 +47,7 @@ const handleGetCommissionPayments = async (req, res, next) => {
     if (sellerId) {
       const requestedSellerId = parseInt(sellerId, 10);
       if (!checkRole(user.role, ['manager', 'superuser']) && user.id !== requestedSellerId) {
-        throw new APIError("Not authorized", STATUS_CODE.UNAUTHORIZED, "You are not authorized to view this seller's commission payments.");
+        throw new AuthorizationError("You are not authorized to view this seller's commission payments.");
       }
       else {
         options.sellerId = requestedSellerId;
