@@ -11,7 +11,7 @@ import {
   confirmphonearrival,
 } from "../controllers/mobile-management-controller.js";
 import { validateSalesPayload } from "../../Utils/joivalidation.js";
-import { Authorization } from "../../middleware/Authorization.js";
+import { Authorization,confirmationAuthorization } from "../../middleware/Authorization.js";
 const route = express.Router();
 route.get("/mobile", verifyUser, Authorization, findAllMobileAccessoryProduct);
 route.get(
@@ -32,7 +32,7 @@ route.delete(
   verifyUser,
   createanewsoftdeleteoftheproduct
 );
-route.post("/confirm/phone/", verifyUser, confirmphonearrival);
+route.post("/confirm/phone/", verifyUser,confirmationAuthorization, confirmphonearrival);
 //route.put("/update-phone-stock", verifyUser, updatePhoneStock);
 route.put("/update-phone-product/:id", verifyUser, Authorization, createnewproductupdate);
 export default route;

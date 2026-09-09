@@ -7,10 +7,6 @@ const salaryService = new SalaryService();
 
 const handleCreateSalaryPayment = async (req, res, next) => {
   try {
-    if (!checkRole(req.user.role, ['manager', 'superuser'])) {
-      throw new APIError("Not authorized", STATUS_CODE.UNAUTHORIZED, "You are not authorized to create salary payments.");
-    }
-
     const paymentData = {
       ...req.body,
       processedById: req.user.id,

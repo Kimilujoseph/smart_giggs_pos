@@ -326,7 +326,7 @@ class MobilemanagementService {
 
   async searchForMobile(searchItem) {
     try {
-      console.log("searchItem", searchItem);
+      //console.log("searchItem", searchItem);
       const searchResult = await this.mobile.searchMobileProducts(searchItem);
       return searchResult;
     } catch (err) {

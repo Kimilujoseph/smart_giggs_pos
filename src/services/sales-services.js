@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import prisma from "../databases/client.js";
 import { Sales } from "../databases/repository/sales-repository.js";
 import { AccessoryInventoryRepository } from "../databases/repository/accessory-inventory-repository.js";
 import { InventorymanagementRepository } from "../databases/repository/invetory-controller-repository.js";
@@ -16,7 +16,7 @@ import {
 } from "../Utils/app-error.js";
 import CustomerRepository from "../databases/repository/customer-repository.js";
 import reportQueue from "../queues/salesReportQueue.js";
-const prisma = new PrismaClient();
+//const prisma = new PrismaClient();
 
 class salesmanagment {
   constructor() {
@@ -60,7 +60,7 @@ class salesmanagment {
       customer = await this.customer.createCustomer(customerData);
       //console.log("created new customer", customer);
     }
-
+    
     return prisma.$transaction(async (tx) => {
       const allSalesResults = [];
       const analyticsAggregator = new Map();

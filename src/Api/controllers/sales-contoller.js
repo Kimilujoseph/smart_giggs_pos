@@ -21,28 +21,13 @@ const handleGetSales = async (req, res, next) => {
     //console.log("console .log", servicePayload)
 
     if (shopId) {
-      if (!checkRole(user.role, ["manager", "superuser"])) {
-        throw new APIError(
-          "Not authorized",
-          STATUS_CODE.UNAUTHORIZED,
-          "You are not authorized to view shop sales."
-        );
-      }
       serviceMethod = "generateShopSales";
       servicePayload.shopId = parseInt(shopId, 10);
     } else if (categoryId) {
-      if (!checkRole(user.role, ["manager", "superuser"])) {
-        throw new APIError(
-          "Not authorized",
-          STATUS_CODE.UNAUTHORIZED,
-          "You are not authorized to view category sales."
-        );
-      }
       serviceMethod = "generateCategorySales";
       servicePayload.categoryId = parseInt(categoryId, 10);
     } else if (userId) {
       const parsedUserId = parseInt(userId, 10);
-      console.log("##$#$#$#$#", parsedUserId)
       if (
         !checkRole(user.role, ["manager", "superuser"]) &&
         user.id !== parsedUserId
@@ -56,23 +41,9 @@ const handleGetSales = async (req, res, next) => {
       serviceMethod = "getUserSales";
       servicePayload.userId = parsedUserId;
     } else if (financerId) {
-      if (!checkRole(user.role, ["manager", "superuser"])) {
-        throw new APIError(
-          "Not authorized",
-          STATUS_CODE.UNAUTHORIZED,
-          "You are not authorized to view financer sales."
-        );
-      }
       serviceMethod = "generateFinancerSales";
       servicePayload.financerId = parseInt(financerId, 10);
     } else {
-      if (!checkRole(user.role, ["manager", "superuser"])) {
-        throw new APIError(
-          "Not authorized",
-          STATUS_CODE.UNAUTHORIZED,
-          "You are not authorized to view general sales."
-        );
-      }
       serviceMethod = "generategeneralsales";
     }
 
