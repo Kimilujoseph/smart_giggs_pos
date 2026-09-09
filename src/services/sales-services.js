@@ -65,6 +65,8 @@ class salesmanagment {
       const allSalesResults = [];
       const analyticsAggregator = new Map();
 
+      //console.log("@@@@@@@@@@@@@@@@",JSON.stringify(bulksales))
+
       for (const sale of bulksales) {
         const { itemType, items, payments, CategoryId } = sale;
 

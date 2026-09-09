@@ -7,13 +7,11 @@ import dotenv from "dotenv";
 import { buildHTML, buildReportMeta } from "./reportTemplate.js";
 dotenv.config();
 
-// Each worker thread owns its own Prisma instance — disconnected in finally{}
-// to prevent connection-pool exhaustion across concurrent workers.
 const prisma = new PrismaClient();
 const salesService = new salesmanagment();
 const kpiService   = new KpiService();
 
-// ── Main worker ───────────────────────────────────────────────────────────────
+
 async function processReport() {
   const { jobParams, wsEndpoint } = workerData;
   let browser, page;
@@ -30,8 +28,6 @@ async function processReport() {
 
   try {
     console.log("[Worker] Fetching data for job params:", jobParams);
-
-    // All DB/service calls run in parallel
     const [summaryData, spRes, shRes, acRes, simRes] = await Promise.all([
       salesService._getSummarySalesData(jobParams),
       salesService.generategeneralsales({ ...jobParams, model: "mobiles",   itemType: "smartphones" }),
@@ -120,8 +116,6 @@ async function processReport() {
     if (browser) await browser.disconnect().catch(console.error);
     clearInterval(memoryMonitor);
     await prisma.$disconnect().catch(console.error);
-    // Exit cleanly so the thread-pool slot is freed with code 0.
-    // Do NOT rely on the parent calling worker.terminate() — that exits with code 1.
     process.exit(0);
   }
 }

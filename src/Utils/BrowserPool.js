@@ -10,7 +10,6 @@ class BrowserPool {
         this.maxBrowsers = maxBrowsers;
         this.pool = [];
         this.isInitializing = false;
-        // Queue of { resolve, reject } for callers waiting for an endpoint
         this._waiters = [];
     }
 

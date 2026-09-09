@@ -25,12 +25,13 @@ const makesales = async (req, res) => {
     const totalAmount = bulksales.reduce((acc, sale) => {
       return acc + sale.items.reduce((itemAcc, item) => itemAcc + (item.soldprice * item.soldUnits), 0);
     }, 0);
-
+    console.log("payment made")
     const payment = await paymentService.createPayment({
       amount: totalAmount,
       paymentMethod: bulksales[0].paymentmethod,
       customerId: customer.id,
     });
+    console.log("payment",payment)
 
     // Step 3: Process each sale with the new customer and payment IDs
     const processSales = (sales, salesMethod) => {

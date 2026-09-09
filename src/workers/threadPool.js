@@ -6,7 +6,7 @@ import { dirname } from "path";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// How long a single worker thread is allowed to run before it is killed (ms).
+
 const WORKER_TIMEOUT_MS = 90_000;
 
 class WorkerThreadPool {
@@ -19,8 +19,7 @@ class WorkerThreadPool {
     run(jobParams, wsEndpoint) {
         return new Promise((resolve, reject) => {
             if (this.activeWorkers >= this.maxWorkers) {
-                // Queue the work item; it will be picked up by next() once a
-                // slot frees up.  This is the only place a caller can wait.
+              
                 console.log(
                     `[ThreadPool] All ${this.maxWorkers} slots busy — queuing job. ` +
                     `Queue depth: ${this.queue.length + 1}`
@@ -44,7 +43,7 @@ class WorkerThreadPool {
             workerData: { jobParams, wsEndpoint },
         });
 
-        // Whether resolve/reject has already been called for this slot
+     
         let settled = false;
 
         const settle = (fn, value) => {
@@ -53,8 +52,6 @@ class WorkerThreadPool {
             fn(value);
         };
 
-        // Force-kill the worker if it takes longer than WORKER_TIMEOUT_MS.
-        // This is the ONLY legitimate place to call worker.terminate().
         const timeoutId = setTimeout(() => {
             console.warn(`[ThreadPool] Worker timed out after ${WORKER_TIMEOUT_MS / 1000}s — force terminating.`);
             worker.terminate().catch(console.error);
@@ -63,7 +60,7 @@ class WorkerThreadPool {
 
         worker.on("message", (message) => {
             if (message.type === "PROGRESS") {
-                // Optional: relay progress to caller if needed
+               
             } else if (message.type === "COMPLETE") {
                 clearTimeout(timeoutId);
                 settle(resolve, Buffer.from(message.buffer));
@@ -89,7 +86,6 @@ class WorkerThreadPool {
                 `Active: ${this.activeWorkers}/${this.maxWorkers}, Queued: ${this.queue.length}`
             );
 
-            // If the worker crashed without sending COMPLETE or error
             if (code !== 0) {
                 settle(reject, new Error(`[ThreadPool] Worker crashed with exit code ${code}`));
             }
