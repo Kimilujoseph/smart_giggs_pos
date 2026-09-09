@@ -6,13 +6,6 @@ const financerService = new FinancerService();
 const createFinancer = async (req, res, next) => {
   try {
     const user = req.user;
-    if (!["superuser", "manager"].includes(user.role)) {
-      throw new APIError(
-        "Unauthorized",
-        STATUS_CODE.UNAUTHORIZED,
-        "Not authorized to create financers"
-      );
-    }
     const { name, contactName, phone, email, address } = req.body;
     const newFinancer = await financerService.createFinancer({
       name,
@@ -34,13 +27,6 @@ const createFinancer = async (req, res, next) => {
 const getFinancerById = async (req, res, next) => {
   try {
     const user = req.user;
-    if (!["superuser", "manager", "seller"].includes(user.role)) {
-      throw new APIError(
-        "Unauthorized",
-        STATUS_CODE.UNAUTHORIZED,
-        "Not authorized to view financers"
-      );
-    }
     const { id } = req.params;
     const financer = await financerService.getFinancerById(id);
     res.status(200).json({ data: financer });
@@ -56,13 +42,6 @@ const getFinancerById = async (req, res, next) => {
 const getAllFinancers = async (req, res, next) => {
   try {
     const user = req.user;
-    if (!["superuser", "manager", "seller"].includes(user.role)) {
-      throw new APIError(
-        "Unauthorized",
-        STATUS_CODE.UNAUTHORIZED,
-        "Not authorized to view financers"
-      );
-    }
     const financers = await financerService.getAllFinancers();
     res.status(200).json({ data: financers });
   } catch (err) {
