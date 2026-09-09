@@ -145,7 +145,7 @@ class transferManagementService {
         distributedShop,
         tx
       );
-
+    
       const [stockItem, mobileShopItem] = await Promise.all([
         this.mobile.findItem(mobileId, tx),
         this.mobile.findMobileItem(productItemId, tx),

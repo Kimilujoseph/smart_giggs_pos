@@ -32,11 +32,8 @@ class phoneinventoryrepository {
       });
       return stockItem;
     } catch (err) {
-      throw new APIError(
-        "database error",
-        STATUS_CODE.INTERNAL_ERROR,
-        "internal server error"
-      );
+      console.log("error",err)
+      throw new InternalServerError('Internal server error')
     }
   }
 

@@ -1,5 +1,6 @@
 import express from "express";
 import verifyUser from "../../middleware/verification.js";
+import {generalAuthorization} from "../../middleware/authorization.js";
 import {
   createShop,
   getSpecificShop,
@@ -17,7 +18,7 @@ const route = express.Router();
 route.post("/create-shop", verifyUser, createShop);
 route.get("/all", getAllShops);
 route.get("/:name", getSpecificShop);
-route.get("/:name/overview", verifyUser, getShopStockOverview);
+route.get("/:name/overview", verifyUser, generalAuthorization, getShopStockOverview);
 route.get("/searchproducts/:shopName", searchproduct);
 route.get("/:name/:requestedItem", findSpecificShopItem);
 route.post("/assignment/add", verifyUser, addassignment);

@@ -219,13 +219,6 @@ const searchproduct = async (req, res, next) => {
 const getShopStockOverview = async (req, res, next) => {
   try {
     const user = req.user;
-    if (
-      user.role !== "manager" &&
-      user.role !== "superuser" &&
-      user.role !== "seller"
-    ) {
-      return res.status(403).json({ message: "unauthorised", error: true });
-    }
     const name = req.params.name;
     const overview = await ShopManagementSystem.getShopStockOverview({ name });
     return res.status(200).json({ message: "success", overview });

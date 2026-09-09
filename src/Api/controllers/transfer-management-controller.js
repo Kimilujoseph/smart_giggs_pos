@@ -7,6 +7,7 @@ const handleBulkTransfer = async (req, res) => {
         const user = req.user;
 
         const { bulkDistribution, shopDetails, category } = req.body
+        console.log("@@@###$$",req.body)
         if (!bulkDistribution || bulkDistribution.length === 0) {
             throw new APIError("No distribution data provided", STATUS_CODE.BAD_REQUEST, "No distribution data provided");
         }
@@ -54,13 +55,14 @@ const handleBulkTransfer = async (req, res) => {
             if (failedDistributions.length > 0) {
                 console.error("Some distributions failed:", failedDistributions);
             }
-
+            
             return res.status(200).json({
                 message: "Distribution process completed",
                 successfulDistributions: successfulDistributions.length,
                 failedDistributions: failedDistributions.length,
                 error: failedDistributions.length > 0,
                 details: failedDistributions.map((failure) => ({
+
                     reason: failure.reason.message || "Unknown error",
                 })),
             });

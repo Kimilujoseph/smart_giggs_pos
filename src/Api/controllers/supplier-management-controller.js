@@ -6,13 +6,7 @@ const supplierService = new SupplierService();
 const createSupplier = async (req, res, next) => {
   try {
     const user = req.user;
-    if (!["superuser", "manager"].includes(user.role)) {
-      throw new APIError(
-        "Unauthorized",
-        STATUS_CODE.UNAUTHORIZED,
-        "Not authorized to create suppliers"
-      );
-    }
+    
     const { name, contactName, phone, email, address } = req.body;
     const newSupplier = await supplierService.createSupplier({
       name,
@@ -34,13 +28,6 @@ const createSupplier = async (req, res, next) => {
 const getSupplierById = async (req, res, next) => {
   try {
     const user = req.user;
-    if (!["superuser", "manager", "seller"].includes(user.role)) {
-      throw new APIError(
-        "Unauthorized",
-        STATUS_CODE.UNAUTHORIZED,
-        "Not authorized to view suppliers"
-      );
-    }
     const { id } = req.params;
     const supplier = await supplierService.getSupplierById(id);
     res.status(200).json({ data: supplier });
@@ -56,13 +43,8 @@ const getSupplierById = async (req, res, next) => {
 const getAllSuppliers = async (req, res, next) => {
   try {
     const user = req.user;
-    if (!["superuser", "manager", "seller"].includes(user.role)) {
-      throw new APIError(
-        "Unauthorized",
-        STATUS_CODE.UNAUTHORIZED,
-        "Not authorized to view suppliers"
-      );
-    }
+   
+   
     const suppliers = await supplierService.getAllSuppliers();
     res.status(200).json({ data: suppliers });
   } catch (err) {
@@ -77,13 +59,7 @@ const getAllSuppliers = async (req, res, next) => {
 const updateSupplier = async (req, res, next) => {
   try {
     const user = req.user;
-    if (!["superuser", "manager"].includes(user.role)) {
-      throw new APIError(
-        "Unauthorized",
-        STATUS_CODE.UNAUTHORIZED,
-        "Not authorized to update suppliers"
-      );
-    }
+   
     const { id } = req.params;
     const updates = req.body;
     const updatedSupplier = await supplierService.updateSupplier(id, updates);
@@ -100,13 +76,6 @@ const updateSupplier = async (req, res, next) => {
 const deleteSupplier = async (req, res, next) => {
   try {
     const user = req.user;
-    if (!["superuser", "manager"].includes(user.role)) {
-      throw new APIError(
-        "Unauthorized",
-        STATUS_CODE.UNAUTHORIZED,
-        "Not authorized to delete suppliers"
-      );
-    }
     const { id } = req.params;
     const result = await supplierService.deleteSupplier(id);
     res.status(200).json(result);
