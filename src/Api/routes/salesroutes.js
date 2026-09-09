@@ -21,7 +21,8 @@ route.get("/report/status/:jobId", verifyUser,generalAuthorization, handleGetRep
 route.post("/items/sale", verifyUser, handleBulkSale);
 
 const authorizeFinanceUpdate = (req, res, next) => {
-  if (!checkRole(req.user.role, ["manager", "superuser"])) {
+  const userRole = String(req.user?.role || "").toLowerCase();
+  if (!["manager", "superuser"].includes(userRole)) {
     return res.status(403).json({ message: "You are not authorized to update sales." });
   }
   next();

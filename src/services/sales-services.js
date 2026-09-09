@@ -323,7 +323,7 @@ class salesmanagment {
     return Job
   }
   async _getSummarySalesData(filters) {
-    //console.log("filters", filters)
+   // console.log("filters@@@@@@@@@@@@@@@@@@@@@@", filters)
     const {
       startDate,
       endDate,
@@ -332,7 +332,12 @@ class salesmanagment {
       categoryId,
       financerId,
       financeStatus,
+      userRole,
+      role,
     } = filters;
+    const activeRole = String(userRole || role || "").toLowerCase();
+    const canViewProfit = ["superuser", "manager"].includes(activeRole);
+
     const today = new Date();
     //convert today to midnight;
     const parsedStartDate = startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
@@ -361,82 +366,11 @@ class salesmanagment {
     let historicalSmallPhones = historicalTotals.filter((item) => item.itemType === "smallphones")[0];
     let historicalAccessoryTotals = historicalTotals.filter((item) => item.itemType === "accessories")[0];
     let historicalSimCardTotals = historicalTotals.filter((item) => item.itemType === "simcards")[0];
-
-    // console.log("historical mobile totals", historicalMobileTotals)
-    // console.log("historical accessory totals", historicalAccessoryTotals)
-
-    // let todaysMobileTotals = {
-    //   category: "mobile",
-    //   totalRevenue: 0,
-    //   grossProfit: 0,
-    //   totalCommission: 0,
-    //   totalCommissionPaid: 0,
-    //   totalItems: 0,
-    //   totalFinanceAmount: 0,
-    // };
-    // let todaysAccessoryTotals = {
-    //   category: "accessory",
-    //   totalRevenue: 0,
-    //   grossProfit: 0,
-    //   totalCommission: 0,
-    //   totalCommissionPaid: 0,
-    //   totalItems: 0,
-    //   totalFinanceAmount: 0,
-    // };
-    // if (parsedEndDate >= today) {
-    //   const todaySalesDetails = {
-    //     startDate: today,
-    //     endDate: parsedEndDate,
-    //     shopId: parsedShopId,
-    //     userId: parsedUserId,
-    //     categoryId: parsedCategoryId,
-    //     financerId: parsedFinancerId,
-    //     financeStatus,
-    //     page: 1,
-    //     limit: 150,
-    //   };
-
-    //   const [mobileSales, accessorySales] = await Promise.all([
-    //     this.sales.findSummarySales({
-    //       ...todaySalesDetails,
-    //       salesTable: "mobilesales",
-    //     }),
-    //     this.sales.findSummarySales({
-    //       ...todaySalesDetails,
-    //       salesTable: "accessorysales",
-    //     }),
-    //   ]);
-
-    //   console.log("mobile sales", mobileSales)
-    //   console.log("accessory sales", accessorySales)
-    //   todaysMobileTotals = {
-    //     category: "mobile",
-    //     totalRevenue:
-    //       (mobileSales._sum.soldPrice || 0),
-    //     grossProfit:
-    //       (mobileSales._sum.profit || 0),
-    //     totalCommission:
-    //       (mobileSales._sum.commission || 0),
-    //     totalItems:
-    //       (mobileSales._count || 0)
-    //   };
-    //   todaysAccessoryTotals = {
-    //     category: "accessory",
-    //     totalRevenue:
-    //       (accessorySales._sum.soldPrice || 0),
-    //     grossProfit:
-    //       (accessorySales._sum.profit || 0),
-    //     totalCommission:
-    //       (accessorySales._sum.commission || 0),
-    //     totalItems:
-    //       (accessorySales._count || 0)
-    //   };
-    // }
-
     const finalTotals = {
       totalSales: Number(historicalSmartPhone?.totalRevenue || 0) + Number(historicalSmallPhones?.totalRevenue || 0) + Number(historicalAccessoryTotals?.totalRevenue || 0) + Number(historicalSimCardTotals?.totalRevenue || 0),
-      totalProfit:
-        Number(historicalSmartPhone?.grossProfit || 0) + Number(historicalSmallPhones?.grossProfit || 0) + Number(historicalAccessoryTotals?.grossProfit || 0) + Number(historicalSimCardTotals?.grossProfit || 0),
+      totalProfit: canViewProfit ? (
+        Number(historicalSmartPhone?.grossProfit || 0) + Number(historicalSmallPhones?.grossProfit || 0) + Number(historicalAccessoryTotals?.grossProfit || 0) + Number(historicalSimCardTotals?.grossProfit || 0)
+      ) : 0,
       totalCommission:
         Number(historicalSmartPhone?.totalCommission || 0) +
         Number(historicalSmallPhones?.totalCommission || 0) + Number(historicalAccessoryTotals?.totalCommission || 0) + Number(historicalSimCardTotals?.totalCommission || 0),
@@ -444,10 +378,10 @@ class salesmanagment {
       totalSmallPhoneSales: Number(historicalSmallPhones?.totalRevenue || 0),
       totalAccessorySales: Number(historicalAccessoryTotals?.totalRevenue || 0),
       totalSimCardSales: Number(historicalSimCardTotals?.totalRevenue || 0),
-      totalSmartphoneProfit: Number(historicalSmartPhone?.grossProfit || 0),
-      totalSmallPhoneProfit: Number(historicalSmallPhones?.grossProfit || 0),
-      totalAccessoryProfit: Number(historicalAccessoryTotals?.grossProfit || 0),
-      totalSimCardProfit: Number(historicalSimCardTotals?.grossProfit || 0),
+      totalSmartphoneProfit: canViewProfit ? Number(historicalSmartPhone?.grossProfit || 0) : 0,
+      totalSmallPhoneProfit: canViewProfit ? Number(historicalSmallPhones?.grossProfit || 0) : 0,
+      totalAccessoryProfit: canViewProfit ? Number(historicalAccessoryTotals?.grossProfit || 0) : 0,
+      totalSimCardProfit: canViewProfit ? Number(historicalSimCardTotals?.grossProfit || 0) : 0,
       totalSmartphoneCommission: Number(historicalSmartPhone?.totalCommission || 0),
       totalSmallPhoneCommission: Number(historicalSmallPhones?.totalCommission || 0),
       totalAccessoryCommission: Number(historicalAccessoryTotals?.totalCommission || 0),
@@ -475,8 +409,13 @@ class salesmanagment {
       financerId,
       financeStatus,
       model,
-      itemType
+      itemType,
+      role,
+      userRole,
     } = filters;
+
+    const activeRole = String(userRole || role || "").toLowerCase();
+    const canViewProfit = ["superuser", "manager"].includes(activeRole);
 
     const today = new Date();
     //today.setHours(0, 0, 0, 0);
@@ -502,6 +441,7 @@ class salesmanagment {
       itemType,
       page: parsedPage,
       limit: parsedLimit,
+      userRole: activeRole,
     };
 
     let salesTable = model === "mobiles" ? "mobilesales" : "accessorysales"
@@ -516,12 +456,18 @@ class salesmanagment {
     //console.log("sales found for a table", salesFoundForATable)
 
     salesFoundForATable.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-    const totalItemsForPagination =
-      (salesFoundForATable[0].totals.totalItems || 0);
+    const salesResult = salesFoundForATable[0];
+    const totalItemsForPagination = (salesResult.totals.totalItems || 0);
 
     return {
       sales: {
-        sales: salesFoundForATable[0].data.map(transformSales),
+        sales: salesResult.data.map(sale => transformSales(sale, activeRole)),
+        totalSales: salesResult.totals.totalSales,
+        totalProfit: canViewProfit ? salesResult.totals.totalProfit : 0,
+        totalCommission: salesResult.totals.totalCommission,
+        totalCommissionPaid: salesResult.totals.totalCommissionPaid,
+        totalItems: salesResult.totals.totalItems,
+        totalFinanceAmount: salesResult.totals.totalFinanceAmount,
         totalPages: Math.ceil(totalItemsForPagination / parsedLimit),
         currentPage: parsedPage,
       },
@@ -531,7 +477,6 @@ class salesmanagment {
 
   async generategeneralsales(filters) {
     try {
-
       return await this._getHybridSalesData(filters);
     } catch (err) {
       this.handleServiceError(err);

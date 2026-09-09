@@ -52,6 +52,8 @@ class Sales {
     userId,
     financerId,
     financeStatus,
+    userRole,
+    role,
   }) {
     try {
       const salesmodel = prisma[salesTable]
@@ -91,6 +93,12 @@ class Sales {
         },
         _count: true,
       })
+
+      const requestingRole = String(userRole || role || "").toLowerCase();
+      const canViewProfit = requestingRole === "" || ["superuser", "manager"].includes(requestingRole);
+      if (!canViewProfit && totalS?._sum) {
+        totalS._sum.profit = 0;
+      }
       return totalS
 
     } catch (err) {
@@ -109,7 +117,9 @@ class Sales {
     userId,
     financerId,
     financeStatus,
-    itemType
+    itemType,
+    userRole,
+    role,
   }) {
     try {
       //console.log("item type @@@@@@@@@@@@", itemType)
@@ -248,11 +258,16 @@ class Sales {
       ]);
 
       // console.log("sales results@@@@@@@@@@@@@", results)
+      const requestingRole = String(userRole || role || "").toLowerCase();
+      const canViewProfit = requestingRole === "" || ["superuser", "manager"].includes(requestingRole);
 
       const transformSale = (sale) => ({
         ...sale,
+        profit: canViewProfit ? sale.profit : 0,
         productDetails:
-          salesTable === "mobilesales" ? sale.mobiles : sale.accessories,
+          salesTable === "mobilesales"
+            ? (canViewProfit ? sale.mobiles : (sale.mobiles ? { ...sale.mobiles, productCost: 0 } : null))
+            : (canViewProfit ? sale.accessories : (sale.accessories ? { ...sale.accessories, productCost: 0 } : null)),
         shopDetails: sale.shops,
         sellerDetails: sale.actors,
         categoryDetails: sale.categories,
@@ -267,7 +282,7 @@ class Sales {
         data: results.map(transformSale),
         totals: {
           totalSales: Number(totals._sum.soldPrice) || 0,
-          totalProfit: Number(totals._sum.profit) || 0,
+          totalProfit: canViewProfit ? (Number(totals._sum.profit) || 0) : 0,
           totalCommission: Number(totals._sum.commission) || 0,
           totalCommissionPaid: Number(totals._sum.commissionPaid) || 0,
           totalItems: Number(totals._count) || 0,
@@ -317,6 +332,8 @@ class Sales {
     limit,
     financerId,
     financeStatus,
+    userRole,
+    role,
   }) {
     try {
 
@@ -443,10 +460,16 @@ class Sales {
         _count: true,
       });
 
+      const requestingRole = String(userRole || role || "").toLowerCase();
+      const canViewProfit = requestingRole === "" || ["superuser", "manager"].includes(requestingRole);
+
       const transformSale = (sale) => ({
         ...sale,
+        profit: canViewProfit ? sale.profit : 0,
         productDetails:
-          salesTable === "mobilesales" ? sale.mobiles : sale.accessories,
+          salesTable === "mobilesales"
+            ? (canViewProfit ? sale.mobiles : (sale.mobiles ? { ...sale.mobiles, productCost: 0 } : null))
+            : (canViewProfit ? sale.accessories : (sale.accessories ? { ...sale.accessories, productCost: 0 } : null)),
         shopDetails: sale.shops,
         sellerDetails: sale.actors,
         categoryDetails: sale.categories,
@@ -461,7 +484,7 @@ class Sales {
         data: results.map(transformSale),
         totals: {
           totalSales: Number(totals._sum.soldPrice) || 0,
-          totalProfit: Number(totals._sum.profit) || 0,
+          totalProfit: canViewProfit ? (Number(totals._sum.profit) || 0) : 0,
           totalCommission: Number(totals._sum.commission) || 0,
           totalCommissionPaid: Number(totals._sum.commissionPaid) || 0,
           totalItems: Number(totals._count) || 0,
@@ -500,18 +523,22 @@ class Sales {
     });
   }
 
-  transformUserSale(sale, tableName) {
+  transformUserSale(sale, tableName, userRole) {
+    const requestingRole = String(userRole || "").toLowerCase();
+    const canViewProfit = requestingRole === "" || ["superuser", "manager"].includes(requestingRole);
+
     // Common properties
     const base = {
       soldprice: Number(sale.soldPrice),
-      totalprofit: sale.profit,
+      totalprofit: canViewProfit ? sale.profit : 0,
       totaltransaction: sale.quantity || 1,
       productDetails: {
         productID: sale.productID,
-        productCost:
-          tableName === "mobilesales"
+        productCost: canViewProfit
+          ? (tableName === "mobilesales"
             ? sale.mobiles?.productCost
-            : sale.accessories?.productCost,
+            : sale.accessories?.productCost)
+          : 0,
         batchNumber:
           tableName === "mobilesales"
             ? sale.mobiles?.batchNumber

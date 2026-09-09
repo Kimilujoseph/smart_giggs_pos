@@ -14,7 +14,9 @@ const handleGetSales = async (req, res, next) => {
     // console.log("reqqw", req.query)
     const { model } = req.query;
     let serviceMethod;
-    const servicePayload = { ...salesQuery, ...req.query };
+    const servicePayload = { ...salesQuery,...req.query };
+    servicePayload.role = user?.role;
+    servicePayload.userRole = user?.role;
     //console.log("payload from req", servicePayload)
 
 
@@ -86,7 +88,7 @@ const handleSummarySales = async (req, res, next) => {
   try {
     const { user, salesQuery } = req;
 
-    const salesQueryPayLoad = { ...salesQuery, ...req.query }
+    const salesQueryPayLoad = { ...salesQuery, ...req.query, role: user?.role, userRole: user?.role }
     //console.log("payload", salesQueryPayLoad);
     const [salesAnaytics, accountRecevable, commissionAnalysis] = await Promise.all([
       salesService._getSummarySalesData(salesQueryPayLoad),
