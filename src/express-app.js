@@ -103,7 +103,7 @@ const App = async (app) => {
   const allowedOrigins = ALLOWED_ORIGINS
     ? ALLOWED_ORIGINS.split(",").map((origin) => origin.trim()).filter(Boolean)
     : defaultOrigins;
-
+  console.log("Allowed Origins:", allowedOrigins);
   app.use(
     cors({
       origin: allowedOrigins,
