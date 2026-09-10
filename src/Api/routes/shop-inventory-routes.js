@@ -1,6 +1,6 @@
 import express from "express";
 import verifyUser from "../../middleware/verification.js";
-import {generalAuthorization} from "../../middleware/authorization.js";
+import {generalAuthorization} from "../../middleware/Authorization.js";
 import {
   createShop,
   getSpecificShop,
