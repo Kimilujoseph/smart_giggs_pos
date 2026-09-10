@@ -112,6 +112,25 @@ class AccessoryInventoryRepository {
     }
   }
 
+  async updateSoldUnitsOfAccessory( id, soldUnits ,tx) {
+    const prismaClient = tx || prisma;
+    try{
+      const updatedAccessory = await prismaClient.accessories.updateMany({
+        where: {
+          id: id,
+        },
+        data: {
+          soldUnits: { increment: soldUnits },
+          updatedAt: new Date(),
+        },
+      });
+      return updatedAccessory;
+    }catch(err){
+     // console.error("Error in updateSoldUnitsOfAccessory:", err);
+      throw new InternalServerError("Internal server error");
+    }
+  }
+
   async updateSalesOfAccessory({ id, sellerId, status }) {
     try {
       const updatedSalesOfAccessory = await prisma.accessoryHistory.updateMany({

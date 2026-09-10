@@ -172,6 +172,7 @@ class salesmanagment {
             soldUnits,
           };
           await this.accessory.updateSoldAccessoryItems(updateData, tx);
+          await this.accessory.updateSoldUnitsOfAccessory(parseInt(productId), soldUnits, tx);
         }
 
         const paymentPromises = payments.map((p) => {
