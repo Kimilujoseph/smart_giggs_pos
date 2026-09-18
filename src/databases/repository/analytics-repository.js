@@ -33,6 +33,11 @@ class AnalyticsRepository {
         conditions.push(Prisma.sql`d.financeStatus = ${financeStatus}`);
       }
 
+      const permissions = getSalesPermissions(userRole);
+      if (!permissions.canViewConsignmentSoldPrice) {
+        conditions.push(Prisma.sql`d.isConsignment = false`);
+      }
+
       const result = await prisma.$queryRaw(
         Prisma.sql`
     SELECT
@@ -50,14 +55,10 @@ class AnalyticsRepository {
   `
       );
 
-      // Apply role-based field masking on the result set.
-      // grossProfit is the only field we can guard here without a schema change.
-      // Note: totalRevenue includes consignment revenue — filtering that out
-      // requires an isConsignment column on DailySalesAnalytics (future migration).
-      const { canViewProfit } = getSalesPermissions(userRole);
+      // Apply role-based field masking on the result set
       return result.map((row) => ({
         ...row,
-        grossProfit: canViewProfit ? row.grossProfit : 0,
+        grossProfit: permissions.canViewProfit ? row.grossProfit : 0,
       }));
 
     } catch (err) {
@@ -101,7 +102,7 @@ class AnalyticsRepository {
 
       const summary = await prisma.$queryRaw`
         SELECT 
-         SUM(soldPrice) AS totalFinanceAmount
+         SUM(financeAmount) AS totalFinanceAmount
         FROM mobilesales 
         WHERE ${Prisma.join(conditions, " AND ")}
 

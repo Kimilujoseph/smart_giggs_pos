@@ -165,7 +165,7 @@ class Sales {
                 storage: true,
                 color: true,
                 paymentStatus: true,
-                isConsignment:true
+                isConsignment: true
               },
             },
             shops: {
@@ -240,52 +240,48 @@ class Sales {
       const { canViewProfit, canViewConsignmentSoldPrice, canViewProductCost } =
         getSalesPermissions(userRole || role);
 
-      // For non-privileged users on mobilesales: DB only sums soldPrice for
-      // non-consignment items — consignment revenue is never sent over the wire.
+
       const needsConsignmentFilter =
         salesTable === "mobilesales" && !canViewConsignmentSoldPrice;
 
-      // Build the soldPrice aggregate where-clause once
+     
       const soldPriceWhere = needsConsignmentFilter
         ? { ...whereClause, mobiles: { isConsignment: false } }
         : whereClause;
-
-      // totalsQuery: when consignment filter is needed, run two parallel DB
-      // aggregates and merge; otherwise a single aggregate suffices.
       const totalsQuery = needsConsignmentFilter
         ? Promise.all([
-            // Count, commissions, finance — always full scope
-            salesModel.aggregate({
-              where: whereClause,
-              _sum: { commission: true, commissionPaid: true, financeAmount: true },
-              _count: true,
-            }),
-            // soldPrice — only non-consignment rows
-            salesModel.aggregate({
-              where: soldPriceWhere,
-              _sum: { soldPrice: true },
-            }),
-          ]).then(([base, sold]) => ({
-            _count: base._count,
-            _sum: {
-              soldPrice: sold._sum.soldPrice,
-              profit: 0, // non-privileged — masked at DB query level
-              commission: base._sum.commission,
-              commissionPaid: base._sum.commissionPaid,
-              financeAmount: base._sum.financeAmount,
-            },
-          }))
-        : salesModel.aggregate({
+          // Count, commissions, finance — always full scope
+          salesModel.aggregate({
             where: whereClause,
-            _sum: {
-              soldPrice: true,
-              profit: true,
-              commission: true,
-              commissionPaid: true,
-              financeAmount: true,
-            },
+            _sum: { commission: true, commissionPaid: true, financeAmount: true },
             _count: true,
-          });
+          }),
+          // soldPrice — only non-consignment rows
+          salesModel.aggregate({
+            where: soldPriceWhere,
+            _sum: { soldPrice: true },
+          }),
+        ]).then(([base, sold]) => ({
+          _count: base._count,
+          _sum: {
+            soldPrice: sold._sum.soldPrice,
+            profit: 0, // non-privileged — masked at DB query level
+            commission: base._sum.commission,
+            commissionPaid: base._sum.commissionPaid,
+            financeAmount: base._sum.financeAmount,
+          },
+        }))
+        : salesModel.aggregate({
+          where: whereClause,
+          _sum: {
+            soldPrice: true,
+            profit: true,
+            commission: true,
+            commissionPaid: true,
+            financeAmount: true,
+          },
+          _count: true,
+        });
 
       const [results, totals] = await Promise.all([
         salesModel.findMany({
@@ -314,8 +310,8 @@ class Sales {
                 ? { ...sale.mobiles, productCost: canViewProductCost ? sale.mobiles.productCost : 0 }
                 : null
               : sale.accessories
-              ? { ...sale.accessories, productCost: canViewProductCost ? sale.accessories.productCost : 0 }
-              : null,
+                ? { ...sale.accessories, productCost: canViewProductCost ? sale.accessories.productCost : 0 }
+                : null,
           shopDetails: sale.shops,
           sellerDetails: sale.actors,
           categoryDetails: sale.categories,
@@ -503,36 +499,36 @@ class Sales {
 
       const totalsQuery = needsConsignmentFilter
         ? Promise.all([
-            salesModel.aggregate({
-              where: whereClause,
-              _sum: { commission: true, commissionPaid: true, financeAmount: true },
-              _count: true,
-            }),
-            salesModel.aggregate({
-              where: soldPriceWhere,
-              _sum: { soldPrice: true },
-            }),
-          ]).then(([base, sold]) => ({
-            _count: base._count,
-            _sum: {
-              soldPrice: sold._sum.soldPrice,
-              profit: 0,
-              commission: base._sum.commission,
-              commissionPaid: base._sum.commissionPaid,
-              financeAmount: base._sum.financeAmount,
-            },
-          }))
-        : salesModel.aggregate({
+          salesModel.aggregate({
             where: whereClause,
-            _sum: {
-              soldPrice: true,
-              profit: true,
-              commission: true,
-              commissionPaid: true,
-              financeAmount: true,
-            },
+            _sum: { commission: true, commissionPaid: true, financeAmount: true },
             _count: true,
-          });
+          }),
+          salesModel.aggregate({
+            where: soldPriceWhere,
+            _sum: { soldPrice: true },
+          }),
+        ]).then(([base, sold]) => ({
+          _count: base._count,
+          _sum: {
+            soldPrice: sold._sum.soldPrice,
+            profit: 0,
+            commission: base._sum.commission,
+            commissionPaid: base._sum.commissionPaid,
+            financeAmount: base._sum.financeAmount,
+          },
+        }))
+        : salesModel.aggregate({
+          where: whereClause,
+          _sum: {
+            soldPrice: true,
+            profit: true,
+            commission: true,
+            commissionPaid: true,
+            financeAmount: true,
+          },
+          _count: true,
+        });
 
       const [results, totals] = await Promise.all([
         salesModel.findMany({
@@ -561,8 +557,8 @@ class Sales {
                 ? { ...sale.mobiles, productCost: canViewProductCost ? sale.mobiles.productCost : 0 }
                 : null
               : sale.accessories
-              ? { ...sale.accessories, productCost: canViewProductCost ? sale.accessories.productCost : 0 }
-              : null,
+                ? { ...sale.accessories, productCost: canViewProductCost ? sale.accessories.productCost : 0 }
+                : null,
           shopDetails: sale.shops,
           sellerDetails: sale.actors,
           categoryDetails: sale.categories,

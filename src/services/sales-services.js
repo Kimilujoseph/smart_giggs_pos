@@ -266,13 +266,14 @@ class salesmanagment {
       for (const analyticsData of analyticsAggregator.values()) {
         const existingRecord = await tx.dailySalesAnalytics.findUnique({
           where: {
-            date_categoryId_shopId_sellerId_financeId_financeStatus: {
+            date_categoryId_shopId_sellerId_financeId_financeStatus_isConsignment: {
               date: analyticsData.date,
               categoryId: analyticsData.categoryId,
               shopId: analyticsData.shopId,
               sellerId: analyticsData.sellerId,
               financeStatus: analyticsData.financeStatus,
               financeId: analyticsData.financeId,
+              isConsignment: analyticsData.isConsignment,
             },
           },
         });
