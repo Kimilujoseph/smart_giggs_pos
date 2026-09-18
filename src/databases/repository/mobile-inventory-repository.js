@@ -28,6 +28,7 @@ class phoneinventoryrepository {
           productCost: true,
           commission: true,
           IMEI: true,
+          isConsignment: true,
         },
       });
       return stockItem;

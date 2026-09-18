@@ -585,6 +585,7 @@ model DailySalesAnalytics {
   sellerId           Int
   financeId          Int?
   financeStatus      String?   @db.VarChar(50)
+  isConsignment      Boolean   @default(false)
   totalUnitsSold     Int?
   totalRevenue       Decimal?  @db.Decimal(18, 2)
   totalCostOfGoods   Decimal   @db.Decimal(12, 2)
@@ -592,7 +593,7 @@ model DailySalesAnalytics {
   totalCommission    Decimal?  @db.Decimal(18, 2)
   totalfinanceAmount Decimal?  @db.Decimal(18, 2)
 
-  @@unique([date, categoryId, shopId, sellerId, financeId, financeStatus], map: "idx_unique_daily_sale")
+  @@unique([date, categoryId, shopId, sellerId, financeId, financeStatus, isConsignment], map: "idx_unique_daily_sale")
   @@index([categoryId], map: "idx_categoryId")
   @@index([date], map: "idx_date")
   @@index([sellerId], map: "idx_sellerId")

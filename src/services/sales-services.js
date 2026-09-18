@@ -8,6 +8,7 @@ import { phoneinventoryrepository } from "../databases/repository/mobile-invento
 import { CategoryManagementRepository } from "../databases/repository/category-contoller-repository.js";
 import { AnalyticsRepository } from "../databases/repository/analytics-repository.js";
 import { transformSales } from "../helpers/transformsales.js";
+import { getSalesPermissions } from "../helpers/sales-permissions.js";
 import {
   APIError,
   STATUS_CODE,
@@ -201,8 +202,13 @@ class salesmanagment {
         const financeStatusKey =
           financeStatus === null ? "null" : financeStatus;
 
+        // isConsignment lives on the mobiles table (productDetails).
+        // Accessories are always non-consignment so default to false.
+        const isConsignment =
+          itemType === "mobiles" ? (productDetails.isConsignment ?? false) : false;
+
         const analyticsKey = `${today.toISOString()}-${CategoryId}-${shop.id
-          }-${sellerId}-${financeStatusKey}-${financeIdKey}`;
+          }-${sellerId}-${financeStatusKey}-${financeIdKey}-${isConsignment}`;
 
         const currentAnalytics = analyticsAggregator.get(analyticsKey) || {
           date: today,
@@ -211,6 +217,7 @@ class salesmanagment {
           sellerId: sellerId,
           financeStatus: financeStatus,
           financeId: parsedFinanceId,
+          isConsignment,
           totalUnitsSold: 0,
           totalRevenue: 0,
           totalCostOfGoods: 0,
@@ -336,8 +343,9 @@ class salesmanagment {
       userRole,
       role,
     } = filters;
+
     const activeRole = String(userRole || role || "").toLowerCase();
-    const canViewProfit = ["superuser", "manager"].includes(activeRole);
+    const { canViewProfit } = getSalesPermissions(activeRole);
 
     const today = new Date();
     //convert today to midnight;
@@ -359,6 +367,7 @@ class salesmanagment {
       categoryId: parsedCategoryId,
       financerId: parsedFinancerId,
       financeStatus,
+      userRole: activeRole,  // threaded through so analytics layer applies masking
     });
     //console.log("historical totals", historicalTotals)
 

@@ -1,10 +1,11 @@
 import { PrismaClient, Prisma } from "@prisma/client";
 import { APIError, STATUS_CODE, InternalServerError } from "../../Utils/app-error.js";
+import { getSalesPermissions } from "../../helpers/sales-permissions.js";
 
 const prisma = new PrismaClient();
 
 class AnalyticsRepository {
-  async getSalesAnalytics({ startDate, endDate, shopId, sellerId, categoryId, financerId, financeStatus }) {
+  async getSalesAnalytics({ startDate, endDate, shopId, sellerId, categoryId, financerId, financeStatus, userRole }) {
     try {
       //console.log("analytics query filters", startDate, endDate, shopId, sellerId, categoryId, financerId, financeStatus)
       const conditions = [
@@ -32,8 +33,6 @@ class AnalyticsRepository {
         conditions.push(Prisma.sql`d.financeStatus = ${financeStatus}`);
       }
 
-      // console.log("whre clause generated", whereClause)
-
       const result = await prisma.$queryRaw(
         Prisma.sql`
     SELECT
@@ -50,9 +49,17 @@ class AnalyticsRepository {
     GROUP BY c.itemType;
   `
       );
-      //console.log("sales results", result)
 
-      return result
+      // Apply role-based field masking on the result set.
+      // grossProfit is the only field we can guard here without a schema change.
+      // Note: totalRevenue includes consignment revenue — filtering that out
+      // requires an isConsignment column on DailySalesAnalytics (future migration).
+      const { canViewProfit } = getSalesPermissions(userRole);
+      return result.map((row) => ({
+        ...row,
+        grossProfit: canViewProfit ? row.grossProfit : 0,
+      }));
+
     } catch (err) {
       console.error("Analytics Repository Error:", err);
       throw new APIError(

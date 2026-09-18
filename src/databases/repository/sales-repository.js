@@ -6,6 +6,7 @@ import {
   STATUS_CODE,
   InternalServerError,
 } from "../../Utils/app-error.js";
+import { getSalesPermissions } from "../../helpers/sales-permissions.js";
 //const prisma = new PrismaClient();
 class Sales {
   constructor() {
@@ -94,8 +95,7 @@ class Sales {
         _count: true,
       })
 
-      const requestingRole = String(userRole || role || "").toLowerCase();
-      const canViewProfit = requestingRole === "" || ["superuser", "manager"].includes(requestingRole);
+      const { canViewProfit } = getSalesPermissions(userRole || role);
       if (!canViewProfit && totalS?._sum) {
         totalS._sum.profit = 0;
       }
@@ -165,6 +165,7 @@ class Sales {
                 storage: true,
                 color: true,
                 paymentStatus: true,
+                isConsignment:true
               },
             },
             shops: {
@@ -236,6 +237,56 @@ class Sales {
             },
             //Payment: true
           };
+      const { canViewProfit, canViewConsignmentSoldPrice, canViewProductCost } =
+        getSalesPermissions(userRole || role);
+
+      // For non-privileged users on mobilesales: DB only sums soldPrice for
+      // non-consignment items — consignment revenue is never sent over the wire.
+      const needsConsignmentFilter =
+        salesTable === "mobilesales" && !canViewConsignmentSoldPrice;
+
+      // Build the soldPrice aggregate where-clause once
+      const soldPriceWhere = needsConsignmentFilter
+        ? { ...whereClause, mobiles: { isConsignment: false } }
+        : whereClause;
+
+      // totalsQuery: when consignment filter is needed, run two parallel DB
+      // aggregates and merge; otherwise a single aggregate suffices.
+      const totalsQuery = needsConsignmentFilter
+        ? Promise.all([
+            // Count, commissions, finance — always full scope
+            salesModel.aggregate({
+              where: whereClause,
+              _sum: { commission: true, commissionPaid: true, financeAmount: true },
+              _count: true,
+            }),
+            // soldPrice — only non-consignment rows
+            salesModel.aggregate({
+              where: soldPriceWhere,
+              _sum: { soldPrice: true },
+            }),
+          ]).then(([base, sold]) => ({
+            _count: base._count,
+            _sum: {
+              soldPrice: sold._sum.soldPrice,
+              profit: 0, // non-privileged — masked at DB query level
+              commission: base._sum.commission,
+              commissionPaid: base._sum.commissionPaid,
+              financeAmount: base._sum.financeAmount,
+            },
+          }))
+        : salesModel.aggregate({
+            where: whereClause,
+            _sum: {
+              soldPrice: true,
+              profit: true,
+              commission: true,
+              commissionPaid: true,
+              financeAmount: true,
+            },
+            _count: true,
+          });
+
       const [results, totals] = await Promise.all([
         salesModel.findMany({
           where: whereClause,
@@ -244,45 +295,43 @@ class Sales {
           skip: skip,
           take: limit,
         }),
-        salesModel.aggregate({
-          where: whereClause,
-          _sum: {
-            soldPrice: true,
-            profit: true,
-            commission: true,
-            commissionPaid: true,
-            financeAmount: true,
-          },
-          _count: true,
-        }),
+        totalsQuery,
       ]);
 
-      // console.log("sales results@@@@@@@@@@@@@", results)
-      const requestingRole = String(userRole || role || "").toLowerCase();
-      const canViewProfit = requestingRole === "" || ["superuser", "manager"].includes(requestingRole);
+      const transformSale = (sale) => {
+        const isConsignment =
+          salesTable === "mobilesales" && sale.mobiles?.isConsignment === true;
+        const visibleSoldPrice =
+          isConsignment && !canViewConsignmentSoldPrice ? 0 : sale.soldPrice;
 
-      const transformSale = (sale) => ({
-        ...sale,
-        profit: canViewProfit ? sale.profit : 0,
-        productDetails:
-          salesTable === "mobilesales"
-            ? (canViewProfit ? sale.mobiles : (sale.mobiles ? { ...sale.mobiles, productCost: 0 } : null))
-            : (canViewProfit ? sale.accessories : (sale.accessories ? { ...sale.accessories, productCost: 0 } : null)),
-        shopDetails: sale.shops,
-        sellerDetails: sale.actors,
-        categoryDetails: sale.categories,
-        financeDetails: {
-          financeStatus: sale.financeStatus || "N/A",
-          financeAmount: sale.financeAmount || 0,
-          financer: sale.Financer?.name || "N/A",
-        },
-      });
+        return {
+          ...sale,
+          soldPrice: visibleSoldPrice,
+          profit: canViewProfit ? sale.profit : 0,
+          productDetails:
+            salesTable === "mobilesales"
+              ? sale.mobiles
+                ? { ...sale.mobiles, productCost: canViewProductCost ? sale.mobiles.productCost : 0 }
+                : null
+              : sale.accessories
+              ? { ...sale.accessories, productCost: canViewProductCost ? sale.accessories.productCost : 0 }
+              : null,
+          shopDetails: sale.shops,
+          sellerDetails: sale.actors,
+          categoryDetails: sale.categories,
+          financeDetails: {
+            financeStatus: sale.financeStatus || "N/A",
+            financeAmount: sale.financeAmount || 0,
+            financer: sale.Financer?.name || "N/A",
+          },
+        };
+      };
 
       return {
         data: results.map(transformSale),
         totals: {
           totalSales: Number(totals._sum.soldPrice) || 0,
-          totalProfit: canViewProfit ? (Number(totals._sum.profit) || 0) : 0,
+          totalProfit: canViewProfit ? Number(totals._sum.profit) || 0 : 0,
           totalCommission: Number(totals._sum.commission) || 0,
           totalCommissionPaid: Number(totals._sum.commissionPaid) || 0,
           totalItems: Number(totals._count) || 0,
@@ -367,6 +416,7 @@ class Sales {
                 storage: true,
                 color: true,
                 paymentStatus: true,
+                isConsignment: true,
               },
             },
             shops: {
@@ -441,50 +491,94 @@ class Sales {
             //Payment: true
           };
 
-      const results = await salesModel.findMany({
-        where: whereClause,
-        include: includeClause,
-        orderBy: { createdAt: "desc" },
-        skip,
-        take: limit,
-      });
-      const totals = await salesModel.aggregate({
-        where: whereClause,
-        _sum: {
-          soldPrice: true,
-          profit: true,
-          commission: true,
-          commissionPaid: true,
-          financeAmount: true,
-        },
-        _count: true,
-      });
+      const { canViewProfit, canViewConsignmentSoldPrice, canViewProductCost } =
+        getSalesPermissions(userRole || role);
 
-      const requestingRole = String(userRole || role || "").toLowerCase();
-      const canViewProfit = requestingRole === "" || ["superuser", "manager"].includes(requestingRole);
+      const needsConsignmentFilter =
+        salesTable === "mobilesales" && !canViewConsignmentSoldPrice;
 
-      const transformSale = (sale) => ({
-        ...sale,
-        profit: canViewProfit ? sale.profit : 0,
-        productDetails:
-          salesTable === "mobilesales"
-            ? (canViewProfit ? sale.mobiles : (sale.mobiles ? { ...sale.mobiles, productCost: 0 } : null))
-            : (canViewProfit ? sale.accessories : (sale.accessories ? { ...sale.accessories, productCost: 0 } : null)),
-        shopDetails: sale.shops,
-        sellerDetails: sale.actors,
-        categoryDetails: sale.categories,
-        financeDetails: {
-          financeStatus: sale.financeStatus || "N/A",
-          financeAmount: sale.financeAmount || 0,
-          financer: sale.Financer?.name || "N/A",
-        },
-      });
-      // console.log("total profit", totals._sum.profit);
+      const soldPriceWhere = needsConsignmentFilter
+        ? { ...whereClause, mobiles: { isConsignment: false } }
+        : whereClause;
+
+      const totalsQuery = needsConsignmentFilter
+        ? Promise.all([
+            salesModel.aggregate({
+              where: whereClause,
+              _sum: { commission: true, commissionPaid: true, financeAmount: true },
+              _count: true,
+            }),
+            salesModel.aggregate({
+              where: soldPriceWhere,
+              _sum: { soldPrice: true },
+            }),
+          ]).then(([base, sold]) => ({
+            _count: base._count,
+            _sum: {
+              soldPrice: sold._sum.soldPrice,
+              profit: 0,
+              commission: base._sum.commission,
+              commissionPaid: base._sum.commissionPaid,
+              financeAmount: base._sum.financeAmount,
+            },
+          }))
+        : salesModel.aggregate({
+            where: whereClause,
+            _sum: {
+              soldPrice: true,
+              profit: true,
+              commission: true,
+              commissionPaid: true,
+              financeAmount: true,
+            },
+            _count: true,
+          });
+
+      const [results, totals] = await Promise.all([
+        salesModel.findMany({
+          where: whereClause,
+          include: includeClause,
+          orderBy: { createdAt: "desc" },
+          skip,
+          take: limit,
+        }),
+        totalsQuery,
+      ]);
+
+      const transformSale = (sale) => {
+        const isConsignment =
+          salesTable === "mobilesales" && sale.mobiles?.isConsignment === true;
+        const visibleSoldPrice =
+          isConsignment && !canViewConsignmentSoldPrice ? 0 : sale.soldPrice;
+
+        return {
+          ...sale,
+          soldPrice: visibleSoldPrice,
+          profit: canViewProfit ? sale.profit : 0,
+          productDetails:
+            salesTable === "mobilesales"
+              ? sale.mobiles
+                ? { ...sale.mobiles, productCost: canViewProductCost ? sale.mobiles.productCost : 0 }
+                : null
+              : sale.accessories
+              ? { ...sale.accessories, productCost: canViewProductCost ? sale.accessories.productCost : 0 }
+              : null,
+          shopDetails: sale.shops,
+          sellerDetails: sale.actors,
+          categoryDetails: sale.categories,
+          financeDetails: {
+            financeStatus: sale.financeStatus || "N/A",
+            financeAmount: sale.financeAmount || 0,
+            financer: sale.Financer?.name || "N/A",
+          },
+        };
+      };
+
       return {
         data: results.map(transformSale),
         totals: {
           totalSales: Number(totals._sum.soldPrice) || 0,
-          totalProfit: canViewProfit ? (Number(totals._sum.profit) || 0) : 0,
+          totalProfit: canViewProfit ? Number(totals._sum.profit) || 0 : 0,
           totalCommission: Number(totals._sum.commission) || 0,
           totalCommissionPaid: Number(totals._sum.commissionPaid) || 0,
           totalItems: Number(totals._count) || 0,
