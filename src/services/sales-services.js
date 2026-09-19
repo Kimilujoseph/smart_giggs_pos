@@ -332,7 +332,7 @@ class salesmanagment {
     return Job
   }
   async _getSummarySalesData(filters) {
-   // console.log("filters@@@@@@@@@@@@@@@@@@@@@@", filters)
+   console.log("filters@@@@@@@@@@@@@@@@@@@@@@", filters)
     const {
       startDate,
       endDate,
@@ -402,7 +402,7 @@ class salesmanagment {
       totalAccessoryUnitsSold: Number(historicalAccessoryTotals?.totalUnitsSold || 0),
       totalSimCardUnitsSold: Number(historicalSimCardTotals?.totalUnitsSold || 0),
     };
-    // console.log("final totals", finalTotals)
+    console.log("final totals", finalTotals)
     return {
       ...finalTotals
     }
