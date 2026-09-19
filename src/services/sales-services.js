@@ -402,7 +402,7 @@ class salesmanagment {
       totalAccessoryUnitsSold: Number(historicalAccessoryTotals?.totalUnitsSold || 0),
       totalSimCardUnitsSold: Number(historicalSimCardTotals?.totalUnitsSold || 0),
     };
-    console.log("final totals", finalTotals)
+    //console.log("final totals", finalTotals)
     return {
       ...finalTotals
     }

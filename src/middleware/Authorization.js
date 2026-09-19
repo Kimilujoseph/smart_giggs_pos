@@ -25,7 +25,7 @@ const confirmationAuthorization =(req,res,next) => {
     next()
 }
 const paymentAuthorization = (req,res,next) =>{
-    if(!checkRole(req.user.role,['superUser'])){
+    if(!checkRole(req.user.role,['superuser'])){
         return next(new AuthorizationError("You are not authorized to pay commission"))
     }
     next()
