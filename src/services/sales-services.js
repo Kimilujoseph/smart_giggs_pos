@@ -332,7 +332,7 @@ class salesmanagment {
     return Job
   }
   async _getSummarySalesData(filters) {
-   console.log("filters@@@@@@@@@@@@@@@@@@@@@@", filters)
+  // console.log("filters@@@@@@@@@@@@@@@@@@@@@@", filters)
     const {
       startDate,
       endDate,
@@ -368,7 +368,7 @@ class salesmanagment {
       categoryId: parsedCategoryId,
       financerId: parsedFinancerId,
       financeStatus,
-      userRole: activeRole,  // threaded through so analytics layer applies masking
+      userRole: activeRole, 
     });
     //console.log("historical totals", historicalTotals)
 

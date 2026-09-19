@@ -14,6 +14,7 @@ function getSalesPermissions(role) {
     canViewProfit: isPrivileged,
     canViewConsignmentSoldPrice: isPrivileged,
     canViewProductCost: isPrivileged,
+    canViewCommission: isPrivileged || normalizedRole === "seller",
   };
 }
 

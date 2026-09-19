@@ -34,26 +34,38 @@ class AnalyticsRepository {
       }
 
       const permissions = getSalesPermissions(userRole);
-      if (!permissions.canViewConsignmentSoldPrice) {
-        conditions.push(Prisma.sql`d.isConsignment = false`);
-      }
+      // if (!permissions.canViewConsignmentSoldPrice) {
+      //   conditions.push(Prisma.sql`d.isConsignment = false`);
+      // }
+     const selectFields = [
+                Prisma.sql`c.itemType`,
+                Prisma.sql`SUM(d.totalUnitsSold) AS totalUnitsSold`,
+                Prisma.sql`SUM(d.totalRevenue) AS totalRevenue`,
+                Prisma.sql`SUM(d.grossProfit) AS grossProfit`,
+                Prisma.sql`SUM(d.totalfinanceAmount) AS totalfinanceAmount`,
+              ];
 
-      const result = await prisma.$queryRaw(
-        Prisma.sql`
+              if (!permissions.canViewConsignmentSoldPrice) {
+                selectFields.push(Prisma.sql`SUM(CASE WHEN d.isConsignment = false THEN d.totalRevenue ELSE 0 END) AS totalRevenue`);
+              }
+
+if (permissions.canViewCommission) {
+  selectFields.push(
+    Prisma.sql`SUM(d.totalCommission) AS totalCommission`
+  );
+}
+
+const result = await prisma.$queryRaw(
+  Prisma.sql`
     SELECT
-      c.itemType,
-      SUM(d.totalUnitsSold) AS totalUnitsSold,
-      SUM(d.totalRevenue) AS totalRevenue,
-      SUM(d.grossProfit) AS grossProfit,
-      SUM(d.totalCommission) AS totalCommission,
-      SUM(d.totalfinanceAmount) AS totalfinanceAmount
+      ${Prisma.join(selectFields, ", ")}
     FROM DailySalesAnalytics d
     JOIN categories c
       ON d.categoryId = c._id
     WHERE ${Prisma.join(conditions, " AND ")}
     GROUP BY c.itemType;
   `
-      );
+);
 
       // Apply role-based field masking on the result set
       return result.map((row) => ({
