@@ -370,7 +370,8 @@ class salesmanagment {
       financeStatus,
       userRole: activeRole, 
     });
-    //console.log("historical totals", historicalTotals)
+    console.log("startdate", parsedStartDate, "enddate", historicalEndDate.toISOString.split('T')[0])
+    console.log("historical totals", historicalTotals)
 
     //hisrotical data is an array of two object mobile and accessory totals
     let historicalSmartPhone = historicalTotals.filter((item) => item.itemType === "smartphones")[0];
