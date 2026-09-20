@@ -5,10 +5,10 @@
 
 */
 -- DropIndex
-DROP INDEX `idx_unique_daily_sale` ON `dailysalesanalytics`;
+DROP INDEX `idx_unique_daily_sale` ON `DailySalesAnalytics`;
 
 -- AlterTable
-ALTER TABLE `dailysalesanalytics` ADD COLUMN `isConsignment` BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE `DailySalesAnalytics` ADD COLUMN `isConsignment` BOOLEAN NOT NULL DEFAULT false;
 
 -- CreateIndex
 CREATE UNIQUE INDEX `idx_unique_daily_sale` ON `DailySalesAnalytics`(`date`, `categoryId`, `shopId`, `sellerId`, `financeId`, `financeStatus`, `isConsignment`);
