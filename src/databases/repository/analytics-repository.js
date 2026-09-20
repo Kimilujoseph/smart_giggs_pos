@@ -7,7 +7,7 @@ const prisma = new PrismaClient();
 class AnalyticsRepository {
   async getSalesAnalytics({ startDate, endDate, shopId, sellerId, categoryId, financerId, financeStatus, userRole }) {
     try {
-      //console.log("analytics query filters", startDate.toISOString().split('T')[0], endDate, shopId, sellerId, categoryId, financerId, financeStatus)
+      console.log("analytics query filters", startDate.toISOString().split('T')[0], endDate, shopId, sellerId, categoryId, financerId, financeStatus)
       const conditions = [
         Prisma.sql`d.date >= ${startDate.toISOString().split('T')[0]}`,
         Prisma.sql`d.date <= ${endDate.toISOString().split('T')[0]}`,
