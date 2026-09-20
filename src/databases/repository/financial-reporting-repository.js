@@ -7,6 +7,16 @@ import {
 
 const prisma = new PrismaClient();
 
+// Helper: format a Date as YYYY-MM-DD in LOCAL time (not UTC).
+// .toISOString() converts to UTC first, which shifts midnight in UTC+N timezones
+// back to the previous day — causing the wrong week/day boundary in SQL queries.
+const toLocalDateString = (date) => {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+};
+
 class FinancialReportingRepository {
   async getAggregatedAnalytics({ startDate, endDate, type }) {
     try {
@@ -23,8 +33,8 @@ class FinancialReportingRepository {
             SUM(d.totalCommission) AS totalCommission,
             SUM(d.totalCostOfGoods) AS totalCostOfGoods
           FROM DailySalesAnalytics d
-          WHERE d.date >= ${startDate.toISOString().split("T")[0]}
-            AND d.date < ${endDate.toISOString().split("T")[0]}
+          WHERE d.date >= ${toLocalDateString(startDate)}
+            AND d.date <= ${toLocalDateString(endDate)}
             ${typeCondition};
         `
       );
