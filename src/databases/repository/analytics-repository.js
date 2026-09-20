@@ -4,13 +4,24 @@ import { getSalesPermissions } from "../../helpers/sales-permissions.js";
 
 const prisma = new PrismaClient();
 
+// Helper: format a Date as YYYY-MM-DD in LOCAL time (not UTC).
+// Using .toISOString() would shift midnight local time back one day in UTC+N timezones.
+const toLocalDateString = (date) => {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+};
+
 class AnalyticsRepository {
   async getSalesAnalytics({ startDate, endDate, shopId, sellerId, categoryId, financerId, financeStatus, userRole }) {
     try {
-      console.log("analytics query filters", startDate.toISOString().split('T')[0], endDate, shopId, sellerId, categoryId, financerId, financeStatus)
+      const startDateStr = toLocalDateString(startDate);
+      const endDateStr = toLocalDateString(endDate);
+      console.log("analytics query filters", startDateStr, endDateStr, shopId, sellerId, categoryId, financerId, financeStatus)
       const conditions = [
-        Prisma.sql`d.date >= ${startDate.toISOString().split('T')[0]}`,
-        Prisma.sql`d.date <= ${endDate.toISOString().split('T')[0]}`,
+        Prisma.sql`d.date >= ${startDateStr}`,
+        Prisma.sql`d.date <= ${endDateStr}`,
       ];
 
       if (shopId) {
@@ -195,8 +206,8 @@ SELECT
 FROM DailySalesAnalytics d
 JOIN categories c
     ON d.categoryId = c._id
-WHERE d.date >= ${startDate.toISOString().split("T")[0]}
-  AND d.date <= ${endDate.toISOString().split("T")[0]}
+WHERE d.date >= ${toLocalDateString(startDate)}
+  AND d.date <= ${toLocalDateString(endDate)}
 GROUP BY d.categoryId
 ORDER BY totalRevenue DESC
 LIMIT ${limit}
@@ -239,7 +250,7 @@ INNER JOIN categories c
     ON d.categoryId = c._id
 INNER JOIN shops s 
     ON d.shopId = s._id
-    WHERE d.date >= ${startDate.toISOString().split("T")[0]} AND d.date <= ${endDate.toISOString().split("T")[0]}
+    WHERE d.date >= ${toLocalDateString(startDate)} AND d.date <= ${toLocalDateString(endDate)}
 
 GROUP BY
     d.shopId,
