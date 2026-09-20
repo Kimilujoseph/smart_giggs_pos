@@ -195,8 +195,8 @@ SELECT
 FROM DailySalesAnalytics d
 JOIN categories c
     ON d.categoryId = c._id
-WHERE d.date >= ${startDate}
-  AND d.date <= ${endDate}
+WHERE d.date >= ${startDate.toISOString().split("T")[0]}
+  AND d.date <= ${endDate.toISOString().split("T")[0]}
 GROUP BY d.categoryId
 ORDER BY totalRevenue DESC
 LIMIT ${limit}
@@ -239,7 +239,7 @@ INNER JOIN categories c
     ON d.categoryId = c._id
 INNER JOIN shops s 
     ON d.shopId = s._id
-    WHERE d.date >= ${startDate} AND d.date <= ${endDate}
+    WHERE d.date >= ${startDate.toISOString().split("T")[0]} AND d.date <= ${endDate.toISOString().split("T")[0]}
 
 GROUP BY
     d.shopId,

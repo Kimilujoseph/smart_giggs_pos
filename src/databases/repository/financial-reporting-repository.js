@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, Prisma } from "@prisma/client";
 import {
   APIError,
   STATUS_CODE,
@@ -10,37 +10,36 @@ const prisma = new PrismaClient();
 class FinancialReportingRepository {
   async getAggregatedAnalytics({ startDate, endDate, type }) {
     try {
-      const whereClause = {
-        date: {
-          gte: startDate,
-          lt: endDate,
-        },
-      };
+      const typeCondition =
+        type === "returns"
+          ? Prisma.sql`AND d.totalRevenue < 0`
+          : Prisma.sql`AND d.totalRevenue > 0`;
 
-      if (type === "sales") {
-        whereClause.totalRevenue = { gt: 0 };
-      } else if (type === "returns") {
-        whereClause.totalRevenue = { lt: 0 };
-      }
-      // console.log("where clause for aggregated analytics", whereClause)
+      const result = await prisma.$queryRaw(
+        Prisma.sql`
+          SELECT
+            SUM(d.totalRevenue) AS totalRevenue,
+            SUM(d.grossProfit) AS grossProfit,
+            SUM(d.totalCommission) AS totalCommission,
+            SUM(d.totalCostOfGoods) AS totalCostOfGoods
+          FROM DailySalesAnalytics d
+          WHERE d.date >= ${startDate.toISOString().split("T")[0]}
+            AND d.date < ${endDate.toISOString().split("T")[0]}
+            ${typeCondition};
+        `
+      );
+      //console.log("aggregated analytics%%%% result", result);
 
-      return await prisma.dailySalesAnalytics.aggregate({
-        where: whereClause,
-        _sum: {
-          totalRevenue: true,
-          grossProfit: true,
-          totalCommission: true,
-          totalCostOfGoods: true,
-        },
-      });
+      return result;
     } catch (err) {
+      console.error("Error in getAggregatedAnalytics:", err);
       throw new InternalServerError("Internal server error");
     }
   }
 
   async getLiveSales({ startDate, endDate }) {
     try {
-      const mobileSales = prisma.mobilesales.aggregate({
+      const mobileSales = await prisma.mobilesales.aggregate({
         where: {
           createdAt: {
             gte: startDate,
@@ -55,8 +54,8 @@ class FinancialReportingRepository {
           commissionPaid: true,
         },
       });
-
-      const accessorySales = prisma.accessorysales.aggregate({
+      console.log("@@@@ I have bit hit", mobileSales)
+      const accessorySales = await prisma.accessorysales.aggregate({
         where: {
           createdAt: {
             gte: startDate,
