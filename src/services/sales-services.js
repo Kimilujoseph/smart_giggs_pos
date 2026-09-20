@@ -370,7 +370,7 @@ class salesmanagment {
       financeStatus,
       userRole: activeRole, 
     });
-    console.log("startdate", parsedStartDate, "enddate", historicalEndDate.toISOString.split('T')[0])
+    console.log("startdate", parsedStartDate, "enddate", historicalEndDate)
     console.log("historical totals", historicalTotals)
 
     //hisrotical data is an array of two object mobile and accessory totals
