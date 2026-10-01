@@ -113,6 +113,7 @@ class MobileSalesService {
 
   async processMobileSale(saleDetails) {
     try {
+      console.log("Processing mobile sale with details:", saleDetails);
       const {
         productId,
         shopname,

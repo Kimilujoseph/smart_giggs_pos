@@ -35,8 +35,7 @@ class salesmanagment {
   async createBulkSale(salePayload, user) {
     const { shopName, customerdetails, bulksales } = salePayload;
     const { id: sellerId } = user;
-    // console.log("customer details", customerdetails);
-
+    console.log('createting',JSON.stringify(salePayload.bulksales))
     const shop = await this.shop.findShop({ name: shopName });
     if (!shop) {
       throw new NotFoundError(`${shopName} shop Not found`);
@@ -138,6 +137,7 @@ class salesmanagment {
           categoryId: parseInt(CategoryId),
           profit,
           commission,
+          salesType:financeStatus === "pending" ? "financed":"direct",
           financeAmount: financeAmount ? parseInt(financeAmount) : 0,
           financeStatus: financeStatus,
           financerId: financeId ? parseInt(financeId) : 1,

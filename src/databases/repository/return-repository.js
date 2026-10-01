@@ -1,11 +1,13 @@
 import { PrismaClient } from "@prisma/client";
-import { APIError, STATUS_CODE } from "../../Utils/app-error.js";
+import { APIError, STATUS_CODE,InternalServerError } from "../../Utils/app-error.js";
 
 import prisma from "../../databases/client.js";
 
 class ReturnRepository {
+  
   async createReturn(returnData) {
-    const {
+    try{
+     const {
       saleId,
       saleType,
       reason,
@@ -26,7 +28,7 @@ class ReturnRepository {
       const originalSale = await saleModel.findUnique({
         where: { id: saleId },
       });
-
+      //console.log("originalSale", originalSale);
       if (!originalSale) {
         throw new APIError(
           "Not Found",
@@ -147,13 +149,14 @@ class ReturnRepository {
 
       const existingRecord = await tx.dailySalesAnalytics.findUnique({
         where: {
-          date_categoryId_shopId_sellerId_financeId_financeStatus: {
+          date_categoryId_shopId_sellerId_financeId_financeStatus_isConsignment: {
             date: returnDate,
             categoryId: originalSale.categoryId,
             shopId: originalSale.shopID,
             sellerId: originalSale.sellerId,
             financeId: originalSale.financerId,
             financeStatus: financeStatusForReturn,
+            isConsignment: originalSale.financeStatus === 'financed' ? true : false,
           },
         },
       });
@@ -192,6 +195,11 @@ class ReturnRepository {
       }
       return returnRecord;
     });
+
+    } catch (err) {
+     // console.log('Error in ReturnRepository.createReturn:', err);
+      throw new InternalServerError('Failed to process the return in the repository layer.');
+    }
   }
 }
 

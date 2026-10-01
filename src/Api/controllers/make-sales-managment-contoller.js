@@ -31,7 +31,7 @@ const makesales = async (req, res) => {
       paymentMethod: bulksales[0].paymentmethod,
       customerId: customer.id,
     });
-    console.log("payment",payment)
+   // console.log("payment",payment)
 
     // Step 3: Process each sale with the new customer and payment IDs
     const processSales = (sales, salesMethod) => {
