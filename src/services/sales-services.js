@@ -370,8 +370,8 @@ class salesmanagment {
       financeStatus,
       userRole: activeRole, 
     });
-    console.log("startdate", parsedStartDate, "enddate", historicalEndDate)
-    console.log("historical totals", historicalTotals)
+    // console.log("startdate", parsedStartDate, "enddate", historicalEndDate)
+    // console.log("historical totals", historicalTotals)
 
     //hisrotical data is an array of two object mobile and accessory totals
     let historicalSmartPhone = historicalTotals.filter((item) => item.itemType === "smartphones")[0];
@@ -500,7 +500,7 @@ class salesmanagment {
 
       return await this._getHybridSalesData(filters);
     } catch (err) {
-      console.log(err)
+      //console.log(err)
       this.handleServiceError(err);
     }
   }
